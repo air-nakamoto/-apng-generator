@@ -12,6 +12,7 @@ interface Props {
     setTransition: (t: string) => void
     effectDirection: string
     setEffectDirection: (d: string) => void
+    onDirectionChange?: () => void  // 方向変更時にプレビューを開始するコールバック
 }
 
 // タブのアイコンと短いラベル
@@ -26,6 +27,7 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
     setTransition,
     effectDirection,
     setEffectDirection,
+    onDirectionChange,
 }) => {
     const [activeTab, setActiveTab] = useState(0)
     const selectedEffect = findEffectByName(transition)
@@ -107,7 +109,10 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                                         {(['up', 'down', 'left', 'right'] as const).map((dir) => (
                                             <button
                                                 key={dir}
-                                                onClick={() => setEffectDirection(dir)}
+                                                onClick={() => {
+                                                    setEffectDirection(dir)
+                                                    onDirectionChange?.()
+                                                }}
                                                 className={`
                                                     p-1 rounded text-xs flex items-center justify-center
                                                     ${effectDirection === dir
@@ -132,7 +137,10 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                                         {(['vertical', 'horizontal'] as const).map((dir) => (
                                             <button
                                                 key={dir}
-                                                onClick={() => setEffectDirection(dir)}
+                                                onClick={() => {
+                                                    setEffectDirection(dir)
+                                                    onDirectionChange?.()
+                                                }}
                                                 className={`
                                                     p-1 rounded text-xs flex items-center justify-center
                                                     ${effectDirection === dir

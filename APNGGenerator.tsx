@@ -1497,6 +1497,10 @@ export default function APNGGenerator() {
                             setTransition={handleTransitionChange}
                             effectDirection={effectDirection}
                             setEffectDirection={setEffectDirection}
+                            onDirectionChange={() => {
+                                stopPreview()
+                                setTimeout(() => startPreview(), 50)
+                            }}
                         />
                     </div>
                 </div>
