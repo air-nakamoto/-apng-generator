@@ -757,22 +757,36 @@ export default function APNGGenerator() {
                         ctx.restore()
                         break
 
-                    // 本めくりイン
+                    // 本めくりイン（3D風回転 - 左端から開くように展開）
                     case 'pageFlipIn':
                         ctx.save()
-                        const flipInSkew = (1 - progress) * 0.5
-                        ctx.transform(progress, 0, flipInSkew, 1, canvas.width * (1 - progress), 0)
-                        ctx.globalAlpha = progress
+                        // 左端を軸に回転するように、右側が徐々に広がる
+                        const flipInScale = progress
+                        const flipInOffset = canvas.width * (1 - progress) * 0.5
+                        ctx.globalAlpha = 0.5 + progress * 0.5
+
+                        // 傾斜効果を追加（本がめくれるような見た目）
+                        ctx.setTransform(
+                            flipInScale, 0,                    // 水平スケール
+                            (1 - progress) * 0.3, 1,           // 傾斜
+                            flipInOffset, 0                     // 移動
+                        )
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
 
-                    // 本めくりアウト
+                    // 本めくりアウト（3D風回転 - 右端を軸に回転して閉じる）
                     case 'pageFlipOut':
                         ctx.save()
-                        const flipOutSkew = progress * 0.5
-                        ctx.transform(1 - progress, 0, flipOutSkew, 1, canvas.width * progress, 0)
-                        ctx.globalAlpha = 1 - progress
+                        const flipOutScale = 1 - progress
+                        const flipOutOffset = canvas.width * progress * 0.5
+                        ctx.globalAlpha = 1 - progress * 0.5
+
+                        ctx.setTransform(
+                            flipOutScale, 0,
+                            progress * 0.3, 1,
+                            flipOutOffset, 0
+                        )
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
