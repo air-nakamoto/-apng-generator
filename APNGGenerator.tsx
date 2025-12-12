@@ -1196,6 +1196,14 @@ export default function APNGGenerator() {
         }
     }, [])
 
+    // 方向が変更された時にプレビューを再起動
+    useEffect(() => {
+        if (isPlaying && sourceImage) {
+            stopPreview()
+            startPreview()
+        }
+    }, [effectDirection])
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 text-gray-800">
             <div className="container mx-auto px-4 py-12 max-w-7xl">
