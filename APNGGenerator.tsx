@@ -1107,15 +1107,27 @@ export default function APNGGenerator() {
                     return { ...baseStyle, transform: `translate(calc(-50% + ${vibOffset}%), -50%)` }
                 }
 
-            // 閉扉
+            // 閉扉（左右から閉じる）
             case 'doorClose':
-                return { ...baseStyle, opacity: previewProgress }
+                const doorCloseProgress = previewProgress
+                return {
+                    ...baseStyle,
+                    clipPath: `inset(0 ${(1 - doorCloseProgress) * 50}% 0 ${(1 - doorCloseProgress) * 50}%)`,
+                }
 
-            // 砂嵐イン/アウト
+            // 砂嵐イン/アウト（ノイズ風）
             case 'tvStaticIn':
-                return { ...baseStyle, opacity: previewProgress }
+                return {
+                    ...baseStyle,
+                    opacity: previewProgress,
+                    filter: `contrast(${1 + (1 - previewProgress) * 2}) brightness(${1 + (1 - previewProgress) * 0.5})`,
+                }
             case 'tvStaticOut':
-                return { ...baseStyle, opacity: 1 - previewProgress }
+                return {
+                    ...baseStyle,
+                    opacity: 1 - previewProgress,
+                    filter: `contrast(${1 + previewProgress * 2}) brightness(${1 + previewProgress * 0.5})`,
+                }
 
             // グリッチイン/アウト
             case 'glitchIn':
@@ -1137,31 +1149,62 @@ export default function APNGGenerator() {
             case 'focusOut':
                 return { ...baseStyle, filter: `blur(${previewProgress * 20}px)`, opacity: 1 - previewProgress * 0.5 }
 
-            // スライスイン/アウト
+            // スライスイン/アウト（横スライス）
             case 'sliceIn':
-                return { ...baseStyle, opacity: previewProgress }
+                const sliceCount = 5
+                const sliceProgress = previewProgress
+                return {
+                    ...baseStyle,
+                    opacity: sliceProgress,
+                    transform: `translate(-50%, -50%) scaleX(${0.5 + sliceProgress * 0.5})`,
+                }
             case 'sliceOut':
-                return { ...baseStyle, opacity: 1 - previewProgress }
+                return {
+                    ...baseStyle,
+                    opacity: 1 - previewProgress,
+                    transform: `translate(-50%, -50%) scaleX(${1 - previewProgress * 0.5})`,
+                }
 
-            // ライトリークイン
+            // ライトリークイン（明るいフラッシュ）
             case 'lightLeakIn':
-                return { ...baseStyle, opacity: previewProgress, filter: `brightness(${1 + (1 - previewProgress) * 0.5})` }
+                return {
+                    ...baseStyle,
+                    opacity: previewProgress,
+                    filter: `brightness(${1 + (1 - previewProgress) * 2}) saturate(${0.5 + previewProgress * 0.5})`,
+                }
 
             // フィルムバーン
             case 'filmBurn':
                 return { ...baseStyle, opacity: 1 - previewProgress, filter: `sepia(${previewProgress}) saturate(${1 + previewProgress})` }
 
-            // タイルイン/アウト
+            // タイルイン/アウト（グリッド風）
             case 'tileIn':
-                return { ...baseStyle, opacity: previewProgress }
+                return {
+                    ...baseStyle,
+                    opacity: previewProgress,
+                    transform: `translate(-50%, -50%) scale(${0.8 + previewProgress * 0.2})`,
+                    filter: `contrast(${0.8 + previewProgress * 0.2})`,
+                }
             case 'tileOut':
-                return { ...baseStyle, opacity: 1 - previewProgress }
+                return {
+                    ...baseStyle,
+                    opacity: 1 - previewProgress,
+                    transform: `translate(-50%, -50%) scale(${1 - previewProgress * 0.2})`,
+                }
 
-            // ピクセレートイン/アウト
+            // ピクセレートイン/アウト（ピクセル風）
             case 'pixelateIn':
-                return { ...baseStyle, opacity: previewProgress }
+                return {
+                    ...baseStyle,
+                    opacity: previewProgress,
+                    filter: `blur(${(1 - previewProgress) * 5}px) contrast(${0.8 + previewProgress * 0.2})`,
+                }
             case 'pixelateOut':
-                return { ...baseStyle, opacity: 1 - previewProgress }
+                return {
+                    ...baseStyle,
+                    opacity: 1 - previewProgress,
+                    filter: `blur(${previewProgress * 5}px)`,
+                }
 
             // アイリスイン/アウト
             case 'irisIn':
