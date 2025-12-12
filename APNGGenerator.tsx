@@ -171,6 +171,20 @@ export default function APNGGenerator() {
 
     const handleTransitionChange = (newTransition: string) => {
         setTransition(newTransition)
+
+        // 効果に応じてデフォルト方向を設定
+        const effect = findEffectByName(newTransition)
+        if (effect?.hasDirection && effect.directions) {
+            // 4方向効果の場合はrightをデフォルトに
+            if (effect.directions.includes('right')) {
+                setEffectDirection('right')
+            }
+            // 縦横効果の場合はhorizontalをデフォルトに
+            else if (effect.directions.includes('horizontal')) {
+                setEffectDirection('horizontal')
+            }
+        }
+
         if (isPlaying) {
             stopPreview()
         }
@@ -1001,6 +1015,176 @@ export default function APNGGenerator() {
                         transform: `translateX(${doorProgress * 100}%)`,
                     },
                 }
+
+            // ========== V114 新規効果プレビュー ==========
+
+            // スライドイン（方向対応）
+            case 'slideIn':
+                switch (effectDirection) {
+                    case 'left':
+                        return { ...baseStyle, transform: `translate(calc(-50% + ${(1 - previewProgress) * -100}%), -50%)` }
+                    case 'right':
+                        return { ...baseStyle, transform: `translate(calc(-50% + ${(1 - previewProgress) * 100}%), -50%)` }
+                    case 'up':
+                        return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${(1 - previewProgress) * -100}%))` }
+                    case 'down':
+                    default:
+                        return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${(1 - previewProgress) * 100}%))` }
+                }
+
+            // スライドアウト（方向対応）
+            case 'slideOut':
+                switch (effectDirection) {
+                    case 'left':
+                        return { ...baseStyle, transform: `translate(calc(-50% + ${previewProgress * -100}%), -50%)` }
+                    case 'right':
+                        return { ...baseStyle, transform: `translate(calc(-50% + ${previewProgress * 100}%), -50%)` }
+                    case 'up':
+                        return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${previewProgress * -100}%))` }
+                    case 'down':
+                    default:
+                        return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${previewProgress * 100}%))` }
+                }
+
+            // ワイプイン（方向対応）
+            case 'wipeIn':
+                switch (effectDirection) {
+                    case 'left':
+                        return { ...baseStyle, clipPath: `inset(0 0 0 ${(1 - previewProgress) * 100}%)` }
+                    case 'right':
+                        return { ...baseStyle, clipPath: `inset(0 ${(1 - previewProgress) * 100}% 0 0)` }
+                    case 'up':
+                        return { ...baseStyle, clipPath: `inset(${(1 - previewProgress) * 100}% 0 0 0)` }
+                    case 'down':
+                    default:
+                        return { ...baseStyle, clipPath: `inset(0 0 ${(1 - previewProgress) * 100}% 0)` }
+                }
+
+            // ワイプアウト（方向対応）
+            case 'wipeOut':
+                switch (effectDirection) {
+                    case 'left':
+                        return { ...baseStyle, clipPath: `inset(0 ${previewProgress * 100}% 0 0)` }
+                    case 'right':
+                        return { ...baseStyle, clipPath: `inset(0 0 0 ${previewProgress * 100}%)` }
+                    case 'up':
+                        return { ...baseStyle, clipPath: `inset(0 0 ${previewProgress * 100}% 0)` }
+                    case 'down':
+                    default:
+                        return { ...baseStyle, clipPath: `inset(${previewProgress * 100}% 0 0 0)` }
+                }
+
+            // 振動（方向対応）
+            case 'vibration':
+                const vibOffset = Math.sin(previewProgress * Math.PI * 8) * 5
+                if (effectDirection === 'vertical') {
+                    return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${vibOffset}%))` }
+                } else {
+                    return { ...baseStyle, transform: `translate(calc(-50% + ${vibOffset}%), -50%)` }
+                }
+
+            // 閉扉
+            case 'doorClose':
+                return { ...baseStyle, opacity: previewProgress }
+
+            // 砂嵐イン/アウト
+            case 'tvStaticIn':
+                return { ...baseStyle, opacity: previewProgress }
+            case 'tvStaticOut':
+                return { ...baseStyle, opacity: 1 - previewProgress }
+
+            // グリッチイン/アウト
+            case 'glitchIn':
+                return {
+                    ...baseStyle,
+                    opacity: previewProgress,
+                    transform: `translate(-50%, -50%) skew(${Math.sin(previewProgress * Math.PI * 5) * (1 - previewProgress) * 10}deg)`,
+                }
+            case 'glitchOut':
+                return {
+                    ...baseStyle,
+                    opacity: 1 - previewProgress,
+                    transform: `translate(-50%, -50%) skew(${Math.sin(previewProgress * Math.PI * 5) * previewProgress * 10}deg)`,
+                }
+
+            // フォーカスイン/アウト
+            case 'focusIn':
+                return { ...baseStyle, filter: `blur(${(1 - previewProgress) * 20}px)` }
+            case 'focusOut':
+                return { ...baseStyle, filter: `blur(${previewProgress * 20}px)`, opacity: 1 - previewProgress * 0.5 }
+
+            // スライスイン/アウト
+            case 'sliceIn':
+                return { ...baseStyle, opacity: previewProgress }
+            case 'sliceOut':
+                return { ...baseStyle, opacity: 1 - previewProgress }
+
+            // ライトリークイン
+            case 'lightLeakIn':
+                return { ...baseStyle, opacity: previewProgress, filter: `brightness(${1 + (1 - previewProgress) * 0.5})` }
+
+            // フィルムバーン
+            case 'filmBurn':
+                return { ...baseStyle, opacity: 1 - previewProgress, filter: `sepia(${previewProgress}) saturate(${1 + previewProgress})` }
+
+            // タイルイン/アウト
+            case 'tileIn':
+                return { ...baseStyle, opacity: previewProgress }
+            case 'tileOut':
+                return { ...baseStyle, opacity: 1 - previewProgress }
+
+            // ピクセレートイン/アウト
+            case 'pixelateIn':
+                return { ...baseStyle, opacity: previewProgress }
+            case 'pixelateOut':
+                return { ...baseStyle, opacity: 1 - previewProgress }
+
+            // アイリスイン/アウト
+            case 'irisIn':
+                return { ...baseStyle, clipPath: `circle(${previewProgress * 100}% at 50% 50%)` }
+            case 'irisOut':
+                return { ...baseStyle, clipPath: `circle(${(1 - previewProgress) * 100}% at 50% 50%)` }
+
+            // 本めくりイン/アウト
+            case 'pageFlipIn':
+                return {
+                    ...baseStyle,
+                    opacity: previewProgress,
+                    transform: `translate(-50%, -50%) perspective(1000px) rotateY(${(1 - previewProgress) * -90}deg)`,
+                }
+            case 'pageFlipOut':
+                return {
+                    ...baseStyle,
+                    opacity: 1 - previewProgress,
+                    transform: `translate(-50%, -50%) perspective(1000px) rotateY(${previewProgress * 90}deg)`,
+                }
+
+            // RGBずれ
+            case 'rgbShift':
+                return { ...baseStyle, filter: `hue-rotate(${Math.sin(previewProgress * Math.PI) * 30}deg)` }
+
+            // 走査線
+            case 'scanlines':
+                return { ...baseStyle }
+
+            // ビネット
+            case 'vignette':
+                return { ...baseStyle, filter: `brightness(${1 - previewProgress * 0.3})` }
+
+            // ジッター
+            case 'jitter':
+                const jitterAmt = Math.sin(previewProgress * Math.PI * 8) * 3
+                return { ...baseStyle, transform: `translate(calc(-50% + ${jitterAmt}px), calc(-50% + ${jitterAmt}px))` }
+
+            // 色収差
+            case 'chromaticAberration':
+                return { ...baseStyle }
+
+            // 閃光
+            case 'flash':
+                const flashOpacity = Math.sin(previewProgress * Math.PI)
+                return { ...baseStyle, filter: `brightness(${1 + flashOpacity * 0.8})` }
+
             default:
                 return baseStyle
         }
