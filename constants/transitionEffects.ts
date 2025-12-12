@@ -79,6 +79,7 @@ export const transitionEffects: EffectCategory[] = [
             { name: 'pixelateIn', label: 'ピクセレートイン', icon: Puzzle, hasDirection: false },
             { name: 'irisIn', label: 'アイリスイン', icon: CircleDot, hasDirection: false },
             { name: 'pageFlipIn', label: '本めくりイン', icon: BookOpen, hasDirection: false },
+            { name: 'cardFlipIn', label: 'カード回転イン', icon: RotateCw, hasDirection: false },
         ],
     },
     {
@@ -100,6 +101,7 @@ export const transitionEffects: EffectCategory[] = [
             { name: 'pixelateOut', label: 'ピクセレートアウト', icon: Puzzle, hasDirection: false },
             { name: 'irisOut', label: 'アイリスアウト', icon: CircleDot, hasDirection: false },
             { name: 'pageFlipOut', label: '本めくりアウト', icon: BookOpen, hasDirection: false },
+            { name: 'cardFlipOut', label: 'カード回転アウト', icon: RotateCcw, hasDirection: false },
         ],
     },
     {

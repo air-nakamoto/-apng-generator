@@ -757,36 +757,46 @@ export default function APNGGenerator() {
                         ctx.restore()
                         break
 
-                    // 本めくりイン（3D風回転 - 左端から開くように展開）
+                    // 本めくりイン（2Dスキュー効果）
                     case 'pageFlipIn':
                         ctx.save()
-                        // 左端を軸に回転するように、右側が徐々に広がる
-                        const flipInScale = progress
-                        const flipInOffset = canvas.width * (1 - progress) * 0.5
-                        ctx.globalAlpha = 0.5 + progress * 0.5
-
-                        // 傾斜効果を追加（本がめくれるような見た目）
-                        ctx.setTransform(
-                            flipInScale, 0,                    // 水平スケール
-                            (1 - progress) * 0.3, 1,           // 傾斜
-                            flipInOffset, 0                     // 移動
-                        )
+                        const flipInSkew = (1 - progress) * 0.5
+                        ctx.transform(progress, 0, flipInSkew, 1, canvas.width * (1 - progress), 0)
+                        ctx.globalAlpha = progress
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
 
-                    // 本めくりアウト（3D風回転 - 右端を軸に回転して閉じる）
+                    // 本めくりアウト（2Dスキュー効果）
                     case 'pageFlipOut':
                         ctx.save()
-                        const flipOutScale = 1 - progress
-                        const flipOutOffset = canvas.width * progress * 0.5
-                        ctx.globalAlpha = 1 - progress * 0.5
+                        const flipOutSkew = progress * 0.5
+                        ctx.transform(1 - progress, 0, flipOutSkew, 1, canvas.width * progress, 0)
+                        ctx.globalAlpha = 1 - progress
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
+                        break
 
-                        ctx.setTransform(
-                            flipOutScale, 0,
-                            progress * 0.3, 1,
-                            flipOutOffset, 0
-                        )
+                    // カード回転イン（3D風Y軸回転で登場）
+                    case 'cardFlipIn':
+                        ctx.save()
+                        const cardInScale = progress
+                        const cardInOffsetX = (canvas.width / 2) * (1 - progress)
+                        ctx.globalAlpha = 0.3 + progress * 0.7
+                        ctx.translate(cardInOffsetX, 0)
+                        ctx.scale(cardInScale, 1)
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
+                        break
+
+                    // カード回転アウト（3D風Y軸回転で退場）
+                    case 'cardFlipOut':
+                        ctx.save()
+                        const cardOutScale = 1 - progress
+                        const cardOutOffsetX = (canvas.width / 2) * progress
+                        ctx.globalAlpha = 1 - progress * 0.7
+                        ctx.translate(cardOutOffsetX, 0)
+                        ctx.scale(cardOutScale, 1)
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
@@ -1159,14 +1169,28 @@ export default function APNGGenerator() {
             case 'irisOut':
                 return { ...baseStyle, clipPath: `circle(${(1 - previewProgress) * 100}% at 50% 50%)` }
 
-            // 本めくりイン/アウト
+            // 本めくりイン/アウト（2Dスキュー風）
             case 'pageFlipIn':
+                return {
+                    ...baseStyle,
+                    opacity: previewProgress,
+                    transform: `translate(-50%, -50%) skewY(${(1 - previewProgress) * 15}deg) scaleX(${previewProgress})`,
+                }
+            case 'pageFlipOut':
+                return {
+                    ...baseStyle,
+                    opacity: 1 - previewProgress,
+                    transform: `translate(-50%, -50%) skewY(${previewProgress * 15}deg) scaleX(${1 - previewProgress})`,
+                }
+
+            // カード回転イン/アウト（3D風回転）
+            case 'cardFlipIn':
                 return {
                     ...baseStyle,
                     opacity: previewProgress,
                     transform: `translate(-50%, -50%) perspective(1000px) rotateY(${(1 - previewProgress) * -90}deg)`,
                 }
-            case 'pageFlipOut':
+            case 'cardFlipOut':
                 return {
                     ...baseStyle,
                     opacity: 1 - previewProgress,
