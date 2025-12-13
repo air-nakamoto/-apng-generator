@@ -31,9 +31,7 @@ import {
     Cloud,
     Maximize2,
     Minimize2,
-    Clapperboard,
     RotateCcw,
-    Fingerprint,
     ArrowUpDown,
     Vibrate,
     Palette,
@@ -50,7 +48,7 @@ export interface TransitionEffect {
     label: string
     icon: React.ComponentType<{ className?: string }>
     hasDirection: boolean
-    directions?: ('up' | 'down' | 'left' | 'right' | 'vertical' | 'horizontal')[]
+    directions?: ('up' | 'down' | 'left' | 'right' | 'vertical' | 'horizontal' | 'random')[]
 }
 
 export interface EffectCategory {
@@ -113,17 +111,14 @@ export const transitionEffects: EffectCategory[] = [
             { name: 'tvStatic', label: 'TV砂嵐', icon: Tv, hasDirection: false },
             { name: 'enlarge', label: '巨大化', icon: Maximize2, hasDirection: false },
             { name: 'minimize', label: '最小化', icon: Minimize2, hasDirection: false },
-            { name: 'curtain', label: 'カーテン', icon: Clapperboard, hasDirection: false },
             { name: 'spiral', label: 'スパイラル', icon: RotateCcw, hasDirection: false },
-            { name: 'fingerprint', label: '指紋', icon: Fingerprint, hasDirection: false },
             { name: 'bounce', label: 'バウンス', icon: ArrowUpDown, hasDirection: false },
-            { name: 'vibration', label: '振動', icon: Vibrate, hasDirection: true, directions: ['vertical', 'horizontal'] },
+            { name: 'vibration', label: '振動', icon: Vibrate, hasDirection: true, directions: ['vertical', 'horizontal', 'random'] },
             { name: 'glitch', label: 'グリッジ', icon: Zap, hasDirection: false },
             // 新規効果
             { name: 'rgbShift', label: 'RGBずれ', icon: Palette, hasDirection: false },
             { name: 'scanlines', label: '走査線', icon: Scan, hasDirection: false },
             { name: 'vignette', label: 'ビネット', icon: Circle, hasDirection: false },
-            { name: 'jitter', label: 'ジッター', icon: Activity, hasDirection: false },
             { name: 'pulsation', label: '脈動', icon: Rainbow, hasDirection: false },
             { name: 'flash', label: '閃光', icon: Sun, hasDirection: false },
         ],

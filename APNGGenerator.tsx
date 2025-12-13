@@ -605,8 +605,13 @@ export default function APNGGenerator() {
                 const vibAmp = Math.sin(progress * Math.PI * 8) * 10
                 if (effectDirection === 'vertical') {
                     ctx.drawImage(sourceImage, 0, (Math.random() - 0.5) * vibAmp, canvas.width, canvas.height)
-                } else {
+                } else if (effectDirection === 'horizontal') {
                     ctx.drawImage(sourceImage, (Math.random() - 0.5) * vibAmp, 0, canvas.width, canvas.height)
+                } else {
+                    // random: X,Y両方ランダム（ジッター）
+                    const jitterX = (Math.random() - 0.5) * vibAmp
+                    const jitterY = (Math.random() - 0.5) * vibAmp
+                    ctx.drawImage(sourceImage, jitterX, jitterY, canvas.width, canvas.height)
                 }
                 break
             case 'bounce':
@@ -682,11 +687,6 @@ export default function APNGGenerator() {
                 ctx.fillStyle = vigGrad
                 ctx.fillRect(0, 0, canvas.width, canvas.height)
                 break
-            case 'jitter':
-                const jitterX = (Math.random() - 0.5) * 10 * Math.sin(progress * Math.PI * 8)
-                const jitterY = (Math.random() - 0.5) * 10 * Math.sin(progress * Math.PI * 8)
-                ctx.drawImage(sourceImage, jitterX, jitterY, canvas.width, canvas.height)
-                break
             case 'pulsation':
                 // 脈動: エッジ部分に色のフリンジ（上下左右にズレ）
                 const aberAmt = Math.sin(progress * Math.PI) * 6
@@ -701,6 +701,61 @@ export default function APNGGenerator() {
                 ctx.drawImage(sourceImage, aberAmt, aberAmt, canvas.width, canvas.height)
                 ctx.globalAlpha = 1
                 ctx.globalCompositeOperation = 'source-over'
+                break
+            case 'tvStatic':
+                // TV砂嵐
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                const tvStaticData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                for (let p = 0; p < tvStaticData.data.length; p += 4) {
+                    if (Math.random() < 0.3) {
+                        const noise = Math.random() * 255
+                        tvStaticData.data[p] = tvStaticData.data[p + 1] = tvStaticData.data[p + 2] = noise
+                    }
+                }
+                ctx.putImageData(tvStaticData, 0, 0)
+                break
+            case 'curtain':
+                // カーテン（左右から閉じる）
+                const curtainProgress = Math.abs(Math.sin(progress * Math.PI))
+                const curtainWidth = canvas.width / 2 * curtainProgress
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.fillStyle = 'black'
+                ctx.fillRect(0, 0, curtainWidth, canvas.height)
+                ctx.fillRect(canvas.width - curtainWidth, 0, curtainWidth, canvas.height)
+                break
+            case 'spiral':
+                // スパイラル回転
+                ctx.save()
+                ctx.translate(canvas.width / 2, canvas.height / 2)
+                ctx.rotate(progress * Math.PI * 4)
+                const spiralScale = 1 + Math.sin(progress * Math.PI * 2) * 0.3
+                ctx.scale(spiralScale, spiralScale)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'fingerprint':
+                // 指紋（同心円）
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.strokeStyle = `rgba(100, 100, 100, ${progress * 0.5})`
+                ctx.lineWidth = 2
+                for (let r = 10; r < Math.max(canvas.width, canvas.height); r += 15) {
+                    ctx.beginPath()
+                    ctx.arc(canvas.width / 2, canvas.height / 2, r * (1 + Math.sin(progress * Math.PI + r * 0.1) * 0.1), 0, Math.PI * 2)
+                    ctx.stroke()
+                }
+                break
+            case 'glitch':
+                // グリッチ
+                ctx.globalAlpha = 1
+                for (let s = 0; s < 10; s++) {
+                    const srcSliceY = s * (sourceImage.height / 10)
+                    const dstSliceY = s * (canvas.height / 10)
+                    const srcSliceH = sourceImage.height / 10
+                    const dstSliceH = canvas.height / 10
+                    const glitchOff = (Math.random() - 0.5) * canvas.width * 0.2 * Math.sin(progress * Math.PI * 4)
+                    ctx.drawImage(sourceImage, 0, srcSliceY, sourceImage.width, srcSliceH, glitchOff, dstSliceY, canvas.width, dstSliceH)
+                }
                 break
             default:
                 drawScaledImage(0, 0, canvas.width, canvas.height)
@@ -1130,13 +1185,18 @@ export default function APNGGenerator() {
 
                     // ========== V114 新規効果 ==========
 
-                    // 振動（方向統合）
+                    // 振動（方向統合: 縦/横/ランダム）
                     case 'vibration':
                         const vibAmp = Math.sin(progress * Math.PI * 8) * 10
                         if (effectDirection === 'vertical') {
                             ctx.drawImage(sourceImage, 0, (Math.random() - 0.5) * vibAmp, canvas.width, canvas.height)
-                        } else {
+                        } else if (effectDirection === 'horizontal') {
                             ctx.drawImage(sourceImage, (Math.random() - 0.5) * vibAmp, 0, canvas.width, canvas.height)
+                        } else {
+                            // random: X,Y両方ランダム（ジッター）
+                            const jitterX = (Math.random() - 0.5) * vibAmp
+                            const jitterY = (Math.random() - 0.5) * vibAmp
+                            ctx.drawImage(sourceImage, jitterX, jitterY, canvas.width, canvas.height)
                         }
                         break
 
@@ -1419,14 +1479,6 @@ export default function APNGGenerator() {
                         vigGrad.addColorStop(1, `rgba(0, 0, 0, ${0.3 + progress * 0.5})`)
                         ctx.fillStyle = vigGrad
                         ctx.fillRect(0, 0, canvas.width, canvas.height)
-                        break
-
-                    // ジッター
-                    case 'jitter':
-                        const jitterInt = Math.sin(progress * Math.PI * 8)
-                        const jitterX = (Math.random() - 0.5) * 10 * jitterInt
-                        const jitterY = (Math.random() - 0.5) * 10 * jitterInt
-                        ctx.drawImage(sourceImage, jitterX, jitterY, canvas.width, canvas.height)
                         break
 
                     // 脈動
@@ -1897,11 +1949,6 @@ export default function APNGGenerator() {
             case 'vignette':
                 return { ...baseStyle, filter: `brightness(${1 - previewProgress * 0.3})` }
 
-            // ジッター
-            case 'jitter':
-                const jitterAmt = Math.sin(previewProgress * Math.PI * 8) * 3
-                return { ...baseStyle, transform: `translate(calc(-50% + ${jitterAmt}px), calc(-50% + ${jitterAmt}px))` }
-
             // 脈動
             case 'pulsation':
                 const aberAmt = Math.sin(previewProgress * Math.PI) * 3
@@ -1939,9 +1986,9 @@ export default function APNGGenerator() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 text-gray-800">
-            <div className="container mx-auto px-4 py-12 max-w-7xl">
-                <div className="flex flex-col items-center mb-8">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" className="w-full max-w-lg h-auto mb-4">
+            <div className="container mx-auto px-4 py-6 max-w-7xl">
+                <div className="flex flex-col items-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" className="w-full max-w-lg h-auto mb-1">
                         <defs>
                             <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <stop offset="0%" style={{ stopColor: "#2C3E50", stopOpacity: 1 }} />
@@ -1969,7 +2016,7 @@ export default function APNGGenerator() {
                             <tspan dx="5" style={{ fontSize: "32px", fontWeight: "normal" }}>Generator</tspan>
                         </text>
                     </svg>
-                    <p className="text-base text-gray-600 text-center mt-2">
+                    <p className="text-sm text-gray-600 text-center">
                         画像からトランジション効果付きのアニメーションPNG作成できるツール
                     </p>
                 </div>
@@ -2077,8 +2124,22 @@ export default function APNGGenerator() {
                     </div>
 
                     <div className="space-y-4">
+                        {/* トランジション効果選択 */}
+                        <TransitionEffectsSelector
+                            transition={transition}
+                            setTransition={handleTransitionChange}
+                            effectDirection={effectDirection}
+                            setEffectDirection={setEffectDirection}
+                            onDirectionChange={() => {
+                                stopPreview()
+                                setTimeout(() => startPreview(), 50)
+                            }}
+                        />
+
+                        {/* 共通設定カード */}
                         <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200 space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-700">設定</h3>
+                            <h3 className="text-lg font-semibold text-gray-700">共通設定</h3>
+
                             <div className="flex items-center space-x-4">
                                 <label className="flex items-center space-x-2">
                                     <input
@@ -2090,6 +2151,7 @@ export default function APNGGenerator() {
                                     <span className="text-sm font-medium text-gray-700">ループする（繰り返し再生）</span>
                                 </label>
                             </div>
+
                             <div className="flex items-center space-x-4">
                                 <label className="flex items-center space-x-2">
                                     <input
@@ -2138,17 +2200,6 @@ export default function APNGGenerator() {
                                 </div>
                             )}
                         </div>
-
-                        <TransitionEffectsSelector
-                            transition={transition}
-                            setTransition={handleTransitionChange}
-                            effectDirection={effectDirection}
-                            setEffectDirection={setEffectDirection}
-                            onDirectionChange={() => {
-                                stopPreview()
-                                setTimeout(() => startPreview(), 50)
-                            }}
-                        />
                     </div>
                 </div>
 
