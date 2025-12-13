@@ -37,6 +37,31 @@ const DoorOpenPreview: React.FC<{ src: string; progress: number }> = ({ src, pro
     )
 }
 
+const DoorClosePreview: React.FC<{ src: string; progress: number }> = ({ src, progress }) => {
+    return (
+        <div className="relative w-full h-full overflow-hidden">
+            {/* 左扉: 左外から中央へ */}
+            <div
+                className="absolute top-0 left-0 w-1/2 h-full bg-cover transition-transform duration-100 ease-out"
+                style={{
+                    backgroundImage: `url(${src})`,
+                    backgroundPosition: 'left',
+                    transform: `translateX(${(1 - progress) * -100}%)`,
+                }}
+            />
+            {/* 右扉: 右外から中央へ */}
+            <div
+                className="absolute top-0 right-0 w-1/2 h-full bg-cover transition-transform duration-100 ease-out"
+                style={{
+                    backgroundImage: `url(${src})`,
+                    backgroundPosition: 'right',
+                    transform: `translateX(${(1 - progress) * 100}%)`,
+                }}
+            />
+        </div>
+    )
+}
+
 export default function APNGGenerator() {
     const [sourceImage, setSourceImage] = useState<HTMLImageElement | null>(null)
     const [isPlaying, setIsPlaying] = useState(false)
@@ -260,6 +285,27 @@ export default function APNGGenerator() {
                 ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, y, width, height)
             }
 
+            // タイル効果用のランダム順序（視覚的に散らばって見えるパターン）
+            // 4x4グリッドを対角線や離れた位置から順に表示
+            const tileOrder = [
+                7,   // 中央左
+                10,  // 中央右下
+                1,   // 上右寄り
+                14,  // 下右寄り
+                4,   // 左上
+                11,  // 右下寄り
+                2,   // 上中央
+                13,  // 下中央
+                8,   // 左中央下
+                5,   // 中央左上
+                15,  // 右下
+                0,   // 左上角
+                9,   // 中央下
+                6,   // 中央
+                3,   // 右上
+                12,  // 左下
+            ]
+
             for (let i = 0; i < frameCount; i++) {
                 const progress = i / (frameCount - 1)
                 ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -274,37 +320,45 @@ export default function APNGGenerator() {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         break
                     case 'slideIn':
-                        // 方向に応じてスライドイン
+                        // 方向に応じてスライドイン（矢印の方向へ移動）
                         switch (effectDirection) {
                             case 'left':
-                                ctx.drawImage(sourceImage, (1 - progress) * -canvas.width, 0, canvas.width, canvas.height)
-                                break
-                            case 'right':
+                                // 左矢印：右から左へ移動
                                 ctx.drawImage(sourceImage, (1 - progress) * canvas.width, 0, canvas.width, canvas.height)
                                 break
+                            case 'right':
+                                // 右矢印：左から右へ移動
+                                ctx.drawImage(sourceImage, (1 - progress) * -canvas.width, 0, canvas.width, canvas.height)
+                                break
                             case 'up':
-                                ctx.drawImage(sourceImage, 0, (1 - progress) * -canvas.height, canvas.width, canvas.height)
+                                // 上矢印：下から上へ移動
+                                ctx.drawImage(sourceImage, 0, (1 - progress) * canvas.height, canvas.width, canvas.height)
                                 break
                             case 'down':
                             default:
-                                ctx.drawImage(sourceImage, 0, (1 - progress) * canvas.height, canvas.width, canvas.height)
+                                // 下矢印：上から下へ移動
+                                ctx.drawImage(sourceImage, 0, (1 - progress) * -canvas.height, canvas.width, canvas.height)
                                 break
                         }
                         break
                     case 'slideOut':
-                        // 方向に応じてスライドアウト
+                        // 方向に応じてスライドアウト（矢印の方向へ退場）
                         switch (effectDirection) {
                             case 'left':
+                                // 左矢印：左方向へ退場
                                 ctx.drawImage(sourceImage, progress * -canvas.width, 0, canvas.width, canvas.height)
                                 break
                             case 'right':
+                                // 右矢印：右方向へ退場
                                 ctx.drawImage(sourceImage, progress * canvas.width, 0, canvas.width, canvas.height)
                                 break
                             case 'up':
+                                // 上矢印：上方向へ退場
                                 ctx.drawImage(sourceImage, 0, progress * -canvas.height, canvas.width, canvas.height)
                                 break
                             case 'down':
                             default:
+                                // 下矢印：下方向へ退場
                                 ctx.drawImage(sourceImage, 0, progress * canvas.height, canvas.width, canvas.height)
                                 break
                         }
@@ -685,26 +739,28 @@ export default function APNGGenerator() {
                         ctx.globalAlpha = 1
                         break
 
-                    // タイルイン
+                    // タイルイン（ランダム順）
                     case 'tileIn':
                         const tileCols = 4, tileRows = 4
                         const tileW = canvas.width / tileCols, tileH = canvas.height / tileRows
                         const tileTotal = tileCols * tileRows
                         const tileVisible = Math.floor(progress * tileTotal)
                         for (let t = 0; t < tileVisible; t++) {
-                            const col = t % tileCols, row = Math.floor(t / tileCols)
+                            const idx = tileOrder[t]
+                            const col = idx % tileCols, row = Math.floor(idx / tileCols)
                             ctx.drawImage(sourceImage, col * tileW, row * tileH, tileW, tileH, col * tileW, row * tileH, tileW, tileH)
                         }
                         break
 
-                    // タイルアウト
+                    // タイルアウト（ランダム順）
                     case 'tileOut':
                         const tileOutCols = 4, tileOutRows = 4
                         const tileOutW = canvas.width / tileOutCols, tileOutH = canvas.height / tileOutRows
                         const tileOutTotal = tileOutCols * tileOutRows
                         const tileOutVisible = Math.floor((1 - progress) * tileOutTotal)
                         for (let t = 0; t < tileOutVisible; t++) {
-                            const col = t % tileOutCols, row = Math.floor(t / tileOutCols)
+                            const idx = tileOrder[t]
+                            const col = idx % tileOutCols, row = Math.floor(idx / tileOutCols)
                             ctx.drawImage(sourceImage, col * tileOutW, row * tileOutH, tileOutW, tileOutH, col * tileOutW, row * tileOutH, tileOutW, tileOutH)
                         }
                         break
@@ -1044,29 +1100,39 @@ export default function APNGGenerator() {
 
             // スライドイン（方向対応）
             case 'slideIn':
+                // 矢印の方向へ移動するスライドイン
                 switch (effectDirection) {
                     case 'left':
-                        return { ...baseStyle, transform: `translate(calc(-50% + ${(1 - previewProgress) * -100}%), -50%)` }
-                    case 'right':
+                        // 左矢印：右から左へ移動
                         return { ...baseStyle, transform: `translate(calc(-50% + ${(1 - previewProgress) * 100}%), -50%)` }
+                    case 'right':
+                        // 右矢印：左から右へ移動
+                        return { ...baseStyle, transform: `translate(calc(-50% + ${(1 - previewProgress) * -100}%), -50%)` }
                     case 'up':
-                        return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${(1 - previewProgress) * -100}%))` }
+                        // 上矢印：下から上へ移動
+                        return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${(1 - previewProgress) * 100}%))` }
                     case 'down':
                     default:
-                        return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${(1 - previewProgress) * 100}%))` }
+                        // 下矢印：上から下へ移動
+                        return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${(1 - previewProgress) * -100}%))` }
                 }
 
             // スライドアウト（方向対応）
             case 'slideOut':
+                // 矢印の方向へ退場するスライドアウト
                 switch (effectDirection) {
                     case 'left':
+                        // 左矢印：左方向へ退場
                         return { ...baseStyle, transform: `translate(calc(-50% + ${previewProgress * -100}%), -50%)` }
                     case 'right':
+                        // 右矢印：右方向へ退場
                         return { ...baseStyle, transform: `translate(calc(-50% + ${previewProgress * 100}%), -50%)` }
                     case 'up':
+                        // 上矢印：上方向へ退場
                         return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${previewProgress * -100}%))` }
                     case 'down':
                     default:
+                        // 下矢印：下方向へ退場
                         return { ...baseStyle, transform: `translate(-50%, calc(-50% + ${previewProgress * 100}%))` }
                 }
 
@@ -1107,40 +1173,45 @@ export default function APNGGenerator() {
                     return { ...baseStyle, transform: `translate(calc(-50% + ${vibOffset}%), -50%)` }
                 }
 
-            // 閉扉（左右から閉じる）
+            // 閉扉（DoorClosePreviewコンポーネントを使用するため元画像は非表示）
             case 'doorClose':
-                const doorCloseProgress = previewProgress
-                return {
-                    ...baseStyle,
-                    clipPath: `inset(0 ${(1 - doorCloseProgress) * 50}% 0 ${(1 - doorCloseProgress) * 50}%)`,
-                }
+                return { ...baseStyle, opacity: 0 }
 
-            // 砂嵐イン/アウト（ノイズ風）
+            // 砂嵐イン/アウト（砂嵐ノイズから徐々に画像が現れる）
             case 'tvStaticIn':
+                // 生成: ランダムピクセルにノイズを乗せる
+                // CSS: SVGフィルターでノイズ感を表現 + 高コントラスト
+                const staticInIntensity = 1 - previewProgress
                 return {
                     ...baseStyle,
-                    opacity: previewProgress,
-                    filter: `contrast(${1 + (1 - previewProgress) * 2}) brightness(${1 + (1 - previewProgress) * 0.5})`,
+                    opacity: 0.3 + previewProgress * 0.7,
+                    filter: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='${staticInIntensity * 30}' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E#n") contrast(${1 + staticInIntensity * 2})`,
                 }
             case 'tvStaticOut':
+                const staticOutIntensity = previewProgress
                 return {
                     ...baseStyle,
-                    opacity: 1 - previewProgress,
-                    filter: `contrast(${1 + previewProgress * 2}) brightness(${1 + previewProgress * 0.5})`,
+                    opacity: 1 - previewProgress * 0.7,
+                    filter: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='${staticOutIntensity * 30}' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E#n") contrast(${1 + staticOutIntensity * 2})`,
                 }
 
-            // グリッチイン/アウト
+            // グリッチイン/アウト（横スライスがランダムにズレる）
             case 'glitchIn':
+                // 10個のスライスがランダムにズレて入ってくる
+                const glitchInSkew = Math.sin(previewProgress * Math.PI * 8) * (1 - previewProgress) * 15
                 return {
                     ...baseStyle,
-                    opacity: previewProgress,
-                    transform: `translate(-50%, -50%) skew(${Math.sin(previewProgress * Math.PI * 5) * (1 - previewProgress) * 10}deg)`,
+                    opacity: 0.3 + previewProgress * 0.7,
+                    transform: `translate(calc(-50% + ${Math.sin(previewProgress * Math.PI * 6) * (1 - previewProgress) * 20}px), -50%) skewX(${glitchInSkew}deg)`,
+                    filter: `hue-rotate(${(1 - previewProgress) * 30}deg)`,
                 }
             case 'glitchOut':
+                const glitchOutSkew = Math.sin(previewProgress * Math.PI * 8) * previewProgress * 15
                 return {
                     ...baseStyle,
-                    opacity: 1 - previewProgress,
-                    transform: `translate(-50%, -50%) skew(${Math.sin(previewProgress * Math.PI * 5) * previewProgress * 10}deg)`,
+                    opacity: 1 - previewProgress * 0.7,
+                    transform: `translate(calc(-50% + ${Math.sin(previewProgress * Math.PI * 6) * previewProgress * 20}px), -50%) skewX(${glitchOutSkew}deg)`,
+                    filter: `hue-rotate(${previewProgress * 30}deg)`,
                 }
 
             // フォーカスイン/アウト
@@ -1149,20 +1220,22 @@ export default function APNGGenerator() {
             case 'focusOut':
                 return { ...baseStyle, filter: `blur(${previewProgress * 20}px)`, opacity: 1 - previewProgress * 0.5 }
 
-            // スライスイン/アウト（横スライス）
+            // スライスイン（横スライス - 5つの横帯が交互に左右からスライドイン）
             case 'sliceIn':
-                const sliceCount = 5
-                const sliceProgress = previewProgress
+                // 生成: 5つのスライスが交互に左右から入ってくる
+                // CSS: スライスの収束を横方向の移動とスケールで表現
+                const sliceOffset = (1 - previewProgress) * 30
                 return {
                     ...baseStyle,
-                    opacity: sliceProgress,
-                    transform: `translate(-50%, -50%) scaleX(${0.5 + sliceProgress * 0.5})`,
+                    opacity: previewProgress,
+                    transform: `translate(calc(-50% + ${Math.sin(previewProgress * Math.PI * 3) * sliceOffset}px), -50%) scaleY(${0.8 + previewProgress * 0.2})`,
                 }
             case 'sliceOut':
+                const sliceOutOffset = previewProgress * 30
                 return {
                     ...baseStyle,
                     opacity: 1 - previewProgress,
-                    transform: `translate(-50%, -50%) scaleX(${1 - previewProgress * 0.5})`,
+                    transform: `translate(calc(-50% + ${Math.sin(previewProgress * Math.PI * 3) * sliceOutOffset}px), -50%) scaleY(${1 - previewProgress * 0.2})`,
                 }
 
             // ライトリークイン（明るいフラッシュ）
@@ -1177,33 +1250,48 @@ export default function APNGGenerator() {
             case 'filmBurn':
                 return { ...baseStyle, opacity: 1 - previewProgress, filter: `sepia(${previewProgress}) saturate(${1 + previewProgress})` }
 
-            // タイルイン/アウト（グリッド風）
+            // タイルイン/アウト（4x4グリッドで順番に登場）
             case 'tileIn':
+                // 生成: 4x4=16タイルが順番に現れる
+                // CSS: タイル感を表現するためstep関数的なopacity変化
+                const tileCount = 16
+                const visibleTiles = Math.floor(previewProgress * tileCount)
+                // タイルが徐々に埋まるイメージ - ステップ的なopacity
+                const stepOpacity = visibleTiles / tileCount
                 return {
                     ...baseStyle,
-                    opacity: previewProgress,
-                    transform: `translate(-50%, -50%) scale(${0.8 + previewProgress * 0.2})`,
-                    filter: `contrast(${0.8 + previewProgress * 0.2})`,
+                    opacity: stepOpacity,
+                    transform: `translate(-50%, -50%) scale(${0.9 + previewProgress * 0.1})`,
                 }
             case 'tileOut':
+                const tileOutCount = 16
+                const visibleTilesOut = Math.floor((1 - previewProgress) * tileOutCount)
+                const stepOpacityOut = visibleTilesOut / tileOutCount
                 return {
                     ...baseStyle,
-                    opacity: 1 - previewProgress,
-                    transform: `translate(-50%, -50%) scale(${1 - previewProgress * 0.2})`,
+                    opacity: stepOpacityOut,
+                    transform: `translate(-50%, -50%) scale(${1 - previewProgress * 0.1})`,
                 }
 
-            // ピクセレートイン/アウト（ピクセル風）
+            // ピクセレートイン/アウト（ピクセルから鮮明に）
             case 'pixelateIn':
+                // 生成: 低解像度を拡大表示してピクセル化
+                // CSS: image-rendering + contrastでピクセル感を強調
                 return {
                     ...baseStyle,
-                    opacity: previewProgress,
-                    filter: `blur(${(1 - previewProgress) * 5}px) contrast(${0.8 + previewProgress * 0.2})`,
+                    // ピクセル感を出すためのcontrast調整
+                    filter: `contrast(${1.5 - previewProgress * 0.5}) saturate(${0.5 + previewProgress * 0.5})`,
+                    imageRendering: 'pixelated' as React.CSSProperties['imageRendering'],
+                    transform: `translate(-50%, -50%) scale(${0.95 + previewProgress * 0.05})`,
                 }
             case 'pixelateOut':
+                const pixelBlurOut = previewProgress * 8
                 return {
                     ...baseStyle,
-                    opacity: 1 - previewProgress,
-                    filter: `blur(${previewProgress * 5}px)`,
+                    opacity: 1 - previewProgress * 0.3,
+                    filter: `contrast(${1 + previewProgress * 0.5}) saturate(${1 - previewProgress * 0.5})`,
+                    imageRendering: 'pixelated' as React.CSSProperties['imageRendering'],
+                    transform: `translate(-50%, -50%) scale(${1 - previewProgress * 0.05})`,
                 }
 
             // アイリスイン/アウト
@@ -1212,18 +1300,24 @@ export default function APNGGenerator() {
             case 'irisOut':
                 return { ...baseStyle, clipPath: `circle(${(1 - previewProgress) * 100}% at 50% 50%)` }
 
-            // 本めくりイン/アウト（2Dスキュー風）
+            // 本めくりイン/アウト（2Dスキュー風 - ページがめくれるように登場）
             case 'pageFlipIn':
+                // 生成: ctx.transform(progress, 0, flipInSkew, 1, ...)
+                // CSS: perspective + rotateYでページめくりを表現
+                const flipInAngle = (1 - previewProgress) * 90
                 return {
                     ...baseStyle,
                     opacity: previewProgress,
-                    transform: `translate(-50%, -50%) skewY(${(1 - previewProgress) * 15}deg) scaleX(${previewProgress})`,
+                    transform: `translate(-50%, -50%) perspective(800px) rotateY(${flipInAngle}deg) scaleX(${0.5 + previewProgress * 0.5})`,
+                    transformOrigin: 'left center',
                 }
             case 'pageFlipOut':
+                const flipOutAngle = previewProgress * 90
                 return {
                     ...baseStyle,
                     opacity: 1 - previewProgress,
-                    transform: `translate(-50%, -50%) skewY(${previewProgress * 15}deg) scaleX(${1 - previewProgress})`,
+                    transform: `translate(-50%, -50%) perspective(800px) rotateY(${-flipOutAngle}deg) scaleX(${1 - previewProgress * 0.5})`,
+                    transformOrigin: 'right center',
                 }
 
             // カード回転イン/アウト（3D風回転）
@@ -1240,13 +1334,35 @@ export default function APNGGenerator() {
                     transform: `translate(-50%, -50%) perspective(1000px) rotateY(${previewProgress * 90}deg)`,
                 }
 
-            // RGBずれ
+            // RGBずれ（3重描画色ずれ）
             case 'rgbShift':
-                return { ...baseStyle, filter: `hue-rotate(${Math.sin(previewProgress * Math.PI) * 30}deg)` }
+                const shiftAmt = Math.sin(previewProgress * Math.PI) * 4
+                return {
+                    ...baseStyle,
+                    filter: `
+                        drop-shadow(${-shiftAmt}px 0 0 rgba(255, 0, 0, 0.4))
+                        drop-shadow(${shiftAmt}px 0 0 rgba(0, 255, 255, 0.4))
+                    `,
+                }
 
             // 走査線
             case 'scanlines':
-                return { ...baseStyle }
+                const scanY = (previewProgress * 200) % 100
+                return {
+                    ...baseStyle,
+                    backgroundImage: `
+                        linear-gradient(
+                            0deg,
+                            transparent 0%,
+                            transparent 50%,
+                            rgba(0, 0, 0, 0.3) 50%,
+                            rgba(0, 0, 0, 0.3) 100%
+                        )
+                    `,
+                    backgroundSize: '100% 4px',
+                    backgroundBlendMode: 'multiply' as const,
+                    boxShadow: `inset 0 ${scanY}px 30px -15px rgba(255, 255, 255, 0.15)`,
+                }
 
             // ビネット
             case 'vignette':
@@ -1259,7 +1375,14 @@ export default function APNGGenerator() {
 
             // 色収差
             case 'chromaticAberration':
-                return { ...baseStyle }
+                const aberAmt = Math.sin(previewProgress * Math.PI) * 3
+                return {
+                    ...baseStyle,
+                    filter: `
+                        drop-shadow(${-aberAmt}px ${-aberAmt}px 0 rgba(255, 0, 0, 0.3))
+                        drop-shadow(${aberAmt}px ${aberAmt}px 0 rgba(0, 0, 255, 0.3))
+                    `,
+                }
 
             // 閃光
             case 'flash':
@@ -1391,6 +1514,9 @@ export default function APNGGenerator() {
                                         />
                                         {transition === 'doorOpen' && (
                                             <DoorOpenPreview src={sourceImage.src} progress={previewProgress} />
+                                        )}
+                                        {transition === 'doorClose' && (
+                                            <DoorClosePreview src={sourceImage.src} progress={previewProgress} />
                                         )}
                                     </>
                                 ) : (
