@@ -3,7 +3,7 @@
 
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { transitionEffects, findEffectByName } from '../constants/transitionEffects'
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MoveVertical, MoveHorizontal, LogIn, LogOut, Sparkles, Shuffle, ChevronDown } from 'lucide-react'
 
@@ -46,7 +46,19 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
     const handleEffectSelect = (effectName: string) => {
         setTransition(effectName)
         setActiveTab(findTabForEffect(effectName))
+        // オプションありの効果ならアニメーショントリガー（毎回リセット）
+        const effect = findEffectByName(effectName)
+        if (effect?.hasDirection && effect.directions) {
+            // 一度非表示にしてから再表示でアニメーションを毎回発火
+            setLineVisible(false)
+            setTimeout(() => setLineVisible(true), 100)
+        } else {
+            setLineVisible(false)
+        }
     }
+
+    // ラインの表示状態
+    const [lineVisible, setLineVisible] = useState(false)
 
     const currentCategory = transitionEffects[activeTab]
 
@@ -97,12 +109,10 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                                 onClick={() => handleEffectSelect(effect.name)}
                                 className={`
                                     relative flex flex-col items-center justify-center p-2 rounded-lg
-                                    transition-all duration-200 min-h-[60px]
+                                    transition-all duration-200 min-h-[60px] overflow-hidden
                                     ${isSelected
                                         ? 'bg-blue-500 text-white ring-2 ring-blue-300 shadow-md'
-                                        : hasOptions
-                                            ? 'bg-blue-50 text-gray-600 hover:bg-blue-100 border border-blue-200'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }
                                 `}
                             >
@@ -110,9 +120,14 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                                 <span className="text-[10px] text-center leading-tight">
                                     {effect.label}
                                 </span>
-                                {/* オプションありインジケーター */}
+                                {/* オプションありインジケーター：右端に下矢印、底辺にライン */}
                                 {hasOptions && (
-                                    <ChevronDown className={`absolute bottom-0.5 right-0.5 w-3 h-3 ${isSelected ? 'text-blue-200' : 'text-blue-400'}`} />
+                                    <>
+                                        <ChevronDown className={`absolute bottom-0.5 right-0.5 w-3 h-3 ${isSelected ? 'text-blue-200' : 'text-blue-400'}`} />
+                                        <div
+                                            className={`absolute bottom-0 left-0 right-0 h-0.5 ${isSelected ? 'bg-blue-200' : 'bg-blue-400'} ${isSelected ? 'animate-pulse' : ''}`}
+                                        />
+                                    </>
                                 )}
                             </button>
                         )
@@ -123,8 +138,12 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
             {/* 効果オプションセクション（常に表示） */}
             <hr className="border-gray-200" />
             <div className="p-4 bg-blue-50">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                <h4 className="text-sm font-medium text-gray-700 mb-3 relative inline-block">
                     効果オプション
+                    {/* アニメーションライン：選択時に毎回アニメーション */}
+                    <span
+                        className={`absolute bottom-0 left-0 h-0.5 bg-blue-500 transition-all duration-500 ease-out ${lineVisible ? 'w-full' : 'w-0'}`}
+                    />
                 </h4>
 
                 {/* 4方向選択（上下左右） */}
