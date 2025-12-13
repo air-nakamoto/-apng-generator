@@ -124,7 +124,7 @@ export const transitionEffects: EffectCategory[] = [
             { name: 'scanlines', label: '走査線', icon: Scan, hasDirection: false },
             { name: 'vignette', label: 'ビネット', icon: Circle, hasDirection: false },
             { name: 'jitter', label: 'ジッター', icon: Activity, hasDirection: false },
-            { name: 'chromaticAberration', label: '色収差', icon: Rainbow, hasDirection: false },
+            { name: 'pulsation', label: '脈動', icon: Rainbow, hasDirection: false },
             { name: 'flash', label: '閃光', icon: Sun, hasDirection: false },
         ],
     },

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Settings, Upload, Info, Play, Pause, Download } from 'lucide-react'
 import * as Popover from '@radix-ui/react-popover'
@@ -80,7 +80,11 @@ export default function APNGGenerator() {
     const [generationState, setGenerationState] = useState<'idle' | 'generating' | 'completed'>('idle');
     const fileInputRef = useRef<HTMLInputElement>(null)
     const previewContainerRef = useRef<HTMLDivElement>(null)
+    const previewCanvasRef = useRef<HTMLCanvasElement>(null)
     const [optimizedSize, setOptimizedSize] = useState<{ width: number; height: number } | null>(null)
+
+    // タイル効果用のランダム順序（プレビュー・生成共通）
+    const tileOrder = [7, 10, 1, 14, 4, 11, 2, 13, 8, 5, 15, 0, 9, 6, 3, 12]
 
     const getFrameCount = () => Math.floor(fps)
 
@@ -193,6 +197,531 @@ export default function APNGGenerator() {
             startPreview()
         }
     }
+
+    // Canvas プレビュー描画関数（生成ロジックと同一）
+    const drawPreviewFrame = useCallback((progress: number) => {
+        if (!sourceImage || !previewCanvasRef.current || !previewContainerRef.current) return
+
+        const canvas = previewCanvasRef.current
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        // プレビューサイズを計算（コンテナに収まる最大サイズ）
+        const containerRect = previewContainerRef.current.getBoundingClientRect()
+        const containerAspectRatio = containerRect.width / containerRect.height
+        const imageAspectRatio = sourceImage.width / sourceImage.height
+
+        let canvasWidth, canvasHeight
+        if (containerAspectRatio > imageAspectRatio) {
+            // コンテナが横長 → 高さに合わせる
+            canvasHeight = containerRect.height * 0.9  // 90%で余白確保
+            canvasWidth = canvasHeight * imageAspectRatio
+        } else {
+            // コンテナが縦長 → 幅に合わせる
+            canvasWidth = containerRect.width * 0.9  // 90%で余白確保
+            canvasHeight = canvasWidth / imageAspectRatio
+        }
+
+        // キャンバスサイズを設定
+        if (canvas.width !== Math.floor(canvasWidth) || canvas.height !== Math.floor(canvasHeight)) {
+            canvas.width = Math.floor(canvasWidth)
+            canvas.height = Math.floor(canvasHeight)
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        // 生成と同じ描画ロジック
+        const drawScaledImage = (x: number, y: number, width: number, height: number) => {
+            ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, y, width, height)
+        }
+
+        switch (transition) {
+            case 'fadeIn':
+                ctx.globalAlpha = progress
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.globalAlpha = 1
+                break
+            case 'fadeOut':
+                ctx.globalAlpha = 1 - progress
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.globalAlpha = 1
+                break
+            case 'slideIn':
+                switch (effectDirection) {
+                    case 'left':
+                        ctx.drawImage(sourceImage, (1 - progress) * canvas.width, 0, canvas.width, canvas.height)
+                        break
+                    case 'right':
+                        ctx.drawImage(sourceImage, (1 - progress) * -canvas.width, 0, canvas.width, canvas.height)
+                        break
+                    case 'up':
+                        ctx.drawImage(sourceImage, 0, (1 - progress) * canvas.height, canvas.width, canvas.height)
+                        break
+                    case 'down':
+                    default:
+                        ctx.drawImage(sourceImage, 0, (1 - progress) * -canvas.height, canvas.width, canvas.height)
+                        break
+                }
+                break
+            case 'slideOut':
+                switch (effectDirection) {
+                    case 'left':
+                        ctx.drawImage(sourceImage, progress * -canvas.width, 0, canvas.width, canvas.height)
+                        break
+                    case 'right':
+                        ctx.drawImage(sourceImage, progress * canvas.width, 0, canvas.width, canvas.height)
+                        break
+                    case 'up':
+                        ctx.drawImage(sourceImage, 0, progress * -canvas.height, canvas.width, canvas.height)
+                        break
+                    case 'down':
+                    default:
+                        ctx.drawImage(sourceImage, 0, progress * canvas.height, canvas.width, canvas.height)
+                        break
+                }
+                break
+            case 'wipeIn':
+                ctx.save()
+                switch (effectDirection) {
+                    case 'left':
+                        ctx.beginPath()
+                        ctx.rect(canvas.width * (1 - progress), 0, canvas.width * progress, canvas.height)
+                        ctx.clip()
+                        break
+                    case 'right':
+                        ctx.beginPath()
+                        ctx.rect(0, 0, canvas.width * progress, canvas.height)
+                        ctx.clip()
+                        break
+                    case 'up':
+                        ctx.beginPath()
+                        ctx.rect(0, canvas.height * (1 - progress), canvas.width, canvas.height * progress)
+                        ctx.clip()
+                        break
+                    case 'down':
+                    default:
+                        ctx.beginPath()
+                        ctx.rect(0, 0, canvas.width, canvas.height * progress)
+                        ctx.clip()
+                        break
+                }
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'zoomIn':
+                const scaleIn = 0.5 + progress * 0.5
+                ctx.save()
+                ctx.translate(canvas.width / 2, canvas.height / 2)
+                ctx.scale(scaleIn, scaleIn)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'zoomOut':
+                const scaleOut = 1.5 - progress * 0.5
+                ctx.save()
+                ctx.translate(canvas.width / 2, canvas.height / 2)
+                ctx.scale(scaleOut, scaleOut)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'doorClose':
+                const halfW = canvas.width / 2
+                ctx.drawImage(sourceImage, 0, 0, sourceImage.width / 2, sourceImage.height,
+                    -halfW + progress * halfW, 0, halfW, canvas.height)
+                ctx.drawImage(sourceImage, sourceImage.width / 2, 0, sourceImage.width / 2, sourceImage.height,
+                    canvas.width - progress * halfW, 0, halfW, canvas.height)
+                break
+            case 'doorOpen':
+                const doHalfW = canvas.width / 2
+                ctx.drawImage(sourceImage, 0, 0, sourceImage.width / 2, sourceImage.height,
+                    -progress * doHalfW, 0, doHalfW, canvas.height)
+                ctx.drawImage(sourceImage, sourceImage.width / 2, 0, sourceImage.width / 2, sourceImage.height,
+                    doHalfW + progress * doHalfW, 0, doHalfW, canvas.height)
+                break
+            case 'sliceIn':
+                for (let s = 0; s < 5; s++) {
+                    const srcSliceH = sourceImage.height / 5
+                    const dstSliceH = canvas.height / 5
+                    const offsetX = (s % 2 === 0 ? -1 : 1) * (1 - progress) * canvas.width * 0.5
+                    ctx.drawImage(sourceImage, 0, s * srcSliceH, sourceImage.width, srcSliceH, offsetX, s * dstSliceH, canvas.width, dstSliceH)
+                }
+                break
+            case 'tileIn':
+                const tileCols = 4, tileRows = 4
+                const srcTileW = sourceImage.width / tileCols, srcTileH = sourceImage.height / tileRows
+                const dstTileW = canvas.width / tileCols, dstTileH = canvas.height / tileRows
+                const tileTotal = tileCols * tileRows
+                const tileVisible = Math.floor(progress * tileTotal)
+                for (let t = 0; t < tileVisible; t++) {
+                    const idx = tileOrder[t]
+                    const col = idx % tileCols, row = Math.floor(idx / tileCols)
+                    ctx.drawImage(sourceImage, col * srcTileW, row * srcTileH, srcTileW, srcTileH, col * dstTileW, row * dstTileH, dstTileW, dstTileH)
+                }
+                break
+            case 'pixelateIn':
+                const pixelSize = Math.max(1, Math.floor((1 - progress) * 30))
+                const tempCanvas = document.createElement('canvas')
+                tempCanvas.width = canvas.width / pixelSize
+                tempCanvas.height = canvas.height / pixelSize
+                const tempCtx = tempCanvas.getContext('2d')!
+                tempCtx.drawImage(sourceImage, 0, 0, tempCanvas.width, tempCanvas.height)
+                ctx.imageSmoothingEnabled = false
+                ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height)
+                ctx.imageSmoothingEnabled = true
+                break
+            case 'focusIn':
+                ctx.filter = `blur(${(1 - progress) * 20}px)`
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.filter = 'none'
+                break
+            case 'irisIn':
+                ctx.save()
+                ctx.beginPath()
+                ctx.arc(canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * progress, 0, Math.PI * 2)
+                ctx.clip()
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'pageFlipIn':
+                ctx.save()
+                const flipInSkew = (1 - progress) * 0.5
+                ctx.transform(progress, 0, flipInSkew, 1, canvas.width * (1 - progress), 0)
+                ctx.globalAlpha = progress
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'cardFlipIn':
+                ctx.save()
+                const cardInScale = progress
+                const cardInOffsetX = (canvas.width / 2) * (1 - progress)
+                ctx.globalAlpha = 0.3 + progress * 0.7
+                ctx.translate(cardInOffsetX, 0)
+                ctx.scale(cardInScale, 1)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'tvStaticIn':
+                ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
+                const staticData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                const staticIntensity = 1 - progress
+                for (let p = 0; p < staticData.data.length; p += 4) {
+                    if (Math.random() < staticIntensity) {
+                        const noise = Math.random() * 255
+                        staticData.data[p] = staticData.data[p + 1] = staticData.data[p + 2] = noise
+                    }
+                }
+                ctx.putImageData(staticData, 0, 0)
+                break
+            case 'glitchIn':
+                const glitchIntensity = 1 - progress
+                ctx.globalAlpha = progress
+                for (let s = 0; s < 10; s++) {
+                    const srcSliceY = s * (sourceImage.height / 10)
+                    const dstSliceY = s * (canvas.height / 10)
+                    const srcSliceH = sourceImage.height / 10
+                    const dstSliceH = canvas.height / 10
+                    const offsetX = (Math.random() - 0.5) * canvas.width * 0.3 * glitchIntensity
+                    ctx.drawImage(sourceImage, 0, srcSliceY, sourceImage.width, srcSliceH, offsetX, dstSliceY, canvas.width, dstSliceH)
+                }
+                ctx.globalAlpha = 1
+                break
+            case 'lightLeakIn':
+                ctx.globalAlpha = progress
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.globalAlpha = 1
+                const leakGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, canvas.width)
+                leakGrad.addColorStop(0, `rgba(255, 200, 100, ${(1 - progress) * 0.5})`)
+                leakGrad.addColorStop(1, 'transparent')
+                ctx.fillStyle = leakGrad
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                break
+            // === 退場エフェクト ===
+            case 'wipeOut':
+                ctx.save()
+                switch (effectDirection) {
+                    case 'left':
+                        ctx.beginPath()
+                        ctx.rect(canvas.width * progress, 0, canvas.width * (1 - progress), canvas.height)
+                        ctx.clip()
+                        break
+                    case 'right':
+                        ctx.beginPath()
+                        ctx.rect(0, 0, canvas.width * (1 - progress), canvas.height)
+                        ctx.clip()
+                        break
+                    case 'up':
+                        ctx.beginPath()
+                        ctx.rect(0, canvas.height * progress, canvas.width, canvas.height * (1 - progress))
+                        ctx.clip()
+                        break
+                    case 'down':
+                    default:
+                        ctx.beginPath()
+                        ctx.rect(0, 0, canvas.width, canvas.height * (1 - progress))
+                        ctx.clip()
+                        break
+                }
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'sliceOut':
+                ctx.globalAlpha = 1 - progress
+                for (let s = 0; s < 5; s++) {
+                    const srcSliceH = sourceImage.height / 5
+                    const dstSliceH = canvas.height / 5
+                    const offsetX = (s % 2 === 0 ? -1 : 1) * progress * canvas.width * 0.5
+                    ctx.drawImage(sourceImage, 0, s * srcSliceH, sourceImage.width, srcSliceH, offsetX, s * dstSliceH, canvas.width, dstSliceH)
+                }
+                ctx.globalAlpha = 1
+                break
+            case 'tileOut':
+                const tileOutCols = 4, tileOutRows = 4
+                const srcTileOutW = sourceImage.width / tileOutCols, srcTileOutH = sourceImage.height / tileOutRows
+                const dstTileOutW = canvas.width / tileOutCols, dstTileOutH = canvas.height / tileOutRows
+                const tileOutTotal = tileOutCols * tileOutRows
+                const tileOutVisible = Math.floor((1 - progress) * tileOutTotal)
+                for (let t = 0; t < tileOutVisible; t++) {
+                    const idx = tileOrder[t]
+                    const col = idx % tileOutCols, row = Math.floor(idx / tileOutCols)
+                    ctx.drawImage(sourceImage, col * srcTileOutW, row * srcTileOutH, srcTileOutW, srcTileOutH, col * dstTileOutW, row * dstTileOutH, dstTileOutW, dstTileOutH)
+                }
+                break
+            case 'pixelateOut':
+                const pixelOutSize = Math.max(1, Math.floor(progress * 30))
+                const tempOutCanvas = document.createElement('canvas')
+                tempOutCanvas.width = canvas.width / pixelOutSize
+                tempOutCanvas.height = canvas.height / pixelOutSize
+                const tempOutCtx = tempOutCanvas.getContext('2d')!
+                tempOutCtx.drawImage(sourceImage, 0, 0, tempOutCanvas.width, tempOutCanvas.height)
+                ctx.imageSmoothingEnabled = false
+                ctx.globalAlpha = 1 - progress * 0.3
+                ctx.drawImage(tempOutCanvas, 0, 0, canvas.width, canvas.height)
+                ctx.imageSmoothingEnabled = true
+                ctx.globalAlpha = 1
+                break
+            case 'focusOut':
+                ctx.filter = `blur(${progress * 20}px)`
+                ctx.globalAlpha = 1 - progress * 0.5
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.filter = 'none'
+                ctx.globalAlpha = 1
+                break
+            case 'irisOut':
+                ctx.save()
+                ctx.beginPath()
+                ctx.arc(canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * (1 - progress), 0, Math.PI * 2)
+                ctx.clip()
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'pageFlipOut':
+                ctx.save()
+                const flipOutSkew = progress * 0.5
+                ctx.transform(1 - progress, 0, flipOutSkew, 1, canvas.width * progress, 0)
+                ctx.globalAlpha = 1 - progress
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'cardFlipOut':
+                ctx.save()
+                const cardOutScale = 1 - progress
+                const cardOutOffsetX = (canvas.width / 2) * progress
+                ctx.globalAlpha = 1 - progress * 0.7
+                ctx.translate(cardOutOffsetX, 0)
+                ctx.scale(cardOutScale, 1)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'tvStaticOut':
+                ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
+                const staticOutData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                for (let p = 0; p < staticOutData.data.length; p += 4) {
+                    if (Math.random() < progress) {
+                        const noise = Math.random() * 255
+                        staticOutData.data[p] = staticOutData.data[p + 1] = staticOutData.data[p + 2] = noise
+                    }
+                }
+                ctx.putImageData(staticOutData, 0, 0)
+                break
+            case 'glitchOut':
+                const glitchOutIntensity = progress
+                ctx.globalAlpha = 1 - progress
+                for (let s = 0; s < 10; s++) {
+                    const srcSliceOutY = s * (sourceImage.height / 10)
+                    const dstSliceOutY = s * (canvas.height / 10)
+                    const srcSliceOutH = sourceImage.height / 10
+                    const dstSliceOutH = canvas.height / 10
+                    const offsetX = (Math.random() - 0.5) * canvas.width * 0.3 * glitchOutIntensity
+                    ctx.drawImage(sourceImage, 0, srcSliceOutY, sourceImage.width, srcSliceOutH, offsetX, dstSliceOutY, canvas.width, dstSliceOutH)
+                }
+                ctx.globalAlpha = 1
+                break
+            case 'filmBurn':
+                ctx.globalAlpha = 1 - progress
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.globalAlpha = 1
+                const burnGrad = ctx.createRadialGradient(canvas.width * 0.7, canvas.height * 0.3, 0, canvas.width * 0.7, canvas.height * 0.3, canvas.width * 0.8)
+                burnGrad.addColorStop(0, `rgba(255, 100, 0, ${progress * 0.8})`)
+                burnGrad.addColorStop(0.5, `rgba(255, 200, 50, ${progress * 0.3})`)
+                burnGrad.addColorStop(1, 'transparent')
+                ctx.fillStyle = burnGrad
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                break
+            // === 演出エフェクト ===
+            case 'rotate':
+                ctx.save()
+                ctx.translate(canvas.width / 2, canvas.height / 2)
+                ctx.rotate(progress * Math.PI * 2)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'blur':
+                ctx.filter = `blur(${(1 - progress) * 20}px)`
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.filter = 'none'
+                break
+            case 'enlarge':
+                const enlargeScale = 1 + progress * 4
+                ctx.save()
+                ctx.translate(canvas.width / 2, canvas.height / 2)
+                ctx.scale(enlargeScale, enlargeScale)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'minimize':
+                const minimizeScale = 5 - progress * 4
+                ctx.save()
+                ctx.translate(canvas.width / 2, canvas.height / 2)
+                ctx.scale(minimizeScale, minimizeScale)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            case 'vibration':
+                const vibAmp = Math.sin(progress * Math.PI * 8) * 10
+                if (effectDirection === 'vertical') {
+                    ctx.drawImage(sourceImage, 0, (Math.random() - 0.5) * vibAmp, canvas.width, canvas.height)
+                } else {
+                    ctx.drawImage(sourceImage, (Math.random() - 0.5) * vibAmp, 0, canvas.width, canvas.height)
+                }
+                break
+            case 'bounce':
+                const bounceY = Math.abs(Math.sin(progress * Math.PI * 2)) * canvas.height * 0.2
+                ctx.drawImage(sourceImage, 0, -bounceY, canvas.width, canvas.height)
+                break
+            case 'flash':
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                const flashIntensity = Math.sin(progress * Math.PI)
+                ctx.fillStyle = `rgba(255, 255, 255, ${flashIntensity * 0.8})`
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                break
+            case 'rgbShift':
+                // RGBシフト: 赤・緑・青を120度ずつ離れた方向にオフセット
+                // R: 上方向 (0°), G: 左下方向 (240°), B: 右下方向 (120°)
+                const shiftAmt = Math.sin(progress * Math.PI) * canvas.width * 0.04
+
+                // 各チャンネルのオフセット計算（120度間隔）
+                const rOffsetX = Math.round(Math.sin(0) * shiftAmt)                    // 0°: 右0, 上-
+                const rOffsetY = Math.round(-Math.cos(0) * shiftAmt)                   // 上方向
+                const gOffsetX = Math.round(Math.sin(Math.PI * 4 / 3) * shiftAmt)      // 240°: 左下
+                const gOffsetY = Math.round(-Math.cos(Math.PI * 4 / 3) * shiftAmt)
+                const bOffsetX = Math.round(Math.sin(Math.PI * 2 / 3) * shiftAmt)      // 120°: 右下
+                const bOffsetY = Math.round(-Math.cos(Math.PI * 2 / 3) * shiftAmt)
+
+                // 元画像を描画
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                const data = imgData.data
+                const newData = ctx.createImageData(canvas.width, canvas.height)
+                const out = newData.data
+
+                for (let y = 0; y < canvas.height; y++) {
+                    for (let x = 0; x < canvas.width; x++) {
+                        const i = (y * canvas.width + x) * 4
+
+                        // 赤チャンネル: 上方向からサンプル
+                        const rX = Math.min(Math.max(x - rOffsetX, 0), canvas.width - 1)
+                        const rY = Math.min(Math.max(y - rOffsetY, 0), canvas.height - 1)
+                        const rI = (rY * canvas.width + rX) * 4
+                        out[i] = data[rI]
+
+                        // 緑チャンネル: 左下方向からサンプル
+                        const gX = Math.min(Math.max(x - gOffsetX, 0), canvas.width - 1)
+                        const gY = Math.min(Math.max(y - gOffsetY, 0), canvas.height - 1)
+                        const gI = (gY * canvas.width + gX) * 4
+                        out[i + 1] = data[gI + 1]
+
+                        // 青チャンネル: 右下方向からサンプル
+                        const bX = Math.min(Math.max(x - bOffsetX, 0), canvas.width - 1)
+                        const bY = Math.min(Math.max(y - bOffsetY, 0), canvas.height - 1)
+                        const bI = (bY * canvas.width + bX) * 4
+                        out[i + 2] = data[bI + 2]
+
+                        // アルファ
+                        out[i + 3] = data[i + 3]
+                    }
+                }
+                ctx.putImageData(newData, 0, 0)
+                break
+            case 'scanlines':
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+                for (let y = 0; y < canvas.height; y += 4) {
+                    ctx.fillRect(0, y, canvas.width, 2)
+                }
+                break
+            case 'vignette':
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                const vigGrad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width * 0.7)
+                vigGrad.addColorStop(0, 'transparent')
+                vigGrad.addColorStop(1, `rgba(0, 0, 0, ${progress * 0.8})`)
+                ctx.fillStyle = vigGrad
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                break
+            case 'jitter':
+                const jitterX = (Math.random() - 0.5) * 10 * Math.sin(progress * Math.PI * 8)
+                const jitterY = (Math.random() - 0.5) * 10 * Math.sin(progress * Math.PI * 8)
+                ctx.drawImage(sourceImage, jitterX, jitterY, canvas.width, canvas.height)
+                break
+            case 'pulsation':
+                // 脈動: エッジ部分に色のフリンジ（上下左右にズレ）
+                const aberAmt = Math.sin(progress * Math.PI) * 6
+                // 元画像を先に描画
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                // エッジに色を乗せる
+                ctx.globalCompositeOperation = 'screen'
+                ctx.globalAlpha = 0.3
+                // 赤（左上にズレ）
+                ctx.drawImage(sourceImage, -aberAmt, -aberAmt, canvas.width, canvas.height)
+                // シアン（右下にズレ）
+                ctx.drawImage(sourceImage, aberAmt, aberAmt, canvas.width, canvas.height)
+                ctx.globalAlpha = 1
+                ctx.globalCompositeOperation = 'source-over'
+                break
+            default:
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                break
+        }
+    }, [sourceImage, transition, effectDirection, tileOrder])
+
+    // プレビュー描画のuseEffect
+    useEffect(() => {
+        if (sourceImage && previewCanvasRef.current) {
+            drawPreviewFrame(previewProgress)
+        }
+    }, [previewProgress, drawPreviewFrame, sourceImage])
+
+    // 初期表示・終了後表示用（最終フレームを表示）
+    useEffect(() => {
+        if (sourceImage && previewCanvasRef.current && !isPlaying) {
+            // プレビュー停止時は完成状態（progress=1）を表示
+            drawPreviewFrame(1)
+        }
+    }, [sourceImage, drawPreviewFrame, isPlaying, transition, effectDirection])
 
     const handleTransitionChange = (newTransition: string) => {
         setTransition(newTransition)
@@ -900,8 +1429,8 @@ export default function APNGGenerator() {
                         ctx.drawImage(sourceImage, jitterX, jitterY, canvas.width, canvas.height)
                         break
 
-                    // 色収差
-                    case 'chromaticAberration':
+                    // 脈動
+                    case 'pulsation':
                         const aberAmt = Math.sin(progress * Math.PI) * 5
                         ctx.globalCompositeOperation = 'screen'
                         ctx.globalAlpha = 0.8
@@ -1373,8 +1902,8 @@ export default function APNGGenerator() {
                 const jitterAmt = Math.sin(previewProgress * Math.PI * 8) * 3
                 return { ...baseStyle, transform: `translate(calc(-50% + ${jitterAmt}px), calc(-50% + ${jitterAmt}px))` }
 
-            // 色収差
-            case 'chromaticAberration':
+            // 脈動
+            case 'pulsation':
                 const aberAmt = Math.sin(previewProgress * Math.PI) * 3
                 return {
                     ...baseStyle,
@@ -1506,19 +2035,11 @@ export default function APNGGenerator() {
                                 style={{ padding: '10% 0' }} // 上下に10%のパディングを追加
                             >
                                 {sourceImage ? (
-                                    <>
-                                        <motion.img
-                                            src={sourceImage.src}
-                                            alt="プレビュー"
-                                            style={getPreviewStyle()}
-                                        />
-                                        {transition === 'doorOpen' && (
-                                            <DoorOpenPreview src={sourceImage.src} progress={previewProgress} />
-                                        )}
-                                        {transition === 'doorClose' && (
-                                            <DoorClosePreview src={sourceImage.src} progress={previewProgress} />
-                                        )}
-                                    </>
+                                    <canvas
+                                        ref={previewCanvasRef}
+                                        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full"
+                                        style={{ imageRendering: 'auto' }}
+                                    />
                                 ) : (
                                     <div className="text-gray-400 text-center p-4">
                                         <Upload className="w-12 h-12 mx-auto mb-2" />
