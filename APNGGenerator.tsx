@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Settings, Upload, Info, Play, Pause, Download } from 'lucide-react'
+import { Settings, Upload, Info, Play, Pause, Download, Repeat, ArrowRightToLine } from 'lucide-react'
 import * as Popover from '@radix-ui/react-popover'
 import { TransitionEffectsSelector } from './components/TransitionEffectsSelector'
 import { findEffectByName } from './constants/transitionEffects'
@@ -11,6 +11,12 @@ import { findEffectByName } from './constants/transitionEffects'
 import UPNG from 'upng-js'
 
 
+// タイル効果用のランダム順序（プレビュー・生成共通）
+const tileOrders: { [key: number]: number[] } = {
+    4: [0, 3, 1, 2],
+    9: [4, 0, 8, 2, 6, 1, 5, 3, 7],
+    16: [7, 10, 1, 14, 4, 11, 2, 13, 8, 5, 15, 0, 9, 6, 3, 12]
+}
 
 
 const DoorOpenPreview: React.FC<{ src: string; progress: number }> = ({ src, progress }) => {
@@ -88,8 +94,7 @@ export default function APNGGenerator() {
     const previewCanvasRef = useRef<HTMLCanvasElement>(null)
     const [optimizedSize, setOptimizedSize] = useState<{ width: number; height: number } | null>(null)
 
-    // タイル効果用のランダム順序（プレビュー・生成共通）
-    const tileOrder = [7, 10, 1, 14, 4, 11, 2, 13, 8, 5, 15, 0, 9, 6, 3, 12]
+
 
     const getFrameCount = () => Math.floor(fps)
 
@@ -357,13 +362,17 @@ export default function APNGGenerator() {
                 break
             }
             case 'tileIn':
-                const tileCols = 4, tileRows = 4
+                const tileInCount = effectOption ? parseInt(effectOption) : 9
+                const tileCols = Math.sqrt(tileInCount), tileRows = Math.sqrt(tileInCount)
                 const srcTileW = sourceImage.width / tileCols, srcTileH = sourceImage.height / tileRows
                 const dstTileW = canvas.width / tileCols, dstTileH = canvas.height / tileRows
                 const tileTotal = tileCols * tileRows
+                const currentTileInOrder = tileOrders[tileInCount] || tileOrders[9]
                 const tileVisible = Math.floor(progress * tileTotal)
+
                 for (let t = 0; t < tileVisible; t++) {
-                    const idx = tileOrder[t]
+                    const idx = currentTileInOrder[t]
+                    if (idx === undefined) continue
                     const col = idx % tileCols, row = Math.floor(idx / tileCols)
                     ctx.drawImage(sourceImage, col * srcTileW, row * srcTileH, srcTileW, srcTileH, col * dstTileW, row * dstTileH, dstTileW, dstTileH)
                 }
@@ -418,23 +427,88 @@ export default function APNGGenerator() {
                 break
             }
             case 'pageFlipIn':
+                // ページめくり：左めくり（デフォルト）と右めくりに対応
+                const isRightFlip = effectOption === 'right'
+
+                // プレビューの最後に完全に画像を表示するための閾値
+                // progressがほぼ1なら、変形なしで描画して終了
+                if (progress > 0.98) {
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+                    break
+                }
+
                 ctx.save()
+
+                // 簡易的なページめくり表現（台形変形＋陰影）
                 const flipInSkew = (1 - progress) * 0.5
-                ctx.transform(progress, 0, flipInSkew, 1, canvas.width * (1 - progress), 0)
-                ctx.globalAlpha = progress
-                drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                if (isRightFlip) {
+                    // 右めくり（左端固定、右端が移動）
+                    // transform(scaleX, skewY, skewX, scaleY, dx, dy)
+                    // scaleX = progress (0->1)
+                    // dx = 0 (左固定)
+                    // skewX = -flipInSkew (右に傾く)
+                    ctx.transform(progress, 0, -flipInSkew, 1, 0, 0)
+
+                    // 画像描画
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                    // 陰影
+                    const flipInGrad = ctx.createLinearGradient(0, 0, canvas.width, 0)
+                    // 軸（左）は明るく、めくれる端（右）は暗く
+                    flipInGrad.addColorStop(0, 'rgba(255,255,255,0.3)') // 折り目（左）
+                    flipInGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)')
+                    flipInGrad.addColorStop(1, 'rgba(0,0,0,0.4)')   // めくれる端（右）
+
+                    ctx.fillStyle = flipInGrad
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+                } else {
+                    // 左めくり（右端固定、左端が移動）（既存）
+                    // transform(scaleX, skewY, skewX, scaleY, dx, dy)
+                    // scaleX = progress (0->1)
+                    // dx = canvas.width * (1 - progress) (左端が右から左へ移動)
+                    // skewX = flipInSkew (左に傾く)
+                    ctx.transform(progress, 0, flipInSkew, 1, canvas.width * (1 - progress), 0)
+
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                    const flipInGrad = ctx.createLinearGradient(0, 0, canvas.width, 0)
+                    // めくれ口（左）は暗く、軸（右）はハイライト
+                    flipInGrad.addColorStop(0, 'rgba(0,0,0,0.4)')   // めくれ口（左）は暗く
+                    flipInGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)')
+                    flipInGrad.addColorStop(0.9, 'rgba(255,255,255,0.3)') // 軸（右）はハイライト
+                    flipInGrad.addColorStop(1, 'rgba(0,0,0,0)')
+
+                    ctx.fillStyle = flipInGrad
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+                }
+
+                // フェードも併用
+                ctx.globalAlpha = Math.max(0, Math.min(1, progress * 1.5))
                 ctx.restore()
                 break
-            case 'cardFlipIn':
+            case 'cardFlipIn': {
                 ctx.save()
-                const cardInScale = progress
-                const cardInOffsetX = (canvas.width / 2) * (1 - progress)
-                ctx.globalAlpha = 0.3 + progress * 0.7
-                ctx.translate(cardInOffsetX, 0)
+                // 回転数オプション取得 (1, 3, 5)
+                const flipInCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
+
+                // (N)回転させるなら
+                // logic: scale = Math.cos(angle)
+                // angle goes from [Start] to [0]
+
+                const startAngleIn = (flipInCount - 1) * Math.PI + (Math.PI / 2)
+                const currentAngleIn = startAngleIn * (1 - progress)
+                const cardInScale = Math.cos(currentAngleIn)
+
+                ctx.translate(canvas.width / 2, canvas.height / 2)
                 ctx.scale(cardInScale, 1)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
+            }
             case 'tvStaticIn':
                 ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
                 const staticData = ctx.getImageData(0, 0, canvas.width, canvas.height)
@@ -462,7 +536,7 @@ export default function APNGGenerator() {
                 break
             // V118: blindIn効果
             case 'blindIn': {
-                const blindCount = 7 // デフォルト
+                const blindCount = effectOption ? parseInt(effectOption) : 7
                 const isVertical = effectDirection === 'horizontal' // 逆にする：horizontalを選ぶと縦に開く
                 const blindSize = isVertical ? canvas.height / blindCount : canvas.width / blindCount
                 const openAmount = progress * blindSize
@@ -524,13 +598,17 @@ export default function APNGGenerator() {
                 break
             }
             case 'tileOut':
-                const tileOutCols = 4, tileOutRows = 4
+                const tileOutCount = effectOption ? parseInt(effectOption) : 9
+                const tileOutCols = Math.sqrt(tileOutCount), tileOutRows = Math.sqrt(tileOutCount)
                 const srcTileOutW = sourceImage.width / tileOutCols, srcTileOutH = sourceImage.height / tileOutRows
                 const dstTileOutW = canvas.width / tileOutCols, dstTileOutH = canvas.height / tileOutRows
                 const tileOutTotal = tileOutCols * tileOutRows
+                const currentTileOutOrder = tileOrders[tileOutCount] || tileOrders[9]
                 const tileOutVisible = Math.floor((1 - progress) * tileOutTotal)
+
                 for (let t = 0; t < tileOutVisible; t++) {
-                    const idx = tileOrder[t]
+                    const idx = currentTileOutOrder[t]
+                    if (idx === undefined) continue
                     const col = idx % tileOutCols, row = Math.floor(idx / tileOutCols)
                     ctx.drawImage(sourceImage, col * srcTileOutW, row * srcTileOutH, srcTileOutW, srcTileOutH, col * dstTileOutW, row * dstTileOutH, dstTileOutW, dstTileOutH)
                 }
@@ -584,20 +662,93 @@ export default function APNGGenerator() {
                 break
             }
             case 'pageFlipOut':
+                // ページめくりアウト：左めくり（デフォルト）と右めくりに対応
+                const isRightFlipOut = effectOption === 'right'
+
+                if (progress > 0.98) {
+                    // ほぼ終わりなら描画しない（消える）
+                    break
+                }
+
                 ctx.save()
+
+                // 簡易的なページめくり表現（台形変形＋陰影）
                 const flipOutSkew = progress * 0.5
-                ctx.transform(1 - progress, 0, flipOutSkew, 1, canvas.width * progress, 0)
-                ctx.globalAlpha = 1 - progress
-                drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                if (isRightFlipOut) {
+                    // 右めくりアウト：右端固定、左端が閉じていく（奥へ倒れる）
+                    // 修正: "Right Flip" = 右へ移動させたい（通常の「右へめくる」動作）
+                    // つまり、動きとして右方向への退場
+
+                    // 右方向への移動 = 左端が右へ移動
+                    // Hinge: Right (w)? No, if moving Right, usually starts flat and folds Up-Right?
+                    // Or Hinge Right, Left edge closes to Right.
+
+                    // 以前の "Left" ロジック（右端固定、左端が右移動）を "Right" に適用
+
+                    // Hinge: Right (w)
+                    // Motion: Left edge (0) -> Right (w)
+
+                    ctx.transform(1 - progress, 0, flipOutSkew, 1, canvas.width * progress, 0)
+
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                    const flipOutGrad = ctx.createLinearGradient(0, 0, canvas.width, 0)
+                    // 端（左）は暗く、軸（右）はハイライト
+                    flipOutGrad.addColorStop(0, 'rgba(0,0,0,0.4)') // 端（左）
+                    flipOutGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)')
+                    flipOutGrad.addColorStop(0.9, 'rgba(255,255,255,0.3)') // 軸（右）
+                    flipOutGrad.addColorStop(1, 'rgba(0,0,0,0)')
+
+                    ctx.fillStyle = flipOutGrad
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+                } else {
+                    // 左めくりアウト（デフォルト）：左端固定、右端が閉じていく（奥へ倒れる）
+                    // 修正: "Left Flip" = 左へ移動させたい
+
+                    // 左方向への移動 = 右端が左へ移動
+                    // Hinge: Left (0)
+                    // Motion: Right edge (w) -> Left (0)
+
+                    // 以前の "Right" ロジック（左端固定、右端が左移動）を "Left" に適用
+
+                    ctx.transform(1 - progress, 0, -flipOutSkew, 1, 0, 0)
+
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                    const flipOutGrad = ctx.createLinearGradient(0, 0, canvas.width, 0)
+                    // 軸（左）は明るく、めくれる端（右）は暗く
+                    flipOutGrad.addColorStop(0, 'rgba(255,255,255,0.3)') // 軸（左）
+                    flipOutGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)')
+                    flipOutGrad.addColorStop(1, 'rgba(0,0,0,0.4)')   // 端（右）
+
+                    ctx.fillStyle = flipOutGrad
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+                }
+
+                // フェード
+                ctx.globalAlpha = Math.max(0, Math.min(1, (1 - progress) * 1.5))
+
                 ctx.restore()
                 break
             case 'cardFlipOut':
                 ctx.save()
-                const cardOutScale = 1 - progress
-                const cardOutOffsetX = (canvas.width / 2) * progress
-                ctx.globalAlpha = 1 - progress * 0.7
-                ctx.translate(cardOutOffsetX, 0)
+                const flipOutCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
+
+                // N=1: 0 -> PI/2 (scale 1->0)
+                // N=3: 0 -> 2.5PI ?
+
+                const endAngleOut = (flipOutCount - 1) * Math.PI + (Math.PI / 2)
+                const currentAngleOut = endAngleOut * progress
+                const cardOutScale = Math.cos(currentAngleOut)
+
+                // const cardOutOffsetX = (canvas.width / 2) * progress
+
+                ctx.translate(canvas.width / 2, canvas.height / 2)
                 ctx.scale(cardOutScale, 1)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
@@ -605,10 +756,15 @@ export default function APNGGenerator() {
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 const tvOutData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                 for (let p = 0; p < tvOutData.data.length; p += 4) {
-                    if (Math.random() < progress * 0.5) {
+                    if (Math.random() < progress) {
                         const noise = Math.random() * 255
                         tvOutData.data[p] = tvOutData.data[p + 1] = tvOutData.data[p + 2] = noise
                     }
+                    // fadeオプションの場合でも、完全に消えるよりは砂嵐になって終わる方が面白いかもだが、
+                    // ユーザー要望は「グレーの砂あらしシルエットでおわる」
+                    // fadeの場合は透明になるので、シルエットは残らない
+                    // なので、fadeオプションが効いていると、少し矛盾するかも
+                    // ここでは要望通り、砂嵐確率を 1.0 (100%) まで上げる
                     if (effectOption === 'fade') {
                         tvOutData.data[p + 3] = tvOutData.data[p + 3] * (1 - progress)
                     }
@@ -630,7 +786,7 @@ export default function APNGGenerator() {
                 break
             // V118: blindOut効果
             case 'blindOut': {
-                const blindOutCount = 7 // デフォルト
+                const blindOutCount = effectOption ? parseInt(effectOption) : 7
                 const isVerticalOut = effectDirection === 'horizontal' // 逆にする
                 const blindOutSize = isVerticalOut ? canvas.height / blindOutCount : canvas.width / blindOutCount
                 const closeAmount = (1 - progress) * blindOutSize
@@ -647,6 +803,91 @@ export default function APNGGenerator() {
                     drawScaledImage(0, 0, canvas.width, canvas.height)
                     ctx.restore()
                 }
+                break
+            }
+            // V118: 斬撃効果（斜めに斬られて上下がスライドして消える）
+            case 'swordSlashOut': {
+                const isRightSlash = effectOption !== 'left' // デフォルトは右斬り（╲）
+                ctx.save()
+
+                // 斬撃フラッシュ効果（0-15%のプログレス）
+                const flashPhase = progress < 0.15
+                if (flashPhase) {
+                    // 斬撃線を描画
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+                    const flashIntensity = Math.sin((progress / 0.15) * Math.PI)
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${flashIntensity})`
+                    ctx.lineWidth = 8
+                    ctx.beginPath()
+                    if (isRightSlash) {
+                        // 右斬り：左上から右下
+                        ctx.moveTo(0, 0)
+                        ctx.lineTo(canvas.width, canvas.height)
+                    } else {
+                        // 左斬り：右上から左下
+                        ctx.moveTo(canvas.width, 0)
+                        ctx.lineTo(0, canvas.height)
+                    }
+                    ctx.stroke()
+                } else {
+                    // スライドフェーズ（15-100%のプログレス）
+                    const slideProgress = (progress - 0.15) / 0.85
+                    const slideAmount = slideProgress * canvas.width * 0.6
+                    const fadeAlpha = 1 - slideProgress
+
+                    ctx.globalAlpha = fadeAlpha
+
+                    // 上三角形（対角線の上側）
+                    ctx.save()
+                    ctx.beginPath()
+                    if (isRightSlash) {
+                        // 右斬り（╲）：上三角形 = (0,0), (w,h), (w,0)
+                        // 左上へスライド
+                        ctx.moveTo(0, 0)
+                        ctx.lineTo(canvas.width, canvas.height)
+                        ctx.lineTo(canvas.width, 0)
+                        ctx.closePath()
+                        ctx.clip()
+                        ctx.drawImage(sourceImage, -slideAmount, -slideAmount * 0.5, canvas.width, canvas.height)
+                    } else {
+                        // 左斬り（╱）：上三角形 = (w,0), (0,h), (0,0)
+                        // 右上へスライド
+                        ctx.moveTo(canvas.width, 0)
+                        ctx.lineTo(0, canvas.height)
+                        ctx.lineTo(0, 0)
+                        ctx.closePath()
+                        ctx.clip()
+                        ctx.drawImage(sourceImage, slideAmount, -slideAmount * 0.5, canvas.width, canvas.height)
+                    }
+                    ctx.restore()
+
+                    // 下三角形（対角線の下側）
+                    ctx.save()
+                    ctx.beginPath()
+                    if (isRightSlash) {
+                        // 右斬り（╲）：下三角形 = (0,0), (0,h), (w,h)
+                        // 右下へスライド
+                        ctx.moveTo(0, 0)
+                        ctx.lineTo(0, canvas.height)
+                        ctx.lineTo(canvas.width, canvas.height)
+                        ctx.closePath()
+                        ctx.clip()
+                        ctx.drawImage(sourceImage, slideAmount, slideAmount * 0.5, canvas.width, canvas.height)
+                    } else {
+                        // 左斬り（╱）：下三角形 = (w,0), (w,h), (0,h)
+                        // 左下へスライド
+                        ctx.moveTo(canvas.width, 0)
+                        ctx.lineTo(canvas.width, canvas.height)
+                        ctx.lineTo(0, canvas.height)
+                        ctx.closePath()
+                        ctx.clip()
+                        ctx.drawImage(sourceImage, -slideAmount, slideAmount * 0.5, canvas.width, canvas.height)
+                    }
+                    ctx.restore()
+                }
+
+                ctx.globalAlpha = 1
+                ctx.restore()
                 break
             }
             // === 演出エフェクト ===
@@ -762,9 +1003,19 @@ export default function APNGGenerator() {
             }
             case 'vignette':
                 drawScaledImage(0, 0, canvas.width, canvas.height)
-                const vigGrad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width * 0.7)
+                // 揺らぎを追加 (半径と濃さが呼吸するように変化)
+                const vigTime = progress * Math.PI * 4 // 2往復程度
+                const vigRadiusBase = 0.7
+                const vigRadiusAmp = 0.05
+                const vigRadius = canvas.width * (vigRadiusBase + Math.sin(vigTime) * vigRadiusAmp)
+
+                const vigAlphaBase = 0.8
+                const vigAlphaAmp = 0.1
+                const vigAlpha = Math.max(0, Math.min(1, vigAlphaBase + Math.sin(vigTime * 1.3) * vigAlphaAmp)) // 周期をずらす
+
+                const vigGrad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, vigRadius)
                 vigGrad.addColorStop(0, 'transparent')
-                vigGrad.addColorStop(1, `rgba(0, 0, 0, ${progress * 0.8})`)
+                vigGrad.addColorStop(1, `rgba(0, 0, 0, ${vigAlpha})`)
                 ctx.fillStyle = vigGrad
                 ctx.fillRect(0, 0, canvas.width, canvas.height)
                 break
@@ -832,7 +1083,14 @@ export default function APNGGenerator() {
                 const shake = Math.sin(progress * Math.PI * 6) * 3
                 const centerX = canvas.width / 2
                 const centerY = canvas.height / 2
-                const innerRadius = canvas.width * 0.25 + shake
+
+                // オプションによる半径調整
+                // weak: 外向け（半径大）、medium: 中、strong: 中心向け（半径小、線が長い）
+                let baseRadiusRatio = 0.25 // default (medium)
+                if (effectOption === 'weak') baseRadiusRatio = 0.4 // 外向け：中心が広く空く
+                if (effectOption === 'strong') baseRadiusRatio = 0.1 // 中心向け：中心まで線が来る
+
+                const innerRadius = canvas.width * baseRadiusRatio + shake
                 const outerRadius = Math.max(canvas.width, canvas.height) * 0.9
 
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
@@ -881,7 +1139,7 @@ export default function APNGGenerator() {
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 break
         }
-    }, [sourceImage, transition, effectDirection, tileOrder])
+    }, [sourceImage, transition, effectDirection, effectOption])
 
     // プレビュー描画のuseEffect
     useEffect(() => {
@@ -990,26 +1248,7 @@ export default function APNGGenerator() {
                 ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, y, width, height)
             }
 
-            // タイル効果用のランダム順序（視覚的に散らばって見えるパターン）
-            // 4x4グリッドを対角線や離れた位置から順に表示
-            const tileOrder = [
-                7,   // 中央左
-                10,  // 中央右下
-                1,   // 上右寄り
-                14,  // 下右寄り
-                4,   // 左上
-                11,  // 右下寄り
-                2,   // 上中央
-                13,  // 下中央
-                8,   // 左中央下
-                5,   // 中央左上
-                15,  // 右下
-                0,   // 左上角
-                9,   // 中央下
-                6,   // 中央
-                3,   // 右上
-                12,  // 左下
-            ]
+
 
             for (let i = 0; i < frameCount; i++) {
                 const progress = i / (frameCount - 1)
@@ -1257,7 +1496,13 @@ export default function APNGGenerator() {
                         const shake = Math.sin(progress * Math.PI * 6) * 3
                         const centerX = canvas.width / 2
                         const centerY = canvas.height / 2
-                        const inRadius = canvas.width * 0.25 + shake
+
+                        // オプションによる半径調整
+                        let baseRadiusRatio = 0.25 // default
+                        if (effectOption === 'weak') baseRadiusRatio = 0.4
+                        if (effectOption === 'strong') baseRadiusRatio = 0.1
+
+                        const inRadius = canvas.width * baseRadiusRatio + shake
                         const outRadius = Math.max(canvas.width, canvas.height) * 0.9
 
                         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
@@ -1306,6 +1551,23 @@ export default function APNGGenerator() {
                             ctx.drawImage(canvas, 0, y, canvas.width, height, offset, y, canvas.width, height)
                         }
                         break
+                    // カード回転イン
+                    case 'cardFlipIn': {
+                        ctx.save()
+                        const flipInCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
+
+                        const startAngleIn = (flipInCount - 1) * Math.PI + (Math.PI / 2)
+                        const currentAngleIn = startAngleIn * (1 - progress)
+                        const cardInScale = Math.cos(currentAngleIn)
+
+                        ctx.translate(canvas.width / 2, canvas.height / 2)
+                        ctx.scale(cardInScale, 1)
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2)
+
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
+                        break
+                    }
                     case 'doorOpen':
                         const doorProgress = Math.min(progress * 2, 1)
                         const halfWidth = canvas.width / 2
@@ -1363,7 +1625,7 @@ export default function APNGGenerator() {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         const tvOutGenData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                         for (let p = 0; p < tvOutGenData.data.length; p += 4) {
-                            if (Math.random() < progress * 0.5) {
+                            if (Math.random() < progress) {
                                 const noise = Math.random() * 255
                                 tvOutGenData.data[p] = tvOutGenData.data[p + 1] = tvOutGenData.data[p + 2] = noise
                             }
@@ -1436,7 +1698,7 @@ export default function APNGGenerator() {
 
                     // V118: ブラインドイン
                     case 'blindIn': {
-                        const blindCount = 7
+                        const blindCount = effectOption ? parseInt(effectOption) : 7
                         const isVertical = effectDirection === 'horizontal' // 逆にする
                         const blindSize = isVertical ? canvas.height / blindCount : canvas.width / blindCount
                         const openAmount = progress * blindSize
@@ -1458,7 +1720,7 @@ export default function APNGGenerator() {
 
                     // V118: ブラインドアウト
                     case 'blindOut': {
-                        const blindOutCount = 7
+                        const blindOutCount = effectOption ? parseInt(effectOption) : 7
                         const isVerticalOut = effectDirection === 'horizontal' // 逆にする
                         const blindOutSize = isVerticalOut ? canvas.height / blindOutCount : canvas.width / blindOutCount
                         const closeAmount = (1 - progress) * blindOutSize
@@ -1478,14 +1740,102 @@ export default function APNGGenerator() {
                         break
                     }
 
+                    // V118: 斬撃効果（斜めに斬られて上下がスライドして消える）
+                    case 'swordSlashOut': {
+                        const isRightSlash = effectOption !== 'left' // デフォルトは右斬り（╲）
+                        ctx.save()
+
+                        // 斬撃フラッシュ効果（0-15%のプログレス）
+                        const flashPhase = progress < 0.15
+                        if (flashPhase) {
+                            // 斬撃線を描画
+                            drawScaledImage(0, 0, canvas.width, canvas.height)
+                            const flashIntensity = Math.sin((progress / 0.15) * Math.PI)
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${flashIntensity})`
+                            ctx.lineWidth = Math.max(4, canvas.width * 0.02)
+                            ctx.beginPath()
+                            if (isRightSlash) {
+                                ctx.moveTo(0, 0)
+                                ctx.lineTo(canvas.width, canvas.height)
+                            } else {
+                                ctx.moveTo(canvas.width, 0)
+                                ctx.lineTo(0, canvas.height)
+                            }
+                            ctx.stroke()
+                        } else {
+                            // スライドフェーズ
+                            const slideProgress = (progress - 0.15) / 0.85
+                            const slideAmount = slideProgress * canvas.width * 0.6
+                            const fadeAlpha = 1 - slideProgress
+
+                            ctx.globalAlpha = fadeAlpha
+
+                            // 上三角形（対角線の上側）
+                            ctx.save()
+                            ctx.beginPath()
+                            if (isRightSlash) {
+                                // 右斬り（╲）：上三角形 = (0,0), (w,h), (w,0)
+                                ctx.moveTo(0, 0)
+                                ctx.lineTo(canvas.width, canvas.height)
+                                ctx.lineTo(canvas.width, 0)
+                                ctx.closePath()
+                                ctx.clip()
+                                ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                    -slideAmount, -slideAmount * 0.5, canvas.width, canvas.height)
+                            } else {
+                                // 左斬り（╱）：上三角形 = (w,0), (0,h), (0,0)
+                                ctx.moveTo(canvas.width, 0)
+                                ctx.lineTo(0, canvas.height)
+                                ctx.lineTo(0, 0)
+                                ctx.closePath()
+                                ctx.clip()
+                                ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                    slideAmount, -slideAmount * 0.5, canvas.width, canvas.height)
+                            }
+                            ctx.restore()
+
+                            // 下三角形（対角線の下側）
+                            ctx.save()
+                            ctx.beginPath()
+                            if (isRightSlash) {
+                                // 右斬り（╲）：下三角形 = (0,0), (0,h), (w,h)
+                                ctx.moveTo(0, 0)
+                                ctx.lineTo(0, canvas.height)
+                                ctx.lineTo(canvas.width, canvas.height)
+                                ctx.closePath()
+                                ctx.clip()
+                                ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                    slideAmount, slideAmount * 0.5, canvas.width, canvas.height)
+                            } else {
+                                // 左斬り（╱）：下三角形 = (w,0), (w,h), (0,h)
+                                ctx.moveTo(canvas.width, 0)
+                                ctx.lineTo(canvas.width, canvas.height)
+                                ctx.lineTo(0, canvas.height)
+                                ctx.closePath()
+                                ctx.clip()
+                                ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                    -slideAmount, slideAmount * 0.5, canvas.width, canvas.height)
+                            }
+                            ctx.restore()
+                        }
+
+                        ctx.globalAlpha = 1
+                        ctx.restore()
+                        break
+                    }
+
                     // タイルイン（ランダム順）
                     case 'tileIn':
-                        const tileCols = 4, tileRows = 4
+                        const tileInCount = effectOption ? parseInt(effectOption) : 9
+                        const tileCols = Math.sqrt(tileInCount), tileRows = Math.sqrt(tileInCount)
                         const tileW = canvas.width / tileCols, tileH = canvas.height / tileRows
                         const tileTotal = tileCols * tileRows
+                        const currentTileInOrder = tileOrders[tileInCount] || tileOrders[9]
                         const tileVisible = Math.floor(progress * tileTotal)
+
                         for (let t = 0; t < tileVisible; t++) {
-                            const idx = tileOrder[t]
+                            const idx = currentTileInOrder[t]
+                            if (idx === undefined) continue
                             const col = idx % tileCols, row = Math.floor(idx / tileCols)
                             ctx.drawImage(sourceImage, col * tileW, row * tileH, tileW, tileH, col * tileW, row * tileH, tileW, tileH)
                         }
@@ -1493,12 +1843,16 @@ export default function APNGGenerator() {
 
                     // タイルアウト（ランダム順）
                     case 'tileOut':
-                        const tileOutCols = 4, tileOutRows = 4
+                        const tileOutCount = effectOption ? parseInt(effectOption) : 9
+                        const tileOutCols = Math.sqrt(tileOutCount), tileOutRows = Math.sqrt(tileOutCount)
                         const tileOutW = canvas.width / tileOutCols, tileOutH = canvas.height / tileOutRows
                         const tileOutTotal = tileOutCols * tileOutRows
+                        const currentTileOutOrder = tileOrders[tileOutCount] || tileOrders[9]
                         const tileOutVisible = Math.floor((1 - progress) * tileOutTotal)
+
                         for (let t = 0; t < tileOutVisible; t++) {
-                            const idx = tileOrder[t]
+                            const idx = currentTileOutOrder[t]
+                            if (idx === undefined) continue
                             const col = idx % tileOutCols, row = Math.floor(idx / tileOutCols)
                             ctx.drawImage(sourceImage, col * tileOutW, row * tileOutH, tileOutW, tileOutH, col * tileOutW, row * tileOutH, tileOutW, tileOutH)
                         }
@@ -2002,6 +2356,21 @@ export default function APNGGenerator() {
                     clipPath: `inset(${previewProgress * 100}% 0 0 0)`,
                 }
 
+            // V118: 斬撃効果
+            case 'swordSlashOut': {
+                // CSSプレビューでは斜め分割の簡易表現
+                const slashProgress = previewProgress
+                const slideAmount = slashProgress * 30
+                return {
+                    ...baseStyle,
+                    opacity: 1 - slashProgress * 0.8,
+                    transform: `translate(calc(-50% + ${slideAmount}px), calc(-50% + ${slideAmount * 0.3}px)) rotate(${slashProgress * 5}deg)`,
+                    clipPath: slashProgress > 0.15
+                        ? `polygon(0 0, 100% ${50 - slashProgress * 30}%, 100% 0)`
+                        : 'none',
+                }
+            }
+
             // V118: カード回転ループ
             case 'cardFlipLoop': {
                 const flipProg = Math.sin(previewProgress * Math.PI * 2)
@@ -2342,7 +2711,8 @@ export default function APNGGenerator() {
                                             }
                                         `}
                                     >
-                                        🔁 ON
+                                        <Repeat className="w-4 h-4" />
+                                        ON
                                     </button>
                                     <button
                                         onClick={() => setIsLooping(false)}
@@ -2353,7 +2723,8 @@ export default function APNGGenerator() {
                                             }
                                         `}
                                     >
-                                        ▶️ OFF
+                                        <ArrowRightToLine className="w-4 h-4" />
+                                        OFF
                                     </button>
                                 </div>
                             </div>

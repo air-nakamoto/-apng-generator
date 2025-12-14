@@ -24,6 +24,7 @@ import {
     ZoomOut,
     DoorOpen,
     Zap,
+    Scissors,  // 斬撃用
 
     // 演出効果用
     RotateCw,
@@ -183,8 +184,33 @@ export const transitionEffects: EffectCategory[] = [
                 ],
                 defaultOption: 'circle'
             },
-            { name: 'pageFlipIn', label: '本めくりイン', icon: BookOpen, hasDirection: false },
-            { name: 'cardFlipIn', label: 'カード回転イン', icon: RotateCw, hasDirection: false },
+            {
+                name: 'pageFlipIn',
+                label: '本めくりイン',
+                icon: BookOpen,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'direction',
+                options: [
+                    { value: 'left', label: '左めくり', numericValue: 0 },
+                    { value: 'right', label: '右めくり', numericValue: 1 },
+                ],
+                defaultOption: 'left'
+            },
+            {
+                name: 'cardFlipIn',
+                label: 'カード回転イン',
+                icon: RotateCw,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'speed', // speedとして扱う（回転数）
+                options: [
+                    { value: '1x', label: '1回転', numericValue: 1 },
+                    { value: '3x', label: '3回転', numericValue: 3 },
+                    { value: '5x', label: '5回転', numericValue: 5 },
+                ],
+                defaultOption: '1x'
+            },
         ],
     },
     {
@@ -307,8 +333,46 @@ export const transitionEffects: EffectCategory[] = [
                 ],
                 defaultOption: 'circle'
             },
-            { name: 'pageFlipOut', label: '本めくりアウト', icon: BookOpen, hasDirection: false },
-            { name: 'cardFlipOut', label: 'カード回転アウト', icon: RotateCcw, hasDirection: false },
+            {
+                name: 'pageFlipOut',
+                label: '本めくりアウト',
+                icon: BookOpen,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'direction',
+                options: [
+                    { value: 'left', label: '左めくり', numericValue: 0 },
+                    { value: 'right', label: '右めくり', numericValue: 1 },
+                ],
+                defaultOption: 'left'
+            },
+            {
+                name: 'cardFlipOut',
+                label: 'カード回転アウト',
+                icon: RotateCcw,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'speed',
+                options: [
+                    { value: '1x', label: '1回転', numericValue: 1 },
+                    { value: '3x', label: '3回転', numericValue: 3 },
+                    { value: '5x', label: '5回転', numericValue: 5 },
+                ],
+                defaultOption: '1x'
+            },
+            {
+                name: 'swordSlashOut',
+                label: '斬撃',
+                icon: Scissors,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'direction',
+                options: [
+                    { value: 'right', label: '右斬り ╲', numericValue: 0 },
+                    { value: 'left', label: '左斬り ╱', numericValue: 1 },
+                ],
+                defaultOption: 'right'
+            },
         ],
     },
     {
@@ -392,7 +456,20 @@ export const transitionEffects: EffectCategory[] = [
             },
             { name: 'vignette', label: 'ビネット', icon: Circle, hasDirection: false },
             { name: 'flash', label: '閃光', icon: Sun, hasDirection: false },
-            { name: 'concentrationLines', label: '集中線', icon: Crosshair, hasDirection: false },
+            {
+                name: 'concentrationLines',
+                label: '集中線',
+                icon: Crosshair,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'size', // sizeとして扱う
+                options: [
+                    { value: 'weak', label: '外向け', numericValue: 0 },
+                    { value: 'medium', label: '中', numericValue: 1 },
+                    { value: 'strong', label: '中心向け', numericValue: 2 },
+                ],
+                defaultOption: 'medium'
+            },
             { name: 'cardFlipLoop', label: 'カード回転ループ', icon: RefreshCw, hasDirection: false },
         ],
     },
