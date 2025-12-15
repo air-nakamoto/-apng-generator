@@ -2587,9 +2587,11 @@ export default function APNGGenerator() {
                                         <Popover.Content className="bg-white p-4 rounded-lg shadow-lg border border-gray-200 max-w-sm">
                                             <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
                                                 <li>画像を選択または枠内にドラッグ&ドロップします</li>
-                                                <li>トランジション効果を選びます</li>
-                                                <li>ループ画像にしたい場合は、［ループする］にチェックします</li>
-                                                <li>1MB以下に調整したい場合は、［1MB以下に調整］にチェックします</li>
+                                                <li>タブ（登場・退場・演出）からトランジション効果を選びます</li>
+                                                <li>効果オプション（方向、サイズ、強度など）を設定します</li>
+                                                <li>ループをON/OFFで選択します</li>
+                                                <li>容量制限を選択します（制限なし/1MB/5MB/10MB）</li>
+                                                <li>再生スピードを調整します（0.25x～2x）</li>
                                                 <li>フレームレートを調整します（高いほど滑らかになります）</li>
                                                 <li>プレビューで確認します</li>
                                                 <li>APNG生成ボタンでファイルを生成します</li>
