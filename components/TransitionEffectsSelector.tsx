@@ -1,5 +1,5 @@
 // components/TransitionEffectsSelector.tsx
-// タブ切り替え式 3カテゴリ表示 + 効果オプションセクション
+// V118: タブ説明文 + エフェクトオプション対応版
 
 'use client'
 
@@ -13,6 +13,12 @@ interface Props {
     effectDirection: string
     setEffectDirection: (d: string) => void
     onDirectionChange?: () => void
+    // V118: オプション対応
+    effectOption?: string
+    setEffectOption?: (o: string) => void
+    effectIntensity?: string
+    setEffectIntensity?: (i: string) => void
+    onOptionChange?: () => void
 }
 
 // タブのアイコンと短いラベル
@@ -28,6 +34,11 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
     effectDirection,
     setEffectDirection,
     onDirectionChange,
+    effectOption,
+    setEffectOption,
+    effectIntensity,
+    setEffectIntensity,
+    onOptionChange,
 }) => {
     const [activeTab, setActiveTab] = useState(0)
     const selectedEffect = findEffectByName(transition)
@@ -42,14 +53,23 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
         return 0
     }
 
-    // 効果選択時にタブも切り替え
+    // 効果選択時にタブも切り替え + デフォルトオプション設定
     const handleEffectSelect = (effectName: string) => {
         setTransition(effectName)
         setActiveTab(findTabForEffect(effectName))
-        // オプションありの効果ならアニメーショントリガー（毎回リセット）
+
         const effect = findEffectByName(effectName)
-        if (effect?.hasDirection && effect.directions) {
-            // 一度非表示にしてから再表示でアニメーションを毎回発火
+
+        // デフォルトオプション設定
+        if (effect?.hasOptions && effect.defaultOption && setEffectOption) {
+            setEffectOption(effect.defaultOption)
+        }
+        if (effect?.hasIntensity && effect.defaultIntensity && setEffectIntensity) {
+            setEffectIntensity(effect.defaultIntensity)
+        }
+
+        // オプションありの効果ならアニメーショントリガー
+        if (effect?.hasDirection || effect?.hasOptions || effect?.hasIntensity) {
             setLineVisible(false)
             setTimeout(() => setLineVisible(true), 100)
         } else {
@@ -65,8 +85,15 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
     // 方向オプションがあるかチェック
     const hasDirectionOption = selectedEffect?.hasDirection && selectedEffect.directions
     const is4Direction = hasDirectionOption && selectedEffect.directions?.includes('up')
-    const is3Direction = hasDirectionOption && selectedEffect.directions?.includes('random')  // 縦/横/ランダム
+    const is3Direction = hasDirectionOption && selectedEffect.directions?.includes('random')
     const is2Direction = hasDirectionOption && selectedEffect.directions?.includes('vertical') && !is3Direction
+
+    // オプションがあるかチェック
+    const hasEffectOptions = selectedEffect?.hasOptions && selectedEffect.options
+    const hasIntensityOptions = selectedEffect?.hasIntensity && selectedEffect.intensityOptions
+
+    // 何かしらのオプションがあるか
+    const hasAnyOption = hasDirectionOption || hasEffectOptions || hasIntensityOptions
 
     return (
         <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
@@ -101,7 +128,7 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                     {currentCategory.effects.map((effect) => {
                         const Icon = effect.icon
                         const isSelected = transition === effect.name
-                        const hasOptions = effect.hasDirection && effect.directions
+                        const hasOptions = effect.hasDirection || effect.hasOptions || effect.hasIntensity
 
                         return (
                             <button
@@ -120,7 +147,7 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                                 <span className="text-[10px] text-center leading-tight">
                                     {effect.label}
                                 </span>
-                                {/* オプションありインジケーター：右端に下矢印、底辺にライン */}
+                                {/* オプションありインジケーター */}
                                 {hasOptions && (
                                     <>
                                         <ChevronDown className={`absolute bottom-0.5 right-0.5 w-3 h-3 ${isSelected ? 'text-blue-200' : 'text-blue-400'}`} />
@@ -135,116 +162,176 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                 </div>
             </div>
 
-            {/* 効果オプションセクション（常に表示） */}
+            {/* 効果オプションセクション */}
             <hr className="border-gray-200" />
             <div className="p-4 bg-blue-50">
                 <h4 className="text-sm font-medium text-gray-700 mb-3 relative inline-block">
                     効果オプション
-                    {/* アニメーションライン：選択時に毎回アニメーション */}
                     <span
                         className={`absolute bottom-0 left-0 h-0.5 bg-blue-500 transition-all duration-500 ease-out ${lineVisible ? 'w-full' : 'w-0'}`}
                     />
                 </h4>
 
-                {/* 4方向選択（上下左右） */}
-                {is4Direction && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 mr-2">方向:</span>
-                        <div className="flex gap-2">
-                            {(['left', 'up', 'down', 'right'] as const).map((dir) => (
-                                <button
-                                    key={dir}
-                                    onClick={() => {
-                                        setEffectDirection(dir)
-                                        onDirectionChange?.()
-                                    }}
-                                    className={`
-                                        p-3 rounded-lg flex items-center justify-center
-                                        transition-all duration-200
-                                        ${effectDirection === dir
-                                            ? 'bg-blue-500 text-white shadow-md'
-                                            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                                        }
-                                    `}
-                                    title={dir === 'up' ? '上' : dir === 'down' ? '下' : dir === 'left' ? '左' : '右'}
-                                >
-                                    {dir === 'up' && <ArrowUp className="w-5 h-5" />}
-                                    {dir === 'down' && <ArrowDown className="w-5 h-5" />}
-                                    {dir === 'left' && <ArrowLeft className="w-5 h-5" />}
-                                    {dir === 'right' && <ArrowRight className="w-5 h-5" />}
-                                </button>
-                            ))}
+                <div className="space-y-3">
+                    {/* 4方向選択（上下左右） */}
+                    {is4Direction && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600 mr-2 min-w-[40px]">方向:</span>
+                            <div className="flex gap-2">
+                                {(['left', 'up', 'down', 'right'] as const).map((dir) => (
+                                    <button
+                                        key={dir}
+                                        onClick={() => {
+                                            setEffectDirection(dir)
+                                            onDirectionChange?.()
+                                        }}
+                                        className={`
+                                            p-3 rounded-lg flex items-center justify-center
+                                            transition-all duration-200
+                                            ${effectDirection === dir
+                                                ? 'bg-blue-500 text-white shadow-md'
+                                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                            }
+                                        `}
+                                        title={dir === 'up' ? '上' : dir === 'down' ? '下' : dir === 'left' ? '左' : '右'}
+                                    >
+                                        {dir === 'up' && <ArrowUp className="w-5 h-5" />}
+                                        {dir === 'down' && <ArrowDown className="w-5 h-5" />}
+                                        {dir === 'left' && <ArrowLeft className="w-5 h-5" />}
+                                        {dir === 'right' && <ArrowRight className="w-5 h-5" />}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* 3方向選択（縦/横/ランダム） */}
-                {is3Direction && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 mr-2">方向:</span>
-                        <div className="flex gap-2">
-                            {(['vertical', 'horizontal', 'random'] as const).map((dir) => (
-                                <button
-                                    key={dir}
-                                    onClick={() => {
-                                        setEffectDirection(dir)
-                                        onDirectionChange?.()
-                                    }}
-                                    className={`
-                                        px-4 py-2 rounded-lg flex items-center justify-center gap-2
-                                        transition-all duration-200
-                                        ${effectDirection === dir
-                                            ? 'bg-blue-500 text-white shadow-md'
-                                            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                                        }
-                                    `}
-                                    title={dir === 'vertical' ? '縦' : dir === 'horizontal' ? '横' : 'ランダム'}
-                                >
-                                    {dir === 'vertical' && <MoveVertical className="w-5 h-5" />}
-                                    {dir === 'horizontal' && <MoveHorizontal className="w-5 h-5" />}
-                                    {dir === 'random' && <Shuffle className="w-5 h-5" />}
-                                    <span className="text-sm">{dir === 'vertical' ? '縦' : dir === 'horizontal' ? '横' : 'ランダム'}</span>
-                                </button>
-                            ))}
+                    {/* 3方向選択（縦/横/ランダム） */}
+                    {is3Direction && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600 mr-2 min-w-[40px]">方向:</span>
+                            <div className="flex gap-2">
+                                {(['vertical', 'horizontal', 'random'] as const).map((dir) => (
+                                    <button
+                                        key={dir}
+                                        onClick={() => {
+                                            setEffectDirection(dir)
+                                            onDirectionChange?.()
+                                        }}
+                                        className={`
+                                            px-4 py-2 rounded-lg flex items-center justify-center gap-2
+                                            transition-all duration-200
+                                            ${effectDirection === dir
+                                                ? 'bg-blue-500 text-white shadow-md'
+                                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                            }
+                                        `}
+                                    >
+                                        {dir === 'vertical' && <MoveVertical className="w-5 h-5" />}
+                                        {dir === 'horizontal' && <MoveHorizontal className="w-5 h-5" />}
+                                        {dir === 'random' && <Shuffle className="w-5 h-5" />}
+                                        <span className="text-sm">{dir === 'vertical' ? '縦' : dir === 'horizontal' ? '横' : 'ランダム'}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* 2方向選択（縦/横のみ） */}
-                {is2Direction && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 mr-2">方向:</span>
-                        <div className="flex gap-2">
-                            {(['vertical', 'horizontal'] as const).map((dir) => (
-                                <button
-                                    key={dir}
-                                    onClick={() => {
-                                        setEffectDirection(dir)
-                                        onDirectionChange?.()
-                                    }}
-                                    className={`
-                                        px-4 py-2 rounded-lg flex items-center justify-center gap-2
-                                        transition-all duration-200
-                                        ${effectDirection === dir
-                                            ? 'bg-blue-500 text-white shadow-md'
-                                            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                                        }
-                                    `}
-                                    title={dir === 'vertical' ? '縦' : '横'}
-                                >
-                                    {dir === 'vertical' && <MoveVertical className="w-5 h-5" />}
-                                    {dir === 'horizontal' && <MoveHorizontal className="w-5 h-5" />}
-                                    <span className="text-sm">{dir === 'vertical' ? '縦' : '横'}</span>
-                                </button>
-                            ))}
+                    {/* 2方向選択（縦/横のみ） */}
+                    {is2Direction && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600 mr-2 min-w-[40px]">方向:</span>
+                            <div className="flex gap-2">
+                                {(['horizontal', 'vertical'] as const).map((dir) => (
+                                    <button
+                                        key={dir}
+                                        onClick={() => {
+                                            setEffectDirection(dir)
+                                            onDirectionChange?.()
+                                        }}
+                                        className={`
+                                            px-4 py-2 rounded-lg flex items-center justify-center gap-2
+                                            transition-all duration-200
+                                            ${effectDirection === dir
+                                                ? 'bg-blue-500 text-white shadow-md'
+                                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                            }
+                                        `}
+                                    >
+                                        {dir === 'vertical' && <MoveVertical className="w-5 h-5" />}
+                                        {dir === 'horizontal' && <MoveHorizontal className="w-5 h-5" />}
+                                        <span className="text-sm">{dir === 'vertical' ? '縦' : '横'}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* オプションなしの場合 */}
-                {!hasDirectionOption && (
-                    <p className="text-sm text-gray-500">この効果にはオプションがありません</p>
-                )}
+                    {/* V118: 効果オプション（サイズ/強度/分割数） */}
+                    {hasEffectOptions && selectedEffect.options && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600 mr-2 min-w-[40px]">
+                                {selectedEffect.optionType === 'size' ? 'サイズ:' :
+                                    selectedEffect.optionType === 'intensity' ? '強度:' :
+                                        selectedEffect.optionType === 'count' ? '分割:' :
+                                            selectedEffect.optionType === 'shape' ? '形状:' : 'オプション:'}
+                            </span>
+                            <div className="flex gap-2">
+                                {selectedEffect.options.map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => {
+                                            setEffectOption?.(opt.value)
+                                            onOptionChange?.()
+                                        }}
+                                        className={`
+                                            px-4 py-2 rounded-lg text-sm
+                                            transition-all duration-200
+                                            ${effectOption === opt.value
+                                                ? 'bg-blue-500 text-white shadow-md'
+                                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                            }
+                                        `}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* V118: 2段階オプション - 強度（振動用） */}
+                    {hasIntensityOptions && selectedEffect.intensityOptions && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600 mr-2 min-w-[40px]">強度:</span>
+                            <div className="flex gap-2">
+                                {selectedEffect.intensityOptions.map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => {
+                                            setEffectIntensity?.(opt.value)
+                                            onOptionChange?.()
+                                        }}
+                                        className={`
+                                            px-4 py-2 rounded-lg text-sm
+                                            transition-all duration-200
+                                            ${effectIntensity === opt.value
+                                                ? 'bg-blue-500 text-white shadow-md'
+                                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                            }
+                                        `}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* オプションなしの場合 */}
+                    {!hasAnyOption && (
+                        <p className="text-sm text-gray-500">この効果にはオプションがありません</p>
+                    )}
+                </div>
             </div>
         </div>
     )

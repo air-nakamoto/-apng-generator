@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Settings, Upload, Info, Play, Pause, Download } from 'lucide-react'
+import { Settings, Upload, Info, Play, Pause, Download, Repeat, ArrowRightToLine } from 'lucide-react'
 import * as Popover from '@radix-ui/react-popover'
 import { TransitionEffectsSelector } from './components/TransitionEffectsSelector'
 import { findEffectByName } from './constants/transitionEffects'
@@ -11,6 +11,12 @@ import { findEffectByName } from './constants/transitionEffects'
 import UPNG from 'upng-js'
 
 
+// タイル効果用のランダム順序（プレビュー・生成共通）
+const tileOrders: { [key: number]: number[] } = {
+    4: [0, 3, 1, 2],
+    9: [4, 0, 8, 2, 6, 1, 5, 3, 7],
+    16: [7, 10, 1, 14, 4, 11, 2, 13, 8, 5, 15, 0, 9, 6, 3, 12]
+}
 
 
 const DoorOpenPreview: React.FC<{ src: string; progress: number }> = ({ src, progress }) => {
@@ -69,6 +75,11 @@ export default function APNGGenerator() {
     const [transition, setTransition] = useState('fadeIn')
     const [effectDirection, setEffectDirection] = useState<string>('right')
     const [isLooping, setIsLooping] = useState(false)
+    // V118: 新規ステート
+    const [playbackSpeed, setPlaybackSpeed] = useState(1.0)
+    const [sizeLimit, setSizeLimit] = useState<number | null>(null)  // null=制限なし, 1/5/10=MB制限
+    const [effectOption, setEffectOption] = useState<string>('medium')
+    const [effectIntensity, setEffectIntensity] = useState<string>('medium')
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [previewProgress, setPreviewProgress] = useState(0)
     const animationRef = useRef<number | null>(null)
@@ -76,15 +87,14 @@ export default function APNGGenerator() {
     const [generationProgress, setGenerationProgress] = useState(0)
     const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
     const [estimatedSize, setEstimatedSize] = useState<number | null>(null)
-    const [adjustToOneMB, setAdjustToOneMB] = useState(false)
+    // adjustToOneMB は sizeLimit に置換されたため削除
     const [generationState, setGenerationState] = useState<'idle' | 'generating' | 'completed'>('idle');
     const fileInputRef = useRef<HTMLInputElement>(null)
     const previewContainerRef = useRef<HTMLDivElement>(null)
     const previewCanvasRef = useRef<HTMLCanvasElement>(null)
     const [optimizedSize, setOptimizedSize] = useState<{ width: number; height: number } | null>(null)
 
-    // タイル効果用のランダム順序（プレビュー・生成共通）
-    const tileOrder = [7, 10, 1, 14, 4, 11, 2, 13, 8, 5, 15, 0, 9, 6, 3, 12]
+
 
     const getFrameCount = () => Math.floor(fps)
 
@@ -161,7 +171,7 @@ export default function APNGGenerator() {
             setIsPlaying(true)
             setError(null)
             let startTime: number | null = null
-            const duration = 1000 // 1秒
+            const duration = 1000 / playbackSpeed // V118: 再生スピード対応
 
             const animate = (timestamp: number) => {
                 if (!startTime) startTime = timestamp
@@ -295,13 +305,13 @@ export default function APNGGenerator() {
                         break
                     case 'up':
                         ctx.beginPath()
-                        ctx.rect(0, canvas.height * (1 - progress), canvas.width, canvas.height * progress)
+                        ctx.rect(0, 0, canvas.width, canvas.height * progress)
                         ctx.clip()
                         break
                     case 'down':
                     default:
                         ctx.beginPath()
-                        ctx.rect(0, 0, canvas.width, canvas.height * progress)
+                        ctx.rect(0, canvas.height * (1 - progress), canvas.width, canvas.height * progress)
                         ctx.clip()
                         break
                 }
@@ -340,28 +350,37 @@ export default function APNGGenerator() {
                 ctx.drawImage(sourceImage, sourceImage.width / 2, 0, sourceImage.width / 2, sourceImage.height,
                     doHalfW + progress * doHalfW, 0, doHalfW, canvas.height)
                 break
-            case 'sliceIn':
-                for (let s = 0; s < 5; s++) {
-                    const srcSliceH = sourceImage.height / 5
-                    const dstSliceH = canvas.height / 5
+            case 'sliceIn': {
+                // effectOptionで分割数を決定（デフォルト4）
+                const sliceInCount = effectOption ? parseInt(effectOption) : 4
+                for (let s = 0; s < sliceInCount; s++) {
+                    const srcSliceH = sourceImage.height / sliceInCount
+                    const dstSliceH = canvas.height / sliceInCount
                     const offsetX = (s % 2 === 0 ? -1 : 1) * (1 - progress) * canvas.width * 0.5
                     ctx.drawImage(sourceImage, 0, s * srcSliceH, sourceImage.width, srcSliceH, offsetX, s * dstSliceH, canvas.width, dstSliceH)
                 }
                 break
+            }
             case 'tileIn':
-                const tileCols = 4, tileRows = 4
+                const tileInCount = effectOption ? parseInt(effectOption) : 9
+                const tileCols = Math.sqrt(tileInCount), tileRows = Math.sqrt(tileInCount)
                 const srcTileW = sourceImage.width / tileCols, srcTileH = sourceImage.height / tileRows
                 const dstTileW = canvas.width / tileCols, dstTileH = canvas.height / tileRows
                 const tileTotal = tileCols * tileRows
+                const currentTileInOrder = tileOrders[tileInCount] || tileOrders[9]
                 const tileVisible = Math.floor(progress * tileTotal)
+
                 for (let t = 0; t < tileVisible; t++) {
-                    const idx = tileOrder[t]
+                    const idx = currentTileInOrder[t]
+                    if (idx === undefined) continue
                     const col = idx % tileCols, row = Math.floor(idx / tileCols)
                     ctx.drawImage(sourceImage, col * srcTileW, row * srcTileH, srcTileW, srcTileH, col * dstTileW, row * dstTileH, dstTileW, dstTileH)
                 }
                 break
             case 'pixelateIn':
-                const pixelSize = Math.max(1, Math.floor((1 - progress) * 30))
+                // effectOptionでブロックサイズを決定（small=15, medium=30, large=60）
+                const maxPixelSize = effectOption === 'small' ? 15 : effectOption === 'large' ? 60 : 30
+                const pixelSize = Math.max(1, Math.floor((1 - progress) * maxPixelSize))
                 const tempCanvas = document.createElement('canvas')
                 tempCanvas.width = canvas.width / pixelSize
                 tempCanvas.height = canvas.height / pixelSize
@@ -372,36 +391,124 @@ export default function APNGGenerator() {
                 ctx.imageSmoothingEnabled = true
                 break
             case 'focusIn':
+                if (effectOption === 'fade') ctx.globalAlpha = progress
                 ctx.filter = `blur(${(1 - progress) * 20}px)`
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.filter = 'none'
+                if (effectOption === 'fade') ctx.globalAlpha = 1
                 break
-            case 'irisIn':
+            case 'irisIn': {
                 ctx.save()
                 ctx.beginPath()
-                ctx.arc(canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * progress, 0, Math.PI * 2)
+                const irisInRadius = Math.max(canvas.width, canvas.height) * progress
+                const irisInCx = canvas.width / 2
+                const irisInCy = canvas.height / 2
+
+                // effectOptionで形状を決定（circle, square, diamond）
+                if (effectOption === 'square') {
+                    // 四角形
+                    const halfSize = irisInRadius * 0.7
+                    ctx.rect(irisInCx - halfSize, irisInCy - halfSize, halfSize * 2, halfSize * 2)
+                } else if (effectOption === 'diamond') {
+                    // ダイヤモンド（回転した四角）
+                    const halfSize = irisInRadius * 0.7
+                    ctx.moveTo(irisInCx, irisInCy - halfSize)
+                    ctx.lineTo(irisInCx + halfSize, irisInCy)
+                    ctx.lineTo(irisInCx, irisInCy + halfSize)
+                    ctx.lineTo(irisInCx - halfSize, irisInCy)
+                    ctx.closePath()
+                } else {
+                    // デフォルト: 円
+                    ctx.arc(irisInCx, irisInCy, irisInRadius, 0, Math.PI * 2)
+                }
                 ctx.clip()
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
+            }
             case 'pageFlipIn':
+                // ページめくり：左めくり（デフォルト）と右めくりに対応
+                const isRightFlip = effectOption === 'right'
+
+                // プレビューの最後に完全に画像を表示するための閾値
+                // progressがほぼ1なら、変形なしで描画して終了
+                if (progress > 0.98) {
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+                    break
+                }
+
                 ctx.save()
+
+                // 簡易的なページめくり表現（台形変形＋陰影）
                 const flipInSkew = (1 - progress) * 0.5
-                ctx.transform(progress, 0, flipInSkew, 1, canvas.width * (1 - progress), 0)
-                ctx.globalAlpha = progress
-                drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                if (isRightFlip) {
+                    // 右めくり（左端固定、右端が移動）
+                    // transform(scaleX, skewY, skewX, scaleY, dx, dy)
+                    // scaleX = progress (0->1)
+                    // dx = 0 (左固定)
+                    // skewX = -flipInSkew (右に傾く)
+                    ctx.transform(progress, 0, -flipInSkew, 1, 0, 0)
+
+                    // 画像描画
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                    // 陰影
+                    const flipInGrad = ctx.createLinearGradient(0, 0, canvas.width, 0)
+                    // 軸（左）は明るく、めくれる端（右）は暗く
+                    flipInGrad.addColorStop(0, 'rgba(255,255,255,0.3)') // 折り目（左）
+                    flipInGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)')
+                    flipInGrad.addColorStop(1, 'rgba(0,0,0,0.4)')   // めくれる端（右）
+
+                    ctx.fillStyle = flipInGrad
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+                } else {
+                    // 左めくり（右端固定、左端が移動）（既存）
+                    // transform(scaleX, skewY, skewX, scaleY, dx, dy)
+                    // scaleX = progress (0->1)
+                    // dx = canvas.width * (1 - progress) (左端が右から左へ移動)
+                    // skewX = flipInSkew (左に傾く)
+                    ctx.transform(progress, 0, flipInSkew, 1, canvas.width * (1 - progress), 0)
+
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                    const flipInGrad = ctx.createLinearGradient(0, 0, canvas.width, 0)
+                    // めくれ口（左）は暗く、軸（右）はハイライト
+                    flipInGrad.addColorStop(0, 'rgba(0,0,0,0.4)')   // めくれ口（左）は暗く
+                    flipInGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)')
+                    flipInGrad.addColorStop(0.9, 'rgba(255,255,255,0.3)') // 軸（右）はハイライト
+                    flipInGrad.addColorStop(1, 'rgba(0,0,0,0)')
+
+                    ctx.fillStyle = flipInGrad
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+                }
+
+                // フェードも併用
+                ctx.globalAlpha = Math.max(0, Math.min(1, progress * 1.5))
                 ctx.restore()
                 break
-            case 'cardFlipIn':
+            case 'cardFlipIn': {
                 ctx.save()
-                const cardInScale = progress
-                const cardInOffsetX = (canvas.width / 2) * (1 - progress)
-                ctx.globalAlpha = 0.3 + progress * 0.7
-                ctx.translate(cardInOffsetX, 0)
+                // 回転数オプション取得 (1, 3, 5)
+                const flipInCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
+
+                // (N)回転させるなら
+                // logic: scale = Math.cos(angle)
+                // angle goes from [Start] to [0]
+
+                const startAngleIn = (flipInCount - 1) * Math.PI + (Math.PI / 2)
+                const currentAngleIn = startAngleIn * (1 - progress)
+                const cardInScale = Math.cos(currentAngleIn)
+
+                ctx.translate(canvas.width / 2, canvas.height / 2)
                 ctx.scale(cardInScale, 1)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
+            }
             case 'tvStaticIn':
                 ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
                 const staticData = ctx.getImageData(0, 0, canvas.width, canvas.height)
@@ -427,69 +534,89 @@ export default function APNGGenerator() {
                 }
                 ctx.globalAlpha = 1
                 break
-            case 'lightLeakIn':
-                ctx.globalAlpha = progress
-                drawScaledImage(0, 0, canvas.width, canvas.height)
-                ctx.globalAlpha = 1
-                const leakGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, canvas.width)
-                leakGrad.addColorStop(0, `rgba(255, 200, 100, ${(1 - progress) * 0.5})`)
-                leakGrad.addColorStop(1, 'transparent')
-                ctx.fillStyle = leakGrad
-                ctx.fillRect(0, 0, canvas.width, canvas.height)
+            // V118: blindIn効果
+            case 'blindIn': {
+                const blindCount = effectOption ? parseInt(effectOption) : 7
+                const isVertical = effectDirection === 'horizontal' // 逆にする：horizontalを選ぶと縦に開く
+                const blindSize = isVertical ? canvas.height / blindCount : canvas.width / blindCount
+                const openAmount = progress * blindSize
+
+                for (let i = 0; i < blindCount; i++) {
+                    ctx.save()
+                    ctx.beginPath()
+                    if (isVertical) {
+                        ctx.rect(0, i * blindSize, canvas.width, openAmount)
+                    } else {
+                        ctx.rect(i * blindSize, 0, openAmount, canvas.height)
+                    }
+                    ctx.clip()
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+                    ctx.restore()
+                }
                 break
+            }
             // === 退場エフェクト ===
             case 'wipeOut':
                 ctx.save()
                 switch (effectDirection) {
                     case 'left':
                         ctx.beginPath()
-                        ctx.rect(canvas.width * progress, 0, canvas.width * (1 - progress), canvas.height)
+                        ctx.rect(0, 0, canvas.width * (1 - progress), canvas.height)
                         ctx.clip()
                         break
                     case 'right':
                         ctx.beginPath()
-                        ctx.rect(0, 0, canvas.width * (1 - progress), canvas.height)
+                        ctx.rect(canvas.width * progress, 0, canvas.width * (1 - progress), canvas.height)
                         ctx.clip()
                         break
                     case 'up':
                         ctx.beginPath()
-                        ctx.rect(0, canvas.height * progress, canvas.width, canvas.height * (1 - progress))
+                        ctx.rect(0, 0, canvas.width, canvas.height * (1 - progress))
                         ctx.clip()
                         break
                     case 'down':
                     default:
                         ctx.beginPath()
-                        ctx.rect(0, 0, canvas.width, canvas.height * (1 - progress))
+                        ctx.rect(0, canvas.height * progress, canvas.width, canvas.height * (1 - progress))
                         ctx.clip()
                         break
                 }
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
-            case 'sliceOut':
+            case 'sliceOut': {
+                // effectOptionで分割数を決定（デフォルト4）
+                const sliceOutCount = effectOption ? parseInt(effectOption) : 4
                 ctx.globalAlpha = 1 - progress
-                for (let s = 0; s < 5; s++) {
-                    const srcSliceH = sourceImage.height / 5
-                    const dstSliceH = canvas.height / 5
+                for (let s = 0; s < sliceOutCount; s++) {
+                    const srcSliceH = sourceImage.height / sliceOutCount
+                    const dstSliceH = canvas.height / sliceOutCount
                     const offsetX = (s % 2 === 0 ? -1 : 1) * progress * canvas.width * 0.5
                     ctx.drawImage(sourceImage, 0, s * srcSliceH, sourceImage.width, srcSliceH, offsetX, s * dstSliceH, canvas.width, dstSliceH)
                 }
                 ctx.globalAlpha = 1
                 break
+            }
             case 'tileOut':
-                const tileOutCols = 4, tileOutRows = 4
+                const tileOutCount = effectOption ? parseInt(effectOption) : 9
+                const tileOutCols = Math.sqrt(tileOutCount), tileOutRows = Math.sqrt(tileOutCount)
                 const srcTileOutW = sourceImage.width / tileOutCols, srcTileOutH = sourceImage.height / tileOutRows
                 const dstTileOutW = canvas.width / tileOutCols, dstTileOutH = canvas.height / tileOutRows
                 const tileOutTotal = tileOutCols * tileOutRows
+                const currentTileOutOrder = tileOrders[tileOutCount] || tileOrders[9]
                 const tileOutVisible = Math.floor((1 - progress) * tileOutTotal)
+
                 for (let t = 0; t < tileOutVisible; t++) {
-                    const idx = tileOrder[t]
+                    const idx = currentTileOutOrder[t]
+                    if (idx === undefined) continue
                     const col = idx % tileOutCols, row = Math.floor(idx / tileOutCols)
                     ctx.drawImage(sourceImage, col * srcTileOutW, row * srcTileOutH, srcTileOutW, srcTileOutH, col * dstTileOutW, row * dstTileOutH, dstTileOutW, dstTileOutH)
                 }
                 break
             case 'pixelateOut':
-                const pixelOutSize = Math.max(1, Math.floor(progress * 30))
+                // effectOptionでブロックサイズを決定（small=15, medium=30, large=60）
+                const maxPixelOut = effectOption === 'small' ? 15 : effectOption === 'large' ? 60 : 30
+                const pixelOutSize = Math.max(1, Math.floor(progress * maxPixelOut))
                 const tempOutCanvas = document.createElement('canvas')
                 tempOutCanvas.width = canvas.width / pixelOutSize
                 tempOutCanvas.height = canvas.height / pixelOutSize
@@ -502,48 +629,147 @@ export default function APNGGenerator() {
                 ctx.globalAlpha = 1
                 break
             case 'focusOut':
+                if (effectOption === 'fade') ctx.globalAlpha = 1 - progress
                 ctx.filter = `blur(${progress * 20}px)`
-                ctx.globalAlpha = 1 - progress * 0.5
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.filter = 'none'
-                ctx.globalAlpha = 1
+                if (effectOption === 'fade') ctx.globalAlpha = 1
                 break
-            case 'irisOut':
+            case 'irisOut': {
                 ctx.save()
                 ctx.beginPath()
-                ctx.arc(canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * (1 - progress), 0, Math.PI * 2)
+                const irisOutRadius = Math.max(canvas.width, canvas.height) * (1 - progress)
+                const irisOutCx = canvas.width / 2
+                const irisOutCy = canvas.height / 2
+
+                // effectOptionで形状を決定（circle, square, diamond）
+                if (effectOption === 'square') {
+                    const halfSize = irisOutRadius * 0.7
+                    ctx.rect(irisOutCx - halfSize, irisOutCy - halfSize, halfSize * 2, halfSize * 2)
+                } else if (effectOption === 'diamond') {
+                    const halfSize = irisOutRadius * 0.7
+                    ctx.moveTo(irisOutCx, irisOutCy - halfSize)
+                    ctx.lineTo(irisOutCx + halfSize, irisOutCy)
+                    ctx.lineTo(irisOutCx, irisOutCy + halfSize)
+                    ctx.lineTo(irisOutCx - halfSize, irisOutCy)
+                    ctx.closePath()
+                } else {
+                    ctx.arc(irisOutCx, irisOutCy, irisOutRadius, 0, Math.PI * 2)
+                }
                 ctx.clip()
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
+            }
             case 'pageFlipOut':
+                // ページめくりアウト：左めくり（デフォルト）と右めくりに対応
+                const isRightFlipOut = effectOption === 'right'
+
+                if (progress > 0.98) {
+                    // ほぼ終わりなら描画しない（消える）
+                    break
+                }
+
                 ctx.save()
+
+                // 簡易的なページめくり表現（台形変形＋陰影）
                 const flipOutSkew = progress * 0.5
-                ctx.transform(1 - progress, 0, flipOutSkew, 1, canvas.width * progress, 0)
-                ctx.globalAlpha = 1 - progress
-                drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                if (isRightFlipOut) {
+                    // 右めくりアウト：右端固定、左端が閉じていく（奥へ倒れる）
+                    // 修正: "Right Flip" = 右へ移動させたい（通常の「右へめくる」動作）
+                    // つまり、動きとして右方向への退場
+
+                    // 右方向への移動 = 左端が右へ移動
+                    // Hinge: Right (w)? No, if moving Right, usually starts flat and folds Up-Right?
+                    // Or Hinge Right, Left edge closes to Right.
+
+                    // 以前の "Left" ロジック（右端固定、左端が右移動）を "Right" に適用
+
+                    // Hinge: Right (w)
+                    // Motion: Left edge (0) -> Right (w)
+
+                    ctx.transform(1 - progress, 0, flipOutSkew, 1, canvas.width * progress, 0)
+
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                    const flipOutGrad = ctx.createLinearGradient(0, 0, canvas.width, 0)
+                    // 端（左）は暗く、軸（右）はハイライト
+                    flipOutGrad.addColorStop(0, 'rgba(0,0,0,0.4)') // 端（左）
+                    flipOutGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)')
+                    flipOutGrad.addColorStop(0.9, 'rgba(255,255,255,0.3)') // 軸（右）
+                    flipOutGrad.addColorStop(1, 'rgba(0,0,0,0)')
+
+                    ctx.fillStyle = flipOutGrad
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+                } else {
+                    // 左めくりアウト（デフォルト）：左端固定、右端が閉じていく（奥へ倒れる）
+                    // 修正: "Left Flip" = 左へ移動させたい
+
+                    // 左方向への移動 = 右端が左へ移動
+                    // Hinge: Left (0)
+                    // Motion: Right edge (w) -> Left (0)
+
+                    // 以前の "Right" ロジック（左端固定、右端が左移動）を "Left" に適用
+
+                    ctx.transform(1 - progress, 0, -flipOutSkew, 1, 0, 0)
+
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                    const flipOutGrad = ctx.createLinearGradient(0, 0, canvas.width, 0)
+                    // 軸（左）は明るく、めくれる端（右）は暗く
+                    flipOutGrad.addColorStop(0, 'rgba(255,255,255,0.3)') // 軸（左）
+                    flipOutGrad.addColorStop(0.5, 'rgba(0,0,0,0.1)')
+                    flipOutGrad.addColorStop(1, 'rgba(0,0,0,0.4)')   // 端（右）
+
+                    ctx.fillStyle = flipOutGrad
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+                }
+
+                // フェード
+                ctx.globalAlpha = Math.max(0, Math.min(1, (1 - progress) * 1.5))
+
                 ctx.restore()
                 break
             case 'cardFlipOut':
                 ctx.save()
-                const cardOutScale = 1 - progress
-                const cardOutOffsetX = (canvas.width / 2) * progress
-                ctx.globalAlpha = 1 - progress * 0.7
-                ctx.translate(cardOutOffsetX, 0)
+                const flipOutCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
+
+                // N=1: 0 -> PI/2 (scale 1->0)
+                // N=3: 0 -> 2.5PI ?
+
+                const endAngleOut = (flipOutCount - 1) * Math.PI + (Math.PI / 2)
+                const currentAngleOut = endAngleOut * progress
+                const cardOutScale = Math.cos(currentAngleOut)
+
+                // const cardOutOffsetX = (canvas.width / 2) * progress
+
+                ctx.translate(canvas.width / 2, canvas.height / 2)
                 ctx.scale(cardOutScale, 1)
+                ctx.translate(-canvas.width / 2, -canvas.height / 2)
+
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
             case 'tvStaticOut':
-                ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
-                const staticOutData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-                for (let p = 0; p < staticOutData.data.length; p += 4) {
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                const tvOutData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                for (let p = 0; p < tvOutData.data.length; p += 4) {
                     if (Math.random() < progress) {
                         const noise = Math.random() * 255
-                        staticOutData.data[p] = staticOutData.data[p + 1] = staticOutData.data[p + 2] = noise
+                        tvOutData.data[p] = tvOutData.data[p + 1] = tvOutData.data[p + 2] = noise
+                    }
+                    // fadeオプションの場合でも、完全に消えるよりは砂嵐になって終わる方が面白いかもだが、
+                    // ユーザー要望は「グレーの砂あらしシルエットでおわる」
+                    // fadeの場合は透明になるので、シルエットは残らない
+                    // なので、fadeオプションが効いていると、少し矛盾するかも
+                    // ここでは要望通り、砂嵐確率を 1.0 (100%) まで上げる
+                    if (effectOption === 'fade') {
+                        tvOutData.data[p + 3] = tvOutData.data[p + 3] * (1 - progress)
                     }
                 }
-                ctx.putImageData(staticOutData, 0, 0)
+                ctx.putImageData(tvOutData, 0, 0)
                 break
             case 'glitchOut':
                 const glitchOutIntensity = progress
@@ -558,31 +784,123 @@ export default function APNGGenerator() {
                 }
                 ctx.globalAlpha = 1
                 break
-            case 'filmBurn':
-                ctx.globalAlpha = 1 - progress
-                drawScaledImage(0, 0, canvas.width, canvas.height)
-                ctx.globalAlpha = 1
-                const burnGrad = ctx.createRadialGradient(canvas.width * 0.7, canvas.height * 0.3, 0, canvas.width * 0.7, canvas.height * 0.3, canvas.width * 0.8)
-                burnGrad.addColorStop(0, `rgba(255, 100, 0, ${progress * 0.8})`)
-                burnGrad.addColorStop(0.5, `rgba(255, 200, 50, ${progress * 0.3})`)
-                burnGrad.addColorStop(1, 'transparent')
-                ctx.fillStyle = burnGrad
-                ctx.fillRect(0, 0, canvas.width, canvas.height)
+            // V118: blindOut効果
+            case 'blindOut': {
+                const blindOutCount = effectOption ? parseInt(effectOption) : 7
+                const isVerticalOut = effectDirection === 'horizontal' // 逆にする
+                const blindOutSize = isVerticalOut ? canvas.height / blindOutCount : canvas.width / blindOutCount
+                const closeAmount = (1 - progress) * blindOutSize
+
+                for (let i = 0; i < blindOutCount; i++) {
+                    ctx.save()
+                    ctx.beginPath()
+                    if (isVerticalOut) {
+                        ctx.rect(0, i * blindOutSize, canvas.width, closeAmount)
+                    } else {
+                        ctx.rect(i * blindOutSize, 0, closeAmount, canvas.height)
+                    }
+                    ctx.clip()
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+                    ctx.restore()
+                }
                 break
+            }
+            // V118: 斬撃効果（斜めに斬られて上下がスライドして消える）
+            case 'swordSlashOut': {
+                const isRightSlash = effectOption !== 'left' // デフォルトは右斬り（╲）
+                ctx.save()
+
+                // 斬撃フラッシュ効果（0-15%のプログレス）
+                const flashPhase = progress < 0.15
+                if (flashPhase) {
+                    // 斬撃線を描画
+                    drawScaledImage(0, 0, canvas.width, canvas.height)
+                    const flashIntensity = Math.sin((progress / 0.15) * Math.PI)
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${flashIntensity})`
+                    ctx.lineWidth = 8
+                    ctx.beginPath()
+                    if (isRightSlash) {
+                        // 右斬り：左上から右下
+                        ctx.moveTo(0, 0)
+                        ctx.lineTo(canvas.width, canvas.height)
+                    } else {
+                        // 左斬り：右上から左下
+                        ctx.moveTo(canvas.width, 0)
+                        ctx.lineTo(0, canvas.height)
+                    }
+                    ctx.stroke()
+                } else {
+                    // スライドフェーズ（15-100%のプログレス）
+                    const slideProgress = (progress - 0.15) / 0.85
+                    const slideAmount = slideProgress * canvas.width * 0.6
+                    const fadeAlpha = 1 - slideProgress
+
+                    ctx.globalAlpha = fadeAlpha
+
+                    // 上三角形（対角線の上側）
+                    ctx.save()
+                    ctx.beginPath()
+                    if (isRightSlash) {
+                        // 右斬り（╲）：上三角形 = (0,0), (w,h), (w,0)
+                        // 左上へスライド
+                        ctx.moveTo(0, 0)
+                        ctx.lineTo(canvas.width, canvas.height)
+                        ctx.lineTo(canvas.width, 0)
+                        ctx.closePath()
+                        ctx.clip()
+                        ctx.drawImage(sourceImage, -slideAmount, -slideAmount * 0.5, canvas.width, canvas.height)
+                    } else {
+                        // 左斬り（╱）：上三角形 = (w,0), (0,h), (0,0)
+                        // 右上へスライド
+                        ctx.moveTo(canvas.width, 0)
+                        ctx.lineTo(0, canvas.height)
+                        ctx.lineTo(0, 0)
+                        ctx.closePath()
+                        ctx.clip()
+                        ctx.drawImage(sourceImage, slideAmount, -slideAmount * 0.5, canvas.width, canvas.height)
+                    }
+                    ctx.restore()
+
+                    // 下三角形（対角線の下側）
+                    ctx.save()
+                    ctx.beginPath()
+                    if (isRightSlash) {
+                        // 右斬り（╲）：下三角形 = (0,0), (0,h), (w,h)
+                        // 右下へスライド
+                        ctx.moveTo(0, 0)
+                        ctx.lineTo(0, canvas.height)
+                        ctx.lineTo(canvas.width, canvas.height)
+                        ctx.closePath()
+                        ctx.clip()
+                        ctx.drawImage(sourceImage, slideAmount, slideAmount * 0.5, canvas.width, canvas.height)
+                    } else {
+                        // 左斬り（╱）：下三角形 = (w,0), (w,h), (0,h)
+                        // 左下へスライド
+                        ctx.moveTo(canvas.width, 0)
+                        ctx.lineTo(canvas.width, canvas.height)
+                        ctx.lineTo(0, canvas.height)
+                        ctx.closePath()
+                        ctx.clip()
+                        ctx.drawImage(sourceImage, -slideAmount, slideAmount * 0.5, canvas.width, canvas.height)
+                    }
+                    ctx.restore()
+                }
+
+                ctx.globalAlpha = 1
+                ctx.restore()
+                break
+            }
             // === 演出エフェクト ===
             case 'rotate':
+                const rotateDir = effectOption === 'right' ? 1 : -1
                 ctx.save()
                 ctx.translate(canvas.width / 2, canvas.height / 2)
-                ctx.rotate(progress * Math.PI * 2)
+                ctx.rotate(progress * Math.PI * 2 * rotateDir)
                 ctx.translate(-canvas.width / 2, -canvas.height / 2)
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
-            case 'blur':
-                ctx.filter = `blur(${(1 - progress) * 20}px)`
-                drawScaledImage(0, 0, canvas.width, canvas.height)
-                ctx.filter = 'none'
-                break
+
             case 'enlarge':
                 const enlargeScale = 1 + progress * 4
                 ctx.save()
@@ -672,18 +990,32 @@ export default function APNGGenerator() {
                 }
                 ctx.putImageData(newData, 0, 0)
                 break
-            case 'scanlines':
+            case 'scanlines': {
                 drawScaledImage(0, 0, canvas.width, canvas.height)
+                // effectOptionで太さを決定（thin=1, medium=2, thick=4）
+                const scanlineThickness = effectOption === 'thin' ? 1 : effectOption === 'thick' ? 4 : 2
+                const scanlineSpacing = scanlineThickness * 2
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
-                for (let y = 0; y < canvas.height; y += 4) {
-                    ctx.fillRect(0, y, canvas.width, 2)
+                for (let y = 0; y < canvas.height; y += scanlineSpacing) {
+                    ctx.fillRect(0, y, canvas.width, scanlineThickness)
                 }
                 break
+            }
             case 'vignette':
                 drawScaledImage(0, 0, canvas.width, canvas.height)
-                const vigGrad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width * 0.7)
+                // 揺らぎを追加 (半径と濃さが呼吸するように変化)
+                const vigTime = progress * Math.PI * 4 // 2往復程度
+                const vigRadiusBase = 0.7
+                const vigRadiusAmp = 0.05
+                const vigRadius = canvas.width * (vigRadiusBase + Math.sin(vigTime) * vigRadiusAmp)
+
+                const vigAlphaBase = 0.8
+                const vigAlphaAmp = 0.1
+                const vigAlpha = Math.max(0, Math.min(1, vigAlphaBase + Math.sin(vigTime * 1.3) * vigAlphaAmp)) // 周期をずらす
+
+                const vigGrad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, vigRadius)
                 vigGrad.addColorStop(0, 'transparent')
-                vigGrad.addColorStop(1, `rgba(0, 0, 0, ${progress * 0.8})`)
+                vigGrad.addColorStop(1, `rgba(0, 0, 0, ${vigAlpha})`)
                 ctx.fillStyle = vigGrad
                 ctx.fillRect(0, 0, canvas.width, canvas.height)
                 break
@@ -696,9 +1028,15 @@ export default function APNGGenerator() {
                 ctx.globalCompositeOperation = 'screen'
                 ctx.globalAlpha = 0.3
                 // 赤（左上にズレ）
-                ctx.drawImage(sourceImage, -aberAmt, -aberAmt, canvas.width, canvas.height)
+                ctx.save()
+                ctx.translate(-aberAmt, -aberAmt)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
                 // シアン（右下にズレ）
-                ctx.drawImage(sourceImage, aberAmt, aberAmt, canvas.width, canvas.height)
+                ctx.save()
+                ctx.translate(aberAmt, aberAmt)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
                 ctx.globalAlpha = 1
                 ctx.globalCompositeOperation = 'source-over'
                 break
@@ -714,37 +1052,65 @@ export default function APNGGenerator() {
                 }
                 ctx.putImageData(tvStaticData, 0, 0)
                 break
-            case 'curtain':
-                // カーテン（左右から閉じる）
-                const curtainProgress = Math.abs(Math.sin(progress * Math.PI))
-                const curtainWidth = canvas.width / 2 * curtainProgress
-                drawScaledImage(0, 0, canvas.width, canvas.height)
-                ctx.fillStyle = 'black'
-                ctx.fillRect(0, 0, curtainWidth, canvas.height)
-                ctx.fillRect(canvas.width - curtainWidth, 0, curtainWidth, canvas.height)
-                break
             case 'spiral':
-                // スパイラル回転
+                const spiralDir = effectOption === 'right' ? 1 : -1
                 ctx.save()
                 ctx.translate(canvas.width / 2, canvas.height / 2)
-                ctx.rotate(progress * Math.PI * 4)
-                const spiralScale = 1 + Math.sin(progress * Math.PI * 2) * 0.3
-                ctx.scale(spiralScale, spiralScale)
+                ctx.rotate(progress * Math.PI * 4 * spiralDir)
+                ctx.scale(1 - progress * 0.5, 1 - progress * 0.5)
                 ctx.translate(-canvas.width / 2, -canvas.height / 2)
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
-            case 'fingerprint':
-                // 指紋（同心円）
+            // V118 Phase 2: 集中線（三角形の放射状線＋揺れ＋周辺ぼかし）
+            case 'concentrationLines': {
+                // 元画像を描画
                 drawScaledImage(0, 0, canvas.width, canvas.height)
-                ctx.strokeStyle = `rgba(100, 100, 100, ${progress * 0.5})`
-                ctx.lineWidth = 2
-                for (let r = 10; r < Math.max(canvas.width, canvas.height); r += 15) {
+
+                // 周辺のぼかし（ビネット風）強め
+                const clVigGrad = ctx.createRadialGradient(
+                    canvas.width / 2, canvas.height / 2, canvas.width * 0.15,
+                    canvas.width / 2, canvas.height / 2, canvas.width * 0.8
+                )
+                clVigGrad.addColorStop(0, 'transparent')
+                clVigGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.3)')
+                clVigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.8)')
+                ctx.fillStyle = clVigGrad
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+                // 三角形の放射状線（漫画の集中線風）
+                const rayCount = 40
+                const shake = Math.sin(progress * Math.PI * 6) * 3
+                const centerX = canvas.width / 2
+                const centerY = canvas.height / 2
+
+                // オプションによる半径調整
+                // weak: 外向け（半径大）、medium: 中、strong: 中心向け（半径小、線が長い）
+                let baseRadiusRatio = 0.25 // default (medium)
+                if (effectOption === 'weak') baseRadiusRatio = 0.4 // 外向け：中心が広く空く
+                if (effectOption === 'strong') baseRadiusRatio = 0.1 // 中心向け：中心まで線が来る
+
+                const innerRadius = canvas.width * baseRadiusRatio + shake
+                const outerRadius = Math.max(canvas.width, canvas.height) * 0.9
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
+                for (let i = 0; i < rayCount; i++) {
+                    const baseAngle = (i / rayCount) * Math.PI * 2
+                    const angleWidth = (Math.PI * 2 / rayCount) * 0.3 // 線の太さ
+                    const jitter = Math.sin(i * 3 + progress * Math.PI * 4) * 0.02 // 揺らぎ
+
+                    const angle1 = baseAngle - angleWidth / 2 + jitter
+                    const angle2 = baseAngle + angleWidth / 2 + jitter
+
                     ctx.beginPath()
-                    ctx.arc(canvas.width / 2, canvas.height / 2, r * (1 + Math.sin(progress * Math.PI + r * 0.1) * 0.1), 0, Math.PI * 2)
-                    ctx.stroke()
+                    ctx.moveTo(centerX + Math.cos(baseAngle) * innerRadius, centerY + Math.sin(baseAngle) * innerRadius)
+                    ctx.lineTo(centerX + Math.cos(angle1) * outerRadius, centerY + Math.sin(angle1) * outerRadius)
+                    ctx.lineTo(centerX + Math.cos(angle2) * outerRadius, centerY + Math.sin(angle2) * outerRadius)
+                    ctx.closePath()
+                    ctx.fill()
                 }
                 break
+            }
             case 'glitch':
                 // グリッチ
                 ctx.globalAlpha = 1
@@ -757,11 +1123,23 @@ export default function APNGGenerator() {
                     ctx.drawImage(sourceImage, 0, srcSliceY, sourceImage.width, srcSliceH, glitchOff, dstSliceY, canvas.width, dstSliceH)
                 }
                 break
+            // V118: カード回転ループ
+            case 'cardFlipLoop': {
+                ctx.save()
+                const flipProgress = Math.sin(progress * Math.PI * 2) // -1 to 1
+                const scaleX = Math.abs(flipProgress)
+                ctx.translate(canvas.width / 2, 0)
+                ctx.scale(scaleX, 1)
+                ctx.translate(-canvas.width / 2, 0)
+                drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+                break
+            }
             default:
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 break
         }
-    }, [sourceImage, transition, effectDirection, tileOrder])
+    }, [sourceImage, transition, effectDirection, effectOption])
 
     // プレビュー描画のuseEffect
     useEffect(() => {
@@ -784,9 +1162,9 @@ export default function APNGGenerator() {
         // 効果に応じてデフォルト方向を設定
         const effect = findEffectByName(newTransition)
         if (effect?.hasDirection && effect.directions) {
-            // 4方向効果の場合はrightをデフォルトに
-            if (effect.directions.includes('right')) {
-                setEffectDirection('right')
+            // 4方向効果の場合はleftをデフォルトに
+            if (effect.directions.includes('left')) {
+                setEffectDirection('left')
             }
             // 縦横効果の場合はhorizontalをデフォルトに
             else if (effect.directions.includes('horizontal')) {
@@ -853,8 +1231,9 @@ export default function APNGGenerator() {
             let delays: number[] = []
 
             let scaleFactor = 1
-            if (adjustToOneMB) {
-                const targetSizeInBytes = 1 // 1MB
+            // V118: sizeLimit に対応
+            if (sizeLimit !== null) {
+                const targetSizeInBytes = sizeLimit // MB
                 scaleFactor = findOptimalScaleFactor(sourceImage.width, sourceImage.height, frameCount, targetSizeInBytes)
             }
 
@@ -869,26 +1248,7 @@ export default function APNGGenerator() {
                 ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, y, width, height)
             }
 
-            // タイル効果用のランダム順序（視覚的に散らばって見えるパターン）
-            // 4x4グリッドを対角線や離れた位置から順に表示
-            const tileOrder = [
-                7,   // 中央左
-                10,  // 中央右下
-                1,   // 上右寄り
-                14,  // 下右寄り
-                4,   // 左上
-                11,  // 右下寄り
-                2,   // 上中央
-                13,  // 下中央
-                8,   // 左中央下
-                5,   // 中央左上
-                15,  // 右下
-                0,   // 左上角
-                9,   // 中央下
-                6,   // 中央
-                3,   // 右上
-                12,  // 左下
-            ]
+
 
             for (let i = 0; i < frameCount; i++) {
                 const progress = i / (frameCount - 1)
@@ -1066,18 +1426,15 @@ export default function APNGGenerator() {
                         )
                         break
                     case 'rotate':
+                        const rotateDir = effectOption === 'right' ? 1 : -1
                         ctx.save()
                         ctx.translate(canvas.width / 2, canvas.height / 2)
-                        ctx.rotate(progress * Math.PI * 2)
+                        ctx.rotate(progress * Math.PI * 2 * rotateDir)
                         ctx.translate(-canvas.width / 2, -canvas.height / 2)
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
-                    case 'blur':
-                        ctx.filter = `blur(${(1 - progress) * 20}px)`
-                        drawScaledImage(0, 0, canvas.width, canvas.height)
-                        ctx.filter = 'none'
-                        break
+
                     case 'tvStatic':
                         ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
                         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
@@ -1109,43 +1466,63 @@ export default function APNGGenerator() {
                             canvas.height * minimizeScale
                         )
                         break
-                    case 'curtain':
-                        ctx.save()
-                        ctx.beginPath()
-                        if (progress < 1) {
-                            ctx.moveTo(0, 0)
-                            ctx.lineTo(canvas.width * progress, 0)
-                            ctx.lineTo(canvas.width * (progress - 0.1), canvas.height)
-                            ctx.lineTo(0, canvas.height)
-                        } else {
-                            ctx.rect(0, 0, canvas.width, canvas.height)
-                        }
-                        ctx.closePath()
-                        ctx.clip()
-                        drawScaledImage(0, 0, canvas.width, canvas.height)
-                        ctx.restore()
-                        break
                     case 'spiral':
+                        const spiralDir = effectOption === 'right' ? 1 : -1
                         ctx.save()
                         ctx.translate(canvas.width / 2, canvas.height / 2)
-                        ctx.rotate(progress * Math.PI * 4)
+                        ctx.rotate(progress * Math.PI * 4 * spiralDir)
                         ctx.scale(1 - progress * 0.5, 1 - progress * 0.5)
                         ctx.translate(-canvas.width / 2, -canvas.height / 2)
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
-                    case 'fingerprint':
+                    // V118 Phase 2: 集中線（三角形の放射状線）
+                    case 'concentrationLines': {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
-                        ctx.fillStyle = `rgba(0, 0, 0, ${1 - progress})`
-                        for (let j = 0; j < 50; j++) {
-                            const x = Math.random() * canvas.width
-                            const y = Math.random() * canvas.height
-                            const radius = Math.random() * 20 + 5
+
+                        // 周辺のぼかし強め
+                        const clVigGrad = ctx.createRadialGradient(
+                            canvas.width / 2, canvas.height / 2, canvas.width * 0.15,
+                            canvas.width / 2, canvas.height / 2, canvas.width * 0.8
+                        )
+                        clVigGrad.addColorStop(0, 'transparent')
+                        clVigGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.3)')
+                        clVigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.8)')
+                        ctx.fillStyle = clVigGrad
+                        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+                        // 三角形の放射状線
+                        const rayCount = 40
+                        const shake = Math.sin(progress * Math.PI * 6) * 3
+                        const centerX = canvas.width / 2
+                        const centerY = canvas.height / 2
+
+                        // オプションによる半径調整
+                        let baseRadiusRatio = 0.25 // default
+                        if (effectOption === 'weak') baseRadiusRatio = 0.4
+                        if (effectOption === 'strong') baseRadiusRatio = 0.1
+
+                        const inRadius = canvas.width * baseRadiusRatio + shake
+                        const outRadius = Math.max(canvas.width, canvas.height) * 0.9
+
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
+                        for (let j = 0; j < rayCount; j++) {
+                            const baseAngle = (j / rayCount) * Math.PI * 2
+                            const angleWidth = (Math.PI * 2 / rayCount) * 0.3
+                            const jitter = Math.sin(j * 3 + progress * Math.PI * 4) * 0.02
+
+                            const angle1 = baseAngle - angleWidth / 2 + jitter
+                            const angle2 = baseAngle + angleWidth / 2 + jitter
+
                             ctx.beginPath()
-                            ctx.arc(x, y, radius, 0, Math.PI * 2)
+                            ctx.moveTo(centerX + Math.cos(baseAngle) * inRadius, centerY + Math.sin(baseAngle) * inRadius)
+                            ctx.lineTo(centerX + Math.cos(angle1) * outRadius, centerY + Math.sin(angle1) * outRadius)
+                            ctx.lineTo(centerX + Math.cos(angle2) * outRadius, centerY + Math.sin(angle2) * outRadius)
+                            ctx.closePath()
                             ctx.fill()
                         }
                         break
+                    }
                     case 'bounce':
                         const bounceProgress = Math.sin(progress * Math.PI)
                         const bounceOffset = bounceProgress * canvas.height * 0.05
@@ -1174,6 +1551,23 @@ export default function APNGGenerator() {
                             ctx.drawImage(canvas, 0, y, canvas.width, height, offset, y, canvas.width, height)
                         }
                         break
+                    // カード回転イン
+                    case 'cardFlipIn': {
+                        ctx.save()
+                        const flipInCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
+
+                        const startAngleIn = (flipInCount - 1) * Math.PI + (Math.PI / 2)
+                        const currentAngleIn = startAngleIn * (1 - progress)
+                        const cardInScale = Math.cos(currentAngleIn)
+
+                        ctx.translate(canvas.width / 2, canvas.height / 2)
+                        ctx.scale(cardInScale, 1)
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2)
+
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
+                        break
+                    }
                     case 'doorOpen':
                         const doorProgress = Math.min(progress * 2, 1)
                         const halfWidth = canvas.width / 2
@@ -1228,15 +1622,18 @@ export default function APNGGenerator() {
 
                     // 砂嵐アウト
                     case 'tvStaticOut':
-                        ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
-                        const staticOutData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-                        for (let p = 0; p < staticOutData.data.length; p += 4) {
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+                        const tvOutGenData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                        for (let p = 0; p < tvOutGenData.data.length; p += 4) {
                             if (Math.random() < progress) {
                                 const noise = Math.random() * 255
-                                staticOutData.data[p] = staticOutData.data[p + 1] = staticOutData.data[p + 2] = noise
+                                tvOutGenData.data[p] = tvOutGenData.data[p + 1] = tvOutGenData.data[p + 2] = noise
+                            }
+                            if (effectOption === 'fade') {
+                                tvOutGenData.data[p + 3] = tvOutGenData.data[p + 3] * (1 - progress)
                             }
                         }
-                        ctx.putImageData(staticOutData, 0, 0)
+                        ctx.putImageData(tvOutGenData, 0, 0)
                         break
 
                     // グリッチイン
@@ -1265,18 +1662,18 @@ export default function APNGGenerator() {
 
                     // フォーカスイン
                     case 'focusIn':
+                        if (effectOption === 'fade') ctx.globalAlpha = progress
                         ctx.filter = `blur(${(1 - progress) * 20}px)`
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.filter = 'none'
+                        if (effectOption === 'fade') ctx.globalAlpha = 1
                         break
-
-                    // フォーカスアウト
                     case 'focusOut':
+                        if (effectOption === 'fade') ctx.globalAlpha = 1 - progress
                         ctx.filter = `blur(${progress * 20}px)`
-                        ctx.globalAlpha = 1 - progress * 0.5
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.filter = 'none'
-                        ctx.globalAlpha = 1
+                        if (effectOption === 'fade') ctx.globalAlpha = 1
                         break
 
                     // スライスイン
@@ -1299,43 +1696,146 @@ export default function APNGGenerator() {
                         ctx.globalAlpha = 1
                         break
 
-                    // ライトリークイン
-                    case 'lightLeakIn':
-                        ctx.globalAlpha = progress
-                        drawScaledImage(0, 0, canvas.width, canvas.height)
-                        ctx.globalCompositeOperation = 'screen'
-                        const lightGrad = ctx.createRadialGradient(canvas.width * 0.3, canvas.height * 0.3, 0, canvas.width * 0.5, canvas.height * 0.5, canvas.width)
-                        lightGrad.addColorStop(0, `rgba(255, 200, 100, ${(1 - progress) * 0.8})`)
-                        lightGrad.addColorStop(1, 'rgba(255, 200, 100, 0)')
-                        ctx.fillStyle = lightGrad
-                        ctx.fillRect(0, 0, canvas.width, canvas.height)
-                        ctx.globalCompositeOperation = 'source-over'
-                        ctx.globalAlpha = 1
-                        break
+                    // V118: ブラインドイン
+                    case 'blindIn': {
+                        const blindCount = effectOption ? parseInt(effectOption) : 7
+                        const isVertical = effectDirection === 'horizontal' // 逆にする
+                        const blindSize = isVertical ? canvas.height / blindCount : canvas.width / blindCount
+                        const openAmount = progress * blindSize
 
-                    // フィルムバーン
-                    case 'filmBurn':
-                        ctx.globalAlpha = 1 - progress
-                        drawScaledImage(0, 0, canvas.width, canvas.height)
-                        ctx.globalCompositeOperation = 'overlay'
-                        const burnGrad = ctx.createRadialGradient(canvas.width * 0.5, canvas.height * 0.5, 0, canvas.width * 0.5, canvas.height * 0.5, canvas.width * 0.7)
-                        burnGrad.addColorStop(0, `rgba(255, 100, 0, ${progress})`)
-                        burnGrad.addColorStop(0.5, `rgba(255, 50, 0, ${progress * 0.7})`)
-                        burnGrad.addColorStop(1, `rgba(0, 0, 0, ${progress})`)
-                        ctx.fillStyle = burnGrad
-                        ctx.fillRect(0, 0, canvas.width, canvas.height)
-                        ctx.globalCompositeOperation = 'source-over'
-                        ctx.globalAlpha = 1
+                        for (let i = 0; i < blindCount; i++) {
+                            ctx.save()
+                            ctx.beginPath()
+                            if (isVertical) {
+                                ctx.rect(0, i * blindSize, canvas.width, openAmount)
+                            } else {
+                                ctx.rect(i * blindSize, 0, openAmount, canvas.height)
+                            }
+                            ctx.clip()
+                            drawScaledImage(0, 0, canvas.width, canvas.height)
+                            ctx.restore()
+                        }
                         break
+                    }
+
+                    // V118: ブラインドアウト
+                    case 'blindOut': {
+                        const blindOutCount = effectOption ? parseInt(effectOption) : 7
+                        const isVerticalOut = effectDirection === 'horizontal' // 逆にする
+                        const blindOutSize = isVerticalOut ? canvas.height / blindOutCount : canvas.width / blindOutCount
+                        const closeAmount = (1 - progress) * blindOutSize
+
+                        for (let i = 0; i < blindOutCount; i++) {
+                            ctx.save()
+                            ctx.beginPath()
+                            if (isVerticalOut) {
+                                ctx.rect(0, i * blindOutSize, canvas.width, closeAmount)
+                            } else {
+                                ctx.rect(i * blindOutSize, 0, closeAmount, canvas.height)
+                            }
+                            ctx.clip()
+                            drawScaledImage(0, 0, canvas.width, canvas.height)
+                            ctx.restore()
+                        }
+                        break
+                    }
+
+                    // V118: 斬撃効果（斜めに斬られて上下がスライドして消える）
+                    case 'swordSlashOut': {
+                        const isRightSlash = effectOption !== 'left' // デフォルトは右斬り（╲）
+                        ctx.save()
+
+                        // 斬撃フラッシュ効果（0-15%のプログレス）
+                        const flashPhase = progress < 0.15
+                        if (flashPhase) {
+                            // 斬撃線を描画
+                            drawScaledImage(0, 0, canvas.width, canvas.height)
+                            const flashIntensity = Math.sin((progress / 0.15) * Math.PI)
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${flashIntensity})`
+                            ctx.lineWidth = Math.max(4, canvas.width * 0.02)
+                            ctx.beginPath()
+                            if (isRightSlash) {
+                                ctx.moveTo(0, 0)
+                                ctx.lineTo(canvas.width, canvas.height)
+                            } else {
+                                ctx.moveTo(canvas.width, 0)
+                                ctx.lineTo(0, canvas.height)
+                            }
+                            ctx.stroke()
+                        } else {
+                            // スライドフェーズ
+                            const slideProgress = (progress - 0.15) / 0.85
+                            const slideAmount = slideProgress * canvas.width * 0.6
+                            const fadeAlpha = 1 - slideProgress
+
+                            ctx.globalAlpha = fadeAlpha
+
+                            // 上三角形（対角線の上側）
+                            ctx.save()
+                            ctx.beginPath()
+                            if (isRightSlash) {
+                                // 右斬り（╲）：上三角形 = (0,0), (w,h), (w,0)
+                                ctx.moveTo(0, 0)
+                                ctx.lineTo(canvas.width, canvas.height)
+                                ctx.lineTo(canvas.width, 0)
+                                ctx.closePath()
+                                ctx.clip()
+                                ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                    -slideAmount, -slideAmount * 0.5, canvas.width, canvas.height)
+                            } else {
+                                // 左斬り（╱）：上三角形 = (w,0), (0,h), (0,0)
+                                ctx.moveTo(canvas.width, 0)
+                                ctx.lineTo(0, canvas.height)
+                                ctx.lineTo(0, 0)
+                                ctx.closePath()
+                                ctx.clip()
+                                ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                    slideAmount, -slideAmount * 0.5, canvas.width, canvas.height)
+                            }
+                            ctx.restore()
+
+                            // 下三角形（対角線の下側）
+                            ctx.save()
+                            ctx.beginPath()
+                            if (isRightSlash) {
+                                // 右斬り（╲）：下三角形 = (0,0), (0,h), (w,h)
+                                ctx.moveTo(0, 0)
+                                ctx.lineTo(0, canvas.height)
+                                ctx.lineTo(canvas.width, canvas.height)
+                                ctx.closePath()
+                                ctx.clip()
+                                ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                    slideAmount, slideAmount * 0.5, canvas.width, canvas.height)
+                            } else {
+                                // 左斬り（╱）：下三角形 = (w,0), (w,h), (0,h)
+                                ctx.moveTo(canvas.width, 0)
+                                ctx.lineTo(canvas.width, canvas.height)
+                                ctx.lineTo(0, canvas.height)
+                                ctx.closePath()
+                                ctx.clip()
+                                ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                    -slideAmount, slideAmount * 0.5, canvas.width, canvas.height)
+                            }
+                            ctx.restore()
+                        }
+
+                        ctx.globalAlpha = 1
+                        ctx.restore()
+                        break
+                    }
 
                     // タイルイン（ランダム順）
                     case 'tileIn':
-                        const tileCols = 4, tileRows = 4
+                        const tileInCount = effectOption ? parseInt(effectOption) : 9
+                        const tileCols = Math.sqrt(tileInCount), tileRows = Math.sqrt(tileInCount)
                         const tileW = canvas.width / tileCols, tileH = canvas.height / tileRows
                         const tileTotal = tileCols * tileRows
+                        const currentTileInOrder = tileOrders[tileInCount] || tileOrders[9]
                         const tileVisible = Math.floor(progress * tileTotal)
+
                         for (let t = 0; t < tileVisible; t++) {
-                            const idx = tileOrder[t]
+                            const idx = currentTileInOrder[t]
+                            if (idx === undefined) continue
                             const col = idx % tileCols, row = Math.floor(idx / tileCols)
                             ctx.drawImage(sourceImage, col * tileW, row * tileH, tileW, tileH, col * tileW, row * tileH, tileW, tileH)
                         }
@@ -1343,33 +1843,42 @@ export default function APNGGenerator() {
 
                     // タイルアウト（ランダム順）
                     case 'tileOut':
-                        const tileOutCols = 4, tileOutRows = 4
+                        const tileOutCount = effectOption ? parseInt(effectOption) : 9
+                        const tileOutCols = Math.sqrt(tileOutCount), tileOutRows = Math.sqrt(tileOutCount)
                         const tileOutW = canvas.width / tileOutCols, tileOutH = canvas.height / tileOutRows
                         const tileOutTotal = tileOutCols * tileOutRows
+                        const currentTileOutOrder = tileOrders[tileOutCount] || tileOrders[9]
                         const tileOutVisible = Math.floor((1 - progress) * tileOutTotal)
+
                         for (let t = 0; t < tileOutVisible; t++) {
-                            const idx = tileOrder[t]
+                            const idx = currentTileOutOrder[t]
+                            if (idx === undefined) continue
                             const col = idx % tileOutCols, row = Math.floor(idx / tileOutCols)
                             ctx.drawImage(sourceImage, col * tileOutW, row * tileOutH, tileOutW, tileOutH, col * tileOutW, row * tileOutH, tileOutW, tileOutH)
                         }
                         break
 
                     // ピクセレートイン
-                    case 'pixelateIn':
-                        const pixelInSize = Math.max(1, Math.floor((1 - progress) * 30))
+                    case 'pixelateIn': {
+                        // effectOptionでブロックサイズを決定
+                        const maxPixelSize = effectOption === 'small' ? 15 : effectOption === 'large' ? 60 : 30
+                        const pixelSize = Math.max(1, Math.floor((1 - progress) * maxPixelSize))
                         const tempIn = document.createElement('canvas')
-                        tempIn.width = canvas.width / pixelInSize
-                        tempIn.height = canvas.height / pixelInSize
+                        tempIn.width = canvas.width / pixelSize
+                        tempIn.height = canvas.height / pixelSize
                         const tempInCtx = tempIn.getContext('2d')!
                         tempInCtx.drawImage(sourceImage, 0, 0, tempIn.width, tempIn.height)
                         ctx.imageSmoothingEnabled = false
                         ctx.drawImage(tempIn, 0, 0, canvas.width, canvas.height)
                         ctx.imageSmoothingEnabled = true
                         break
+                    }
 
                     // ピクセレートアウト
-                    case 'pixelateOut':
-                        const pixelOutSize = Math.max(1, Math.floor(progress * 30))
+                    case 'pixelateOut': {
+                        // effectOptionでブロックサイズを決定
+                        const maxPixelOut = effectOption === 'small' ? 15 : effectOption === 'large' ? 60 : 30
+                        const pixelOutSize = Math.max(1, Math.floor(progress * maxPixelOut))
                         const tempOut = document.createElement('canvas')
                         tempOut.width = canvas.width / pixelOutSize
                         tempOut.height = canvas.height / pixelOutSize
@@ -1381,6 +1890,7 @@ export default function APNGGenerator() {
                         ctx.imageSmoothingEnabled = true
                         ctx.globalAlpha = 1
                         break
+                    }
 
                     // アイリスイン
                     case 'irisIn':
@@ -1482,16 +1992,32 @@ export default function APNGGenerator() {
                         break
 
                     // 脈動
-                    case 'pulsation':
-                        const aberAmt = Math.sin(progress * Math.PI) * 5
+                    case 'pulsation': {
+                        // 脈動: エッジ部分に色のフリンジ
+                        const aberAmt = Math.sin(progress * Math.PI) * 6
+                        // 元画像を先に描画
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                        // エッジに色を乗せる
                         ctx.globalCompositeOperation = 'screen'
-                        ctx.globalAlpha = 0.8
-                        ctx.drawImage(sourceImage, -aberAmt, -aberAmt, canvas.width, canvas.height)
-                        ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
-                        ctx.drawImage(sourceImage, aberAmt, aberAmt, canvas.width, canvas.height)
-                        ctx.globalCompositeOperation = 'source-over'
+                        ctx.globalAlpha = 0.3
+
+                        // 赤（左上にズレ）
+                        ctx.save()
+                        ctx.translate(-aberAmt, -aberAmt)
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
+
+                        // シアン（右下にズレ）
+                        ctx.save()
+                        ctx.translate(aberAmt, aberAmt)
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
+
                         ctx.globalAlpha = 1
+                        ctx.globalCompositeOperation = 'source-over'
                         break
+                    }
 
                     // 閃光
                     case 'flash':
@@ -1599,9 +2125,9 @@ export default function APNGGenerator() {
                 const scaleOut = 1.5 - previewProgress * 0.5
                 return { ...baseStyle, transform: `translate(-50%, -50%) scale(${scaleOut})` }
             case 'rotate':
-                return { ...baseStyle, transform: `translate(-50%, -50%) rotate(${previewProgress * 360}deg)` }
-            case 'blur':
-                return { ...baseStyle, filter: `blur(${(1 - previewProgress) * 20}px)` }
+                const rotDir = effectOption === 'right' ? 1 : -1
+                return { ...baseStyle, transform: `translate(-50%, -50%) rotate(${previewProgress * 360 * rotDir}deg)` }
+
             case 'tvStatic':
                 return {
                     ...baseStyle,
@@ -1614,22 +2140,17 @@ export default function APNGGenerator() {
             case 'minimize':
                 const minimizeScale = 5 - previewProgress * 4
                 return { ...baseStyle, transform: `translate(-50%, -50%) scale(${minimizeScale})` }
-            case 'curtain':
+            // V118 Phase 2: 集中線
+            case 'concentrationLines':
                 return {
                     ...baseStyle,
-                    clipPath: previewProgress < 1
-                        ? `polygon(0 0, ${previewProgress * 100}% 0, ${(previewProgress - 0.1) * 100}% 100%, 0 100%)`
-                        : 'none',
+                    boxShadow: 'inset 0 0 50px rgba(0,0,0,0.6)',
                 }
             case 'spiral':
+                const spDir = effectOption === 'right' ? 1 : -1
                 return {
                     ...baseStyle,
-                    transform: `translate(-50%, -50%) rotate(${previewProgress * 720}deg) scale(${1 - previewProgress * 0.5})`,
-                }
-            case 'fingerprint':
-                return {
-                    ...baseStyle,
-                    filter: `contrast(${1 + previewProgress}) brightness(${1 - previewProgress * 0.5})`,
+                    transform: `translate(-50%, -50%) rotate(${previewProgress * 720 * spDir}deg) scale(${1 - previewProgress * 0.5})`,
                 }
             case 'bounce':
                 const bounceProgress = Math.sin(previewProgress * Math.PI)
@@ -1819,17 +2340,46 @@ export default function APNGGenerator() {
                     transform: `translate(calc(-50% + ${Math.sin(previewProgress * Math.PI * 3) * sliceOutOffset}px), -50%) scaleY(${1 - previewProgress * 0.2})`,
                 }
 
-            // ライトリークイン（明るいフラッシュ）
-            case 'lightLeakIn':
+            // V118: ブラインドイン
+            case 'blindIn':
                 return {
                     ...baseStyle,
                     opacity: previewProgress,
-                    filter: `brightness(${1 + (1 - previewProgress) * 2}) saturate(${0.5 + previewProgress * 0.5})`,
+                    clipPath: `inset(0 0 ${(1 - previewProgress) * 100}% 0)`,
                 }
 
-            // フィルムバーン
-            case 'filmBurn':
-                return { ...baseStyle, opacity: 1 - previewProgress, filter: `sepia(${previewProgress}) saturate(${1 + previewProgress})` }
+            // V118: ブラインドアウト
+            case 'blindOut':
+                return {
+                    ...baseStyle,
+                    opacity: 1 - previewProgress,
+                    clipPath: `inset(${previewProgress * 100}% 0 0 0)`,
+                }
+
+            // V118: 斬撃効果
+            case 'swordSlashOut': {
+                // CSSプレビューでは斜め分割の簡易表現
+                const slashProgress = previewProgress
+                const slideAmount = slashProgress * 30
+                return {
+                    ...baseStyle,
+                    opacity: 1 - slashProgress * 0.8,
+                    transform: `translate(calc(-50% + ${slideAmount}px), calc(-50% + ${slideAmount * 0.3}px)) rotate(${slashProgress * 5}deg)`,
+                    clipPath: slashProgress > 0.15
+                        ? `polygon(0 0, 100% ${50 - slashProgress * 30}%, 100% 0)`
+                        : 'none',
+                }
+            }
+
+            // V118: カード回転ループ
+            case 'cardFlipLoop': {
+                const flipProg = Math.sin(previewProgress * Math.PI * 2)
+                const scaleX = Math.abs(flipProg)
+                return {
+                    ...baseStyle,
+                    transform: `translate(-50%, -50%) scaleX(${Math.max(0.01, scaleX)})`,
+                }
+            }
 
             // タイルイン/アウト（4x4グリッドで順番に登場）
             case 'tileIn':
@@ -2025,7 +2575,7 @@ export default function APNGGenerator() {
                     <div className="space-y-4">
                         <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-semibold text-gray-700">画像選択 & プレビュー</h3>
+                                <h3 className="text-sm font-semibold text-gray-700">画像選択 & プレビュー</h3>
                                 <Popover.Root>
                                     <Popover.Trigger asChild>
                                         <button className="text-sm font-medium text-blue-600 hover:text-blue-500 flex items-center">
@@ -2037,9 +2587,11 @@ export default function APNGGenerator() {
                                         <Popover.Content className="bg-white p-4 rounded-lg shadow-lg border border-gray-200 max-w-sm">
                                             <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
                                                 <li>画像を選択または枠内にドラッグ&ドロップします</li>
-                                                <li>トランジション効果を選びます</li>
-                                                <li>ループ画像にしたい場合は、［ループする］にチェックします</li>
-                                                <li>1MB以下に調整したい場合は、［1MB以下に調整］にチェックします</li>
+                                                <li>タブ（登場・退場・演出）からトランジション効果を選びます</li>
+                                                <li>効果オプション（方向、サイズ、強度など）を設定します</li>
+                                                <li>ループをON/OFFで選択します</li>
+                                                <li>容量制限を選択します（制限なし/1MB/5MB/10MB）</li>
+                                                <li>再生スピードを調整します（0.25x～2x）</li>
                                                 <li>フレームレートを調整します（高いほど滑らかになります）</li>
                                                 <li>プレビューで確認します</li>
                                                 <li>APNG生成ボタンでファイルを生成します</li>
@@ -2134,34 +2686,97 @@ export default function APNGGenerator() {
                                 stopPreview()
                                 setTimeout(() => startPreview(), 50)
                             }}
+                            effectOption={effectOption}
+                            setEffectOption={setEffectOption}
+                            effectIntensity={effectIntensity}
+                            setEffectIntensity={setEffectIntensity}
+                            onOptionChange={() => {
+                                stopPreview()
+                                setTimeout(() => startPreview(), 50)
+                            }}
                         />
 
                         {/* 共通設定カード */}
-                        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200 space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-700">共通設定</h3>
+                        <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200 space-y-2">
+                            <h3 className="text-sm font-semibold text-gray-700">共通設定</h3>
 
-                            <div className="flex items-center space-x-4">
-                                <label className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={isLooping}
-                                        onChange={(e) => setIsLooping(e.target.checked)}
-                                        className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 bg-gray-100 border-gray-300"
-                                    />
-                                    <span className="text-sm font-medium text-gray-700">ループする（繰り返し再生）</span>
-                                </label>
+                            {/* V118: ループトグル（横並びON/OFF） */}
+                            <div>
+                                <span className="text-sm font-medium text-gray-700 block mb-2">ループ</span>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setIsLooping(true)}
+                                        className={`w-32 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
+                                            ${isLooping
+                                                ? 'bg-blue-500 text-white shadow-md'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+                                            }
+                                        `}
+                                    >
+                                        <Repeat className="w-4 h-4" />
+                                        ON
+                                    </button>
+                                    <button
+                                        onClick={() => setIsLooping(false)}
+                                        className={`w-32 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
+                                            ${!isLooping
+                                                ? 'bg-blue-500 text-white shadow-md'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+                                            }
+                                        `}
+                                    >
+                                        <ArrowRightToLine className="w-4 h-4" />
+                                        OFF
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="flex items-center space-x-4">
-                                <label className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={adjustToOneMB}
-                                        onChange={(e) => setAdjustToOneMB(e.target.checked)}
-                                        className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 bg-gray-100 border-gray-300"
-                                    />
-                                    <span className="text-sm font-medium text-gray-700">1MB以下に調整（画質を下げて容量を抑える）</span>
+                            {/* V118: 容量制限セグメント（制限なし/1MB/5MB/10MB） */}
+                            <div>
+                                <span className="text-sm font-medium text-gray-700 block mb-2">容量制限</span>
+                                <div className="flex gap-2">
+                                    {[
+                                        { value: null, label: '制限なし' },
+                                        { value: 1, label: '1MB以下' },
+                                        { value: 5, label: '5MB以下' },
+                                        { value: 10, label: '10MB以下' },
+                                    ].map((option) => (
+                                        <button
+                                            key={option.label}
+                                            onClick={() => setSizeLimit(option.value)}
+                                            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                                                ${sizeLimit === option.value
+                                                    ? 'bg-blue-500 text-white shadow-md'
+                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+                                                }
+                                            `}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* V118: 再生スピードスライダー */}
+                            <div>
+                                <label htmlFor="speed-range" className="block text-sm font-medium text-gray-700 mb-2">
+                                    再生スピード: {playbackSpeed.toFixed(2)}x
                                 </label>
+                                <input
+                                    id="speed-range"
+                                    type="range"
+                                    min="0.25"
+                                    max="2"
+                                    step="0.05"
+                                    value={playbackSpeed}
+                                    onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>0.25x</span>
+                                    <span>1.0x</span>
+                                    <span>2.0x</span>
+                                </div>
                             </div>
 
                             <div>
@@ -2185,14 +2800,14 @@ export default function APNGGenerator() {
                                     {estimatedSize !== null && (
                                         <p className="text-sm text-gray-600 mt-1">
                                             予想APNG容量: {estimatedSize.toFixed(2)} MB
-                                            {adjustToOneMB && estimatedSize > 1 && (
+                                            {sizeLimit !== null && estimatedSize > sizeLimit && (
                                                 <span className="text-yellow-600 ml-2">
-                                                    (1MB以下に自動調整されます)
+                                                    ({sizeLimit}MB以下に自動調整されます)
                                                 </span>
                                             )}
                                         </p>
                                     )}
-                                    {optimizedSize && adjustToOneMB && (
+                                    {optimizedSize && sizeLimit !== null && (
                                         <p className="text-sm text-gray-600 mt-1">
                                             最適化後の画像サイズ: {optimizedSize.width} x {optimizedSize.height} px
                                         </p>
