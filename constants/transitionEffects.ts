@@ -59,7 +59,7 @@ export interface TransitionEffect {
     directions?: ('up' | 'down' | 'left' | 'right' | 'vertical' | 'horizontal' | 'random')[]
     // V118: オプションシステム
     hasOptions?: boolean
-    optionType?: 'size' | 'intensity' | 'count' | 'shape' | 'direction' | 'transparency'
+    optionType?: 'size' | 'intensity' | 'count' | 'shape' | 'direction' | 'transparency' | 'speed'
     options?: EffectOption[]
     defaultOption?: string
     // V118: 2段階オプション（方向＋強度など）
@@ -85,7 +85,19 @@ export const transitionEffects: EffectCategory[] = [
             { name: 'wipeIn', label: 'ワイプイン', icon: PanelLeftOpen, hasDirection: true, directions: ['up', 'down', 'left', 'right'] },
             { name: 'zoomIn', label: 'ズームイン', icon: ZoomIn, hasDirection: false },
             { name: 'doorClose', label: '閉扉', icon: DoorClosed, hasDirection: false },
-            { name: 'tvStaticIn', label: '砂嵐イン', icon: Tv, hasDirection: false },
+            {
+                name: 'tvStaticIn',
+                label: '砂嵐イン',
+                icon: Tv,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'transparency',
+                options: [
+                    { value: 'fade', label: 'フェード', numericValue: 1 },
+                    { value: 'none', label: '効果のみ', numericValue: 0 },
+                ],
+                defaultOption: 'fade'
+            },
             {
                 name: 'glitchIn',
                 label: 'グリッチイン',
@@ -168,7 +180,13 @@ export const transitionEffects: EffectCategory[] = [
                     { value: 'medium', label: '中', numericValue: 8 },
                     { value: 'large', label: '大', numericValue: 16 },
                 ],
-                defaultOption: 'medium'
+                defaultOption: 'medium',
+                hasIntensity: true,
+                intensityOptions: [
+                    { value: 'fade', label: 'フェード', numericValue: 1 },
+                    { value: 'none', label: '効果のみ', numericValue: 0 },
+                ],
+                defaultIntensity: 'fade'
             },
             {
                 name: 'irisIn',
@@ -317,7 +335,13 @@ export const transitionEffects: EffectCategory[] = [
                     { value: 'medium', label: '中', numericValue: 8 },
                     { value: 'large', label: '大', numericValue: 16 },
                 ],
-                defaultOption: 'medium'
+                defaultOption: 'medium',
+                hasIntensity: true,
+                intensityOptions: [
+                    { value: 'fade', label: 'フェード', numericValue: 1 },
+                    { value: 'none', label: '効果のみ', numericValue: 0 },
+                ],
+                defaultIntensity: 'fade'
             },
             {
                 name: 'irisOut',
@@ -424,7 +448,20 @@ export const transitionEffects: EffectCategory[] = [
                 ],
                 defaultIntensity: 'medium'
             },
-            { name: 'glitch', label: 'グリッジ', icon: Zap, hasDirection: false },
+            {
+                name: 'glitch',
+                label: 'グリッチ',
+                icon: Zap,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'intensity',
+                options: [
+                    { value: 'weak', label: '弱', numericValue: 5 },
+                    { value: 'medium', label: '中', numericValue: 10 },
+                    { value: 'strong', label: '強', numericValue: 20 },
+                ],
+                defaultOption: 'medium'
+            },
             {
                 name: 'rgbShift',
                 label: 'RGBずれ',
