@@ -41,6 +41,7 @@ import {
     RefreshCw,
     Crosshair,  // 集中線用
     Activity,   // 脈動用
+    UserRound,  // シルエット用
 } from 'lucide-react'
 
 // オプション定義
@@ -59,7 +60,7 @@ export interface TransitionEffect {
     directions?: ('up' | 'down' | 'left' | 'right' | 'vertical' | 'horizontal' | 'random')[]
     // V118: オプションシステム
     hasOptions?: boolean
-    optionType?: 'size' | 'intensity' | 'count' | 'shape' | 'direction' | 'transparency' | 'speed'
+    optionType?: 'size' | 'intensity' | 'count' | 'shape' | 'direction' | 'transparency' | 'speed' | 'color'
     options?: EffectOption[]
     defaultOption?: string
     // V118: 2段階オプション（方向＋強度など）
@@ -508,6 +509,21 @@ export const transitionEffects: EffectCategory[] = [
                 defaultOption: 'medium'
             },
             { name: 'cardFlipLoop', label: 'カード回転ループ', icon: RefreshCw, hasDirection: false },
+            {
+                name: 'silhouette',
+                label: 'シルエット',
+                icon: UserRound,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'color',
+                options: [
+                    { value: 'white', label: '白', numericValue: 0 },
+                    { value: 'black', label: '黒', numericValue: 1 },
+                    { value: 'red', label: '赤', numericValue: 2 },
+                    { value: 'outline', label: '縁取り', numericValue: 3 },
+                ],
+                defaultOption: 'black'
+            },
         ],
     },
 ]
