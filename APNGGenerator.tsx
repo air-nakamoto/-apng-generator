@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Settings, Upload, Info, Play, Pause, Download, Repeat, ArrowRightToLine } from 'lucide-react'
 import * as Popover from '@radix-ui/react-popover'
 import { TransitionEffectsSelector } from './components/TransitionEffectsSelector'
-import { findEffectByName } from './constants/transitionEffects'
+import { findEffectByName, findCategoryByEffectName } from './constants/transitionEffects'
 
 // @ts-ignore
 import UPNG from 'upng-js'
@@ -75,6 +75,7 @@ export default function APNGGenerator() {
     const [transition, setTransition] = useState('fadeIn')
     const [effectDirection, setEffectDirection] = useState<string>('right')
     const [isLooping, setIsLooping] = useState(false)
+    const [loopSettingsPerEffect, setLoopSettingsPerEffect] = useState<Record<string, boolean>>({}) // エフェクトごとのループ設定記憶
     // V118: 新規ステート
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0)
     const [sizeLimit, setSizeLimit] = useState<number | null>(null)  // null=制限なし, 1/5/10=MB制限
@@ -377,7 +378,7 @@ export default function APNGGenerator() {
                     ctx.drawImage(sourceImage, col * srcTileW, row * srcTileH, srcTileW, srcTileH, col * dstTileW, row * dstTileH, dstTileW, dstTileH)
                 }
                 break
-            case 'pixelateIn':
+            case 'pixelateIn': {
                 // effectOptionでブロックサイズを決定（small=15, medium=30, large=60）
                 const maxPixelSize = effectOption === 'small' ? 15 : effectOption === 'large' ? 60 : 30
                 const pixelSize = Math.max(1, Math.floor((1 - progress) * maxPixelSize))
@@ -387,9 +388,15 @@ export default function APNGGenerator() {
                 const tempCtx = tempCanvas.getContext('2d')!
                 tempCtx.drawImage(sourceImage, 0, 0, tempCanvas.width, tempCanvas.height)
                 ctx.imageSmoothingEnabled = false
+                // fadeオプションの場合、透明度も変化
+                if (effectIntensity === 'fade') {
+                    ctx.globalAlpha = progress
+                }
                 ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height)
+                ctx.globalAlpha = 1
                 ctx.imageSmoothingEnabled = true
                 break
+            }
             case 'focusIn':
                 if (effectOption === 'fade') ctx.globalAlpha = progress
                 ctx.filter = `blur(${(1 - progress) * 20}px)`
@@ -509,7 +516,7 @@ export default function APNGGenerator() {
                 ctx.restore()
                 break
             }
-            case 'tvStaticIn':
+            case 'tvStaticIn': {
                 ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
                 const staticData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                 const staticIntensity = 1 - progress
@@ -518,10 +525,17 @@ export default function APNGGenerator() {
                         const noise = Math.random() * 255
                         staticData.data[p] = staticData.data[p + 1] = staticData.data[p + 2] = noise
                     }
+                    // fadeオプションの場合、透明度も変化
+                    if (effectOption === 'fade') {
+                        staticData.data[p + 3] = staticData.data[p + 3] * progress
+                    }
                 }
                 ctx.putImageData(staticData, 0, 0)
                 break
-            case 'glitchIn':
+            }
+            case 'glitchIn': {
+                // effectOptionで強度を決定（weak=0.15, medium=0.3, strong=0.5）
+                const glitchInBase = effectOption === 'weak' ? 0.15 : effectOption === 'strong' ? 0.5 : 0.3
                 const glitchIntensity = 1 - progress
                 ctx.globalAlpha = progress
                 for (let s = 0; s < 10; s++) {
@@ -529,11 +543,12 @@ export default function APNGGenerator() {
                     const dstSliceY = s * (canvas.height / 10)
                     const srcSliceH = sourceImage.height / 10
                     const dstSliceH = canvas.height / 10
-                    const offsetX = (Math.random() - 0.5) * canvas.width * 0.3 * glitchIntensity
+                    const offsetX = (Math.random() - 0.5) * canvas.width * glitchInBase * glitchIntensity
                     ctx.drawImage(sourceImage, 0, srcSliceY, sourceImage.width, srcSliceH, offsetX, dstSliceY, canvas.width, dstSliceH)
                 }
                 ctx.globalAlpha = 1
                 break
+            }
             // V118: blindIn効果
             case 'blindIn': {
                 const blindCount = effectOption ? parseInt(effectOption) : 7
@@ -613,7 +628,7 @@ export default function APNGGenerator() {
                     ctx.drawImage(sourceImage, col * srcTileOutW, row * srcTileOutH, srcTileOutW, srcTileOutH, col * dstTileOutW, row * dstTileOutH, dstTileOutW, dstTileOutH)
                 }
                 break
-            case 'pixelateOut':
+            case 'pixelateOut': {
                 // effectOptionでブロックサイズを決定（small=15, medium=30, large=60）
                 const maxPixelOut = effectOption === 'small' ? 15 : effectOption === 'large' ? 60 : 30
                 const pixelOutSize = Math.max(1, Math.floor(progress * maxPixelOut))
@@ -623,11 +638,15 @@ export default function APNGGenerator() {
                 const tempOutCtx = tempOutCanvas.getContext('2d')!
                 tempOutCtx.drawImage(sourceImage, 0, 0, tempOutCanvas.width, tempOutCanvas.height)
                 ctx.imageSmoothingEnabled = false
-                ctx.globalAlpha = 1 - progress * 0.3
+                // fadeオプションの場合、透明度も変化
+                if (effectIntensity === 'fade') {
+                    ctx.globalAlpha = 1 - progress
+                }
                 ctx.drawImage(tempOutCanvas, 0, 0, canvas.width, canvas.height)
-                ctx.imageSmoothingEnabled = true
                 ctx.globalAlpha = 1
+                ctx.imageSmoothingEnabled = true
                 break
+            }
             case 'focusOut':
                 if (effectOption === 'fade') ctx.globalAlpha = 1 - progress
                 ctx.filter = `blur(${progress * 20}px)`
@@ -771,7 +790,9 @@ export default function APNGGenerator() {
                 }
                 ctx.putImageData(tvOutData, 0, 0)
                 break
-            case 'glitchOut':
+            case 'glitchOut': {
+                // effectOptionで強度を決定（weak=0.15, medium=0.3, strong=0.5）
+                const glitchOutBase = effectOption === 'weak' ? 0.15 : effectOption === 'strong' ? 0.5 : 0.3
                 const glitchOutIntensity = progress
                 ctx.globalAlpha = 1 - progress
                 for (let s = 0; s < 10; s++) {
@@ -779,11 +800,12 @@ export default function APNGGenerator() {
                     const dstSliceOutY = s * (canvas.height / 10)
                     const srcSliceOutH = sourceImage.height / 10
                     const dstSliceOutH = canvas.height / 10
-                    const offsetX = (Math.random() - 0.5) * canvas.width * 0.3 * glitchOutIntensity
+                    const offsetX = (Math.random() - 0.5) * canvas.width * glitchOutBase * glitchOutIntensity
                     ctx.drawImage(sourceImage, 0, srcSliceOutY, sourceImage.width, srcSliceOutH, offsetX, dstSliceOutY, canvas.width, dstSliceOutH)
                 }
                 ctx.globalAlpha = 1
                 break
+            }
             // V118: blindOut効果
             case 'blindOut': {
                 const blindOutCount = effectOption ? parseInt(effectOption) : 7
@@ -919,8 +941,10 @@ export default function APNGGenerator() {
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
-            case 'vibration':
-                const vibAmp = Math.sin(progress * Math.PI * 8) * 10
+            case 'vibration': {
+                // effectIntensityで振動幅を決定（weak=5, medium=10, strong=20）
+                const vibBase = effectIntensity === 'weak' ? 5 : effectIntensity === 'strong' ? 20 : 10
+                const vibAmp = Math.sin(progress * Math.PI * 8) * vibBase
                 if (effectDirection === 'vertical') {
                     ctx.drawImage(sourceImage, 0, (Math.random() - 0.5) * vibAmp, canvas.width, canvas.height)
                 } else if (effectDirection === 'horizontal') {
@@ -932,6 +956,7 @@ export default function APNGGenerator() {
                     ctx.drawImage(sourceImage, jitterX, jitterY, canvas.width, canvas.height)
                 }
                 break
+            }
             case 'bounce':
                 const bounceY = Math.abs(Math.sin(progress * Math.PI * 2)) * canvas.height * 0.2
                 ctx.drawImage(sourceImage, 0, -bounceY, canvas.width, canvas.height)
@@ -942,10 +967,10 @@ export default function APNGGenerator() {
                 ctx.fillStyle = `rgba(255, 255, 255, ${flashIntensity * 0.8})`
                 ctx.fillRect(0, 0, canvas.width, canvas.height)
                 break
-            case 'rgbShift':
-                // RGBシフト: 赤・緑・青を120度ずつ離れた方向にオフセット
-                // R: 上方向 (0°), G: 左下方向 (240°), B: 右下方向 (120°)
-                const shiftAmt = Math.sin(progress * Math.PI) * canvas.width * 0.04
+            case 'rgbShift': {
+                // RGBシフト: effectOptionで強度を決定（small=2, medium=6, large=12）
+                const rgbBase = effectOption === 'small' ? 0.02 : effectOption === 'large' ? 0.06 : 0.04
+                const shiftAmt = Math.sin(progress * Math.PI) * canvas.width * rgbBase
 
                 // 各チャンネルのオフセット計算（120度間隔）
                 const rOffsetX = Math.round(Math.sin(0) * shiftAmt)                    // 0°: 右0, 上-
@@ -990,6 +1015,7 @@ export default function APNGGenerator() {
                 }
                 ctx.putImageData(newData, 0, 0)
                 break
+            }
             case 'scanlines': {
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 // effectOptionで太さを決定（thin=1, medium=2, thick=4）
@@ -999,12 +1025,20 @@ export default function APNGGenerator() {
                 for (let y = 0; y < canvas.height; y += scanlineSpacing) {
                     ctx.fillRect(0, y, canvas.width, scanlineThickness)
                 }
+                // 動く光のライン効果（速度を過ぎさせない）
+                const scanOffset = (progress * canvas.height) % canvas.height
+                const scanGrad = ctx.createLinearGradient(0, scanOffset - 30, 0, scanOffset + 30)
+                scanGrad.addColorStop(0, 'rgba(255, 255, 255, 0)')
+                scanGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.15)')
+                scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0)')
+                ctx.fillStyle = scanGrad
+                ctx.fillRect(0, scanOffset - 30, canvas.width, 60)
                 break
             }
             case 'vignette':
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 // 揺らぎを追加 (半径と濃さが呼吸するように変化)
-                const vigTime = progress * Math.PI * 4 // 2往復程度
+                const vigTime = progress * Math.PI * 2 // 1往復程度
                 const vigRadiusBase = 0.7
                 const vigRadiusAmp = 0.05
                 const vigRadius = canvas.width * (vigRadiusBase + Math.sin(vigTime) * vigRadiusAmp)
@@ -1111,18 +1145,20 @@ export default function APNGGenerator() {
                 }
                 break
             }
-            case 'glitch':
-                // グリッチ
+            case 'glitch': {
+                // グリッチ: effectOptionで強度を決定（weak=0.1, medium=0.2, strong=0.4）
+                const glitchBase = effectOption === 'weak' ? 0.1 : effectOption === 'strong' ? 0.4 : 0.2
                 ctx.globalAlpha = 1
                 for (let s = 0; s < 10; s++) {
                     const srcSliceY = s * (sourceImage.height / 10)
                     const dstSliceY = s * (canvas.height / 10)
                     const srcSliceH = sourceImage.height / 10
                     const dstSliceH = canvas.height / 10
-                    const glitchOff = (Math.random() - 0.5) * canvas.width * 0.2 * Math.sin(progress * Math.PI * 4)
+                    const glitchOff = (Math.random() - 0.5) * canvas.width * glitchBase * Math.sin(progress * Math.PI * 4)
                     ctx.drawImage(sourceImage, 0, srcSliceY, sourceImage.width, srcSliceH, glitchOff, dstSliceY, canvas.width, dstSliceH)
                 }
                 break
+            }
             // V118: カード回転ループ
             case 'cardFlipLoop': {
                 ctx.save()
@@ -1139,7 +1175,7 @@ export default function APNGGenerator() {
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 break
         }
-    }, [sourceImage, transition, effectDirection, effectOption])
+    }, [sourceImage, transition, effectDirection, effectOption, effectIntensity])
 
     // プレビュー描画のuseEffect
     useEffect(() => {
@@ -1156,6 +1192,22 @@ export default function APNGGenerator() {
         }
     }, [sourceImage, drawPreviewFrame, isPlaying, transition, effectDirection])
 
+    // ループ設定変更時にプレビューを再開（ONに切り替えた時は自動再生開始）
+    useEffect(() => {
+        if (sourceImage) {
+            if (isPlaying) {
+                stopPreview()
+                const timer = setTimeout(() => startPreview(), 50)
+                return () => clearTimeout(timer)
+            } else if (isLooping) {
+                // ループONに切り替えた時、停止中なら自動再生開始
+                const timer = setTimeout(() => startPreview(), 50)
+                return () => clearTimeout(timer)
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLooping])
+
     const handleTransitionChange = (newTransition: string) => {
         setTransition(newTransition)
 
@@ -1169,6 +1221,22 @@ export default function APNGGenerator() {
             // 縦横効果の場合はhorizontalをデフォルトに
             else if (effect.directions.includes('horizontal')) {
                 setEffectDirection('horizontal')
+            }
+        }
+
+        // エフェクトごとのループ設定を確認
+        if (loopSettingsPerEffect.hasOwnProperty(newTransition)) {
+            // ユーザーがこのエフェクトのループ設定を変更したことがある
+            setIsLooping(loopSettingsPerEffect[newTransition])
+        } else {
+            // 初めて選ぶエフェクトはカテゴリに応じたデフォルト
+            const category = findCategoryByEffectName(newTransition)
+            // 演出エフェクトはループON、ただし以下は除く
+            const noLoopEffects = ['enlarge', 'minimize', 'rgbShift', 'pulsation']
+            if (category === '演出（Effects）' && !noLoopEffects.includes(newTransition)) {
+                setIsLooping(true)
+            } else {
+                setIsLooping(false)
             }
         }
 
@@ -1541,16 +1609,19 @@ export default function APNGGenerator() {
                         const horizontalOffset = Math.sin(progress * Math.PI * 10) * canvas.width * 0.05
                         ctx.drawImage(sourceImage, horizontalOffset, 0, canvas.width, canvas.height)
                         break
-                    case 'glitch':
+                    case 'glitch': {
+                        // effectOptionで強度を決定（weak=0.05, medium=0.1, strong=0.2）
+                        const glitchBase = effectOption === 'weak' ? 0.05 : effectOption === 'strong' ? 0.2 : 0.1
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         const glitchIntensity = 1 - progress
                         for (let j = 0; j < 10; j++) {
                             const y = Math.random() * canvas.height
                             const height = Math.random() * canvas.height * 0.1
-                            const offset = (Math.random() - 0.5) * canvas.width * 0.1 * glitchIntensity
+                            const offset = (Math.random() - 0.5) * canvas.width * glitchBase * glitchIntensity
                             ctx.drawImage(canvas, 0, y, canvas.width, height, offset, y, canvas.width, height)
                         }
                         break
+                    }
                     // カード回転イン
                     case 'cardFlipIn': {
                         ctx.save()
@@ -1580,8 +1651,10 @@ export default function APNGGenerator() {
                     // ========== V114 新規効果 ==========
 
                     // 振動（方向統合: 縦/横/ランダム）
-                    case 'vibration':
-                        const vibAmp = Math.sin(progress * Math.PI * 8) * 10
+                    case 'vibration': {
+                        // effectIntensityで振動幅を決定（weak=5, medium=10, strong=20）
+                        const vibBase = effectIntensity === 'weak' ? 5 : effectIntensity === 'strong' ? 20 : 10
+                        const vibAmp = Math.sin(progress * Math.PI * 8) * vibBase
                         if (effectDirection === 'vertical') {
                             ctx.drawImage(sourceImage, 0, (Math.random() - 0.5) * vibAmp, canvas.width, canvas.height)
                         } else if (effectDirection === 'horizontal') {
@@ -1593,6 +1666,7 @@ export default function APNGGenerator() {
                             ctx.drawImage(sourceImage, jitterX, jitterY, canvas.width, canvas.height)
                         }
                         break
+                    }
 
                     // 閉扉（登場）
                     case 'doorClose':
@@ -1607,7 +1681,7 @@ export default function APNGGenerator() {
                         break
 
                     // 砂嵐イン
-                    case 'tvStaticIn':
+                    case 'tvStaticIn': {
                         ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
                         const staticInData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                         const staticInIntensity = 1 - progress
@@ -1616,9 +1690,14 @@ export default function APNGGenerator() {
                                 const noise = Math.random() * 255
                                 staticInData.data[p] = staticInData.data[p + 1] = staticInData.data[p + 2] = noise
                             }
+                            // fadeオプションの場合、透明度も変化
+                            if (effectOption === 'fade') {
+                                staticInData.data[p + 3] = staticInData.data[p + 3] * progress
+                            }
                         }
                         ctx.putImageData(staticInData, 0, 0)
                         break
+                    }
 
                     // 砂嵐アウト
                     case 'tvStaticOut':
@@ -1637,28 +1716,34 @@ export default function APNGGenerator() {
                         break
 
                     // グリッチイン
-                    case 'glitchIn':
+                    case 'glitchIn': {
+                        // effectOptionで強度を決定（weak=0.15, medium=0.3, strong=0.5）
+                        const glitchInBase = effectOption === 'weak' ? 0.15 : effectOption === 'strong' ? 0.5 : 0.3
                         const glitchInIntensity = 1 - progress
                         ctx.globalAlpha = progress
                         for (let s = 0; s < 10; s++) {
                             const sliceY = s * (canvas.height / 10)
-                            const offsetX = (Math.random() - 0.5) * canvas.width * 0.3 * glitchInIntensity
+                            const offsetX = (Math.random() - 0.5) * canvas.width * glitchInBase * glitchInIntensity
                             ctx.drawImage(sourceImage, 0, sliceY, canvas.width, canvas.height / 10, offsetX, sliceY, canvas.width, canvas.height / 10)
                         }
                         ctx.globalAlpha = 1
                         break
+                    }
 
                     // グリッチアウト
-                    case 'glitchOut':
+                    case 'glitchOut': {
+                        // effectOptionで強度を決定（weak=0.15, medium=0.3, strong=0.5）
+                        const glitchOutBase = effectOption === 'weak' ? 0.15 : effectOption === 'strong' ? 0.5 : 0.3
                         const glitchOutIntensity = progress
                         ctx.globalAlpha = 1 - progress
                         for (let s = 0; s < 10; s++) {
                             const sliceY = s * (canvas.height / 10)
-                            const offsetX = (Math.random() - 0.5) * canvas.width * 0.3 * glitchOutIntensity
+                            const offsetX = (Math.random() - 0.5) * canvas.width * glitchOutBase * glitchOutIntensity
                             ctx.drawImage(sourceImage, 0, sliceY, canvas.width, canvas.height / 10, offsetX, sliceY, canvas.width, canvas.height / 10)
                         }
                         ctx.globalAlpha = 1
                         break
+                    }
 
                     // フォーカスイン
                     case 'focusIn':
@@ -1677,24 +1762,28 @@ export default function APNGGenerator() {
                         break
 
                     // スライスイン
-                    case 'sliceIn':
-                        for (let s = 0; s < 5; s++) {
-                            const sliceH = canvas.height / 5
+                    case 'sliceIn': {
+                        const sliceInCount = effectOption ? parseInt(effectOption) : 4
+                        for (let s = 0; s < sliceInCount; s++) {
+                            const sliceH = canvas.height / sliceInCount
                             const offsetX = (s % 2 === 0 ? -1 : 1) * (1 - progress) * canvas.width * 0.5
                             ctx.drawImage(sourceImage, 0, s * sliceH, canvas.width, sliceH, offsetX, s * sliceH, canvas.width, sliceH)
                         }
                         break
+                    }
 
                     // スライスアウト
-                    case 'sliceOut':
+                    case 'sliceOut': {
+                        const sliceOutCount = effectOption ? parseInt(effectOption) : 4
                         ctx.globalAlpha = 1 - progress
-                        for (let s = 0; s < 5; s++) {
-                            const sliceH = canvas.height / 5
+                        for (let s = 0; s < sliceOutCount; s++) {
+                            const sliceH = canvas.height / sliceOutCount
                             const offsetX = (s % 2 === 0 ? -1 : 1) * progress * canvas.width * 0.5
                             ctx.drawImage(sourceImage, 0, s * sliceH, canvas.width, sliceH, offsetX, s * sliceH, canvas.width, sliceH)
                         }
                         ctx.globalAlpha = 1
                         break
+                    }
 
                     // V118: ブラインドイン
                     case 'blindIn': {
@@ -1869,7 +1958,12 @@ export default function APNGGenerator() {
                         const tempInCtx = tempIn.getContext('2d')!
                         tempInCtx.drawImage(sourceImage, 0, 0, tempIn.width, tempIn.height)
                         ctx.imageSmoothingEnabled = false
+                        // fadeオプションの場合、透明度も変化
+                        if (effectIntensity === 'fade') {
+                            ctx.globalAlpha = progress
+                        }
                         ctx.drawImage(tempIn, 0, 0, canvas.width, canvas.height)
+                        ctx.globalAlpha = 1
                         ctx.imageSmoothingEnabled = true
                         break
                     }
@@ -1885,100 +1979,201 @@ export default function APNGGenerator() {
                         const tempOutCtx = tempOut.getContext('2d')!
                         tempOutCtx.drawImage(sourceImage, 0, 0, tempOut.width, tempOut.height)
                         ctx.imageSmoothingEnabled = false
-                        ctx.globalAlpha = 1 - progress * 0.3
+                        // fadeオプションの場合、透明度も変化
+                        if (effectIntensity === 'fade') {
+                            ctx.globalAlpha = 1 - progress
+                        }
                         ctx.drawImage(tempOut, 0, 0, canvas.width, canvas.height)
-                        ctx.imageSmoothingEnabled = true
                         ctx.globalAlpha = 1
+                        ctx.imageSmoothingEnabled = true
                         break
                     }
 
                     // アイリスイン
-                    case 'irisIn':
+                    case 'irisIn': {
                         ctx.save()
                         ctx.beginPath()
-                        ctx.arc(canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * progress, 0, Math.PI * 2)
+                        const irisInRadius = Math.max(canvas.width, canvas.height) * progress
+                        const irisInCx = canvas.width / 2
+                        const irisInCy = canvas.height / 2
+                        if (effectOption === 'square') {
+                            const halfSize = irisInRadius * 0.7
+                            ctx.rect(irisInCx - halfSize, irisInCy - halfSize, halfSize * 2, halfSize * 2)
+                        } else if (effectOption === 'diamond') {
+                            const halfSize = irisInRadius * 0.7
+                            ctx.moveTo(irisInCx, irisInCy - halfSize)
+                            ctx.lineTo(irisInCx + halfSize, irisInCy)
+                            ctx.lineTo(irisInCx, irisInCy + halfSize)
+                            ctx.lineTo(irisInCx - halfSize, irisInCy)
+                            ctx.closePath()
+                        } else {
+                            ctx.arc(irisInCx, irisInCy, irisInRadius, 0, Math.PI * 2)
+                        }
                         ctx.clip()
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
+                    }
 
                     // アイリスアウト
-                    case 'irisOut':
+                    case 'irisOut': {
                         ctx.save()
                         ctx.beginPath()
-                        ctx.arc(canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * (1 - progress), 0, Math.PI * 2)
+                        const irisOutRadius = Math.max(canvas.width, canvas.height) * (1 - progress)
+                        const irisOutCx = canvas.width / 2
+                        const irisOutCy = canvas.height / 2
+                        if (effectOption === 'square') {
+                            const halfSize = irisOutRadius * 0.7
+                            ctx.rect(irisOutCx - halfSize, irisOutCy - halfSize, halfSize * 2, halfSize * 2)
+                        } else if (effectOption === 'diamond') {
+                            const halfSize = irisOutRadius * 0.7
+                            ctx.moveTo(irisOutCx, irisOutCy - halfSize)
+                            ctx.lineTo(irisOutCx + halfSize, irisOutCy)
+                            ctx.lineTo(irisOutCx, irisOutCy + halfSize)
+                            ctx.lineTo(irisOutCx - halfSize, irisOutCy)
+                            ctx.closePath()
+                        } else {
+                            ctx.arc(irisOutCx, irisOutCy, irisOutRadius, 0, Math.PI * 2)
+                        }
                         ctx.clip()
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
+                    }
 
                     // 本めくりイン（2Dスキュー効果）
-                    case 'pageFlipIn':
+                    case 'pageFlipIn': {
+                        const isRightFlip = effectOption === 'right'
+                        if (progress > 0.98) {
+                            drawScaledImage(0, 0, canvas.width, canvas.height)
+                            break
+                        }
                         ctx.save()
                         const flipInSkew = (1 - progress) * 0.5
-                        ctx.transform(progress, 0, flipInSkew, 1, canvas.width * (1 - progress), 0)
-                        ctx.globalAlpha = progress
+                        if (isRightFlip) {
+                            ctx.transform(progress, 0, -flipInSkew, 1, 0, 0)
+                        } else {
+                            ctx.transform(progress, 0, flipInSkew, 1, canvas.width * (1 - progress), 0)
+                        }
+                        ctx.globalAlpha = Math.max(0, Math.min(1, progress * 1.5))
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
+                    }
 
                     // 本めくりアウト（2Dスキュー効果）
-                    case 'pageFlipOut':
+                    case 'pageFlipOut': {
+                        const isRightFlipOut = effectOption === 'right'
+                        if (progress > 0.98) {
+                            break
+                        }
                         ctx.save()
                         const flipOutSkew = progress * 0.5
-                        ctx.transform(1 - progress, 0, flipOutSkew, 1, canvas.width * progress, 0)
-                        ctx.globalAlpha = 1 - progress
+                        if (isRightFlipOut) {
+                            ctx.transform(1 - progress, 0, flipOutSkew, 1, canvas.width * progress, 0)
+                        } else {
+                            ctx.transform(1 - progress, 0, -flipOutSkew, 1, 0, 0)
+                        }
+                        ctx.globalAlpha = Math.max(0, Math.min(1, (1 - progress) * 1.5))
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
+                    }
 
                     // カード回転イン（3D風Y軸回転で登場）
-                    case 'cardFlipIn':
+                    case 'cardFlipIn': {
                         ctx.save()
-                        const cardInScale = progress
-                        const cardInOffsetX = (canvas.width / 2) * (1 - progress)
-                        ctx.globalAlpha = 0.3 + progress * 0.7
-                        ctx.translate(cardInOffsetX, 0)
+                        const flipInCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
+                        const startAngleIn = (flipInCount - 1) * Math.PI + (Math.PI / 2)
+                        const currentAngleIn = startAngleIn * (1 - progress)
+                        const cardInScale = Math.cos(currentAngleIn)
+                        ctx.translate(canvas.width / 2, canvas.height / 2)
                         ctx.scale(cardInScale, 1)
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2)
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
+                    }
 
                     // カード回転アウト（3D風Y軸回転で退場）
-                    case 'cardFlipOut':
+                    case 'cardFlipOut': {
                         ctx.save()
-                        const cardOutScale = 1 - progress
-                        const cardOutOffsetX = (canvas.width / 2) * progress
-                        ctx.globalAlpha = 1 - progress * 0.7
-                        ctx.translate(cardOutOffsetX, 0)
+                        const flipOutCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
+                        const endAngleOut = (flipOutCount - 1) * Math.PI + (Math.PI / 2)
+                        const currentAngleOut = endAngleOut * progress
+                        const cardOutScale = Math.cos(currentAngleOut)
+                        ctx.translate(canvas.width / 2, canvas.height / 2)
                         ctx.scale(cardOutScale, 1)
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2)
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
+                    }
 
                     // RGBずれ
-                    case 'rgbShift':
-                        const shiftAmt = Math.sin(progress * Math.PI) * 10
-                        ctx.globalCompositeOperation = 'lighter'
-                        ctx.globalAlpha = 0.5
-                        ctx.drawImage(sourceImage, -shiftAmt, 0, canvas.width, canvas.height)
-                        ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height)
-                        ctx.drawImage(sourceImage, shiftAmt, 0, canvas.width, canvas.height)
-                        ctx.globalCompositeOperation = 'source-over'
-                        ctx.globalAlpha = 1
+                    case 'rgbShift': {
+                        // effectOptionで強度を決定（small=2, medium=6, large=12）
+                        const baseShift = effectOption === 'small' ? 2 : effectOption === 'large' ? 12 : 6
+                        const shiftAmt = Math.sin(progress * Math.PI) * canvas.width * (baseShift / 100)
+
+                        // R, G, Bのオフセット計算（120度間隔）
+                        const rOffsetX = Math.round(Math.sin(0) * shiftAmt)
+                        const rOffsetY = Math.round(-Math.cos(0) * shiftAmt)
+                        const gOffsetX = Math.round(Math.sin(Math.PI * 4 / 3) * shiftAmt)
+                        const gOffsetY = Math.round(-Math.cos(Math.PI * 4 / 3) * shiftAmt)
+                        const bOffsetX = Math.round(Math.sin(Math.PI * 2 / 3) * shiftAmt)
+                        const bOffsetY = Math.round(-Math.cos(Math.PI * 2 / 3) * shiftAmt)
+
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                        const data = imgData.data
+                        const newData = ctx.createImageData(canvas.width, canvas.height)
+                        const out = newData.data
+
+                        for (let y = 0; y < canvas.height; y++) {
+                            for (let x = 0; x < canvas.width; x++) {
+                                const i = (y * canvas.width + x) * 4
+                                const rX = Math.min(Math.max(x - rOffsetX, 0), canvas.width - 1)
+                                const rY = Math.min(Math.max(y - rOffsetY, 0), canvas.height - 1)
+                                const rI = (rY * canvas.width + rX) * 4
+                                out[i] = data[rI]
+
+                                const gX = Math.min(Math.max(x - gOffsetX, 0), canvas.width - 1)
+                                const gY = Math.min(Math.max(y - gOffsetY, 0), canvas.height - 1)
+                                const gI = (gY * canvas.width + gX) * 4
+                                out[i + 1] = data[gI + 1]
+
+                                const bX = Math.min(Math.max(x - bOffsetX, 0), canvas.width - 1)
+                                const bY = Math.min(Math.max(y - bOffsetY, 0), canvas.height - 1)
+                                const bI = (bY * canvas.width + bX) * 4
+                                out[i + 2] = data[bI + 2]
+
+                                out[i + 3] = data[i + 3]
+                            }
+                        }
+                        ctx.putImageData(newData, 0, 0)
                         break
+                    }
 
                     // 走査線
-                    case 'scanlines':
+                    case 'scanlines': {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
+                        const scanlineThickness = effectOption === 'thin' ? 1 : effectOption === 'thick' ? 4 : 2
+                        const scanlineSpacing = scanlineThickness * 2
                         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
-                        for (let y = 0; y < canvas.height; y += 4) {
-                            ctx.fillRect(0, y, canvas.width, 2)
+                        for (let y = 0; y < canvas.height; y += scanlineSpacing) {
+                            ctx.fillRect(0, y, canvas.width, scanlineThickness)
                         }
-                        const scanOffset = (progress * canvas.height * 2) % canvas.height
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'
-                        ctx.fillRect(0, scanOffset - 10, canvas.width, 20)
+                        // 動く光のライン効果（速度を遅く）
+                        const scanOffset = (progress * canvas.height) % canvas.height
+                        const scanGrad = ctx.createLinearGradient(0, scanOffset - 30, 0, scanOffset + 30)
+                        scanGrad.addColorStop(0, 'rgba(255, 255, 255, 0)')
+                        scanGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.15)')
+                        scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0)')
+                        ctx.fillStyle = scanGrad
+                        ctx.fillRect(0, scanOffset - 30, canvas.width, 60)
                         break
+                    }
 
                     // ビネット
                     case 'vignette':
@@ -2478,7 +2673,10 @@ export default function APNGGenerator() {
 
             // 走査線
             case 'scanlines':
-                const scanY = (previewProgress * 200) % 100
+                // effectOption で太さを決定（thin=2px, medium=4px, thick=8px）
+                const scanThickness = effectOption === 'thin' ? 2 : effectOption === 'thick' ? 8 : 4
+                // 動く光のY位置（速度を遅く）
+                const scanY = (previewProgress * 100) % 100
                 return {
                     ...baseStyle,
                     backgroundImage: `
@@ -2490,9 +2688,9 @@ export default function APNGGenerator() {
                             rgba(0, 0, 0, 0.3) 100%
                         )
                     `,
-                    backgroundSize: '100% 4px',
+                    backgroundSize: `100% ${scanThickness}px`,
                     backgroundBlendMode: 'multiply' as const,
-                    boxShadow: `inset 0 ${scanY}px 30px -15px rgba(255, 255, 255, 0.15)`,
+                    boxShadow: `inset 0 ${scanY}px 40px -20px rgba(255, 255, 255, 0.2)`,
                 }
 
             // ビネット
@@ -2634,15 +2832,27 @@ export default function APNGGenerator() {
                                 style={{ padding: '10% 0' }} // 上下に10%のパディングを追加
                             >
                                 {sourceImage ? (
-                                    <canvas
-                                        ref={previewCanvasRef}
-                                        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full"
-                                        style={{ imageRendering: 'auto' }}
-                                    />
+                                    <>
+                                        <canvas
+                                            ref={previewCanvasRef}
+                                            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full"
+                                            style={{ imageRendering: 'auto' }}
+                                        />
+                                        {error && (
+                                            <div className="absolute bottom-2 left-2 right-2 bg-red-100 border border-red-400 text-red-700 text-sm p-2 rounded-lg">
+                                                {error}
+                                            </div>
+                                        )}
+                                    </>
                                 ) : (
-                                    <div className="text-gray-400 text-center p-4">
-                                        <Upload className="w-12 h-12 mx-auto mb-2" />
-                                        クリックまたはドラッグ&ドロップで画像を選択
+                                    <div className="text-center p-4">
+                                        <Upload className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                                        {error && (
+                                            <div className="text-orange-500 text-sm mb-2">
+                                                ※ 画像をセットしてからプレビューしてください
+                                            </div>
+                                        )}
+                                        <span className="text-gray-400">クリックまたはドラッグ&ドロップで画像を選択</span>
                                     </div>
                                 )}
                                 <input
@@ -2705,7 +2915,10 @@ export default function APNGGenerator() {
                                 <span className="text-sm font-medium text-gray-700 block mb-2">ループ</span>
                                 <div className="flex gap-2">
                                     <button
-                                        onClick={() => setIsLooping(true)}
+                                        onClick={() => {
+                                            setIsLooping(true)
+                                            setLoopSettingsPerEffect(prev => ({ ...prev, [transition]: true }))
+                                        }}
                                         className={`w-32 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
                                             ${isLooping
                                                 ? 'bg-blue-500 text-white shadow-md'
@@ -2717,7 +2930,10 @@ export default function APNGGenerator() {
                                         ON
                                     </button>
                                     <button
-                                        onClick={() => setIsLooping(false)}
+                                        onClick={() => {
+                                            setIsLooping(false)
+                                            setLoopSettingsPerEffect(prev => ({ ...prev, [transition]: false }))
+                                        }}
                                         className={`w-32 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
                                             ${!isLooping
                                                 ? 'bg-blue-500 text-white shadow-md'
@@ -2818,11 +3034,7 @@ export default function APNGGenerator() {
                     </div>
                 </div>
 
-                {error && (
-                    <div className="mt-8 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                        {error}
-                    </div>
-                )}
+
 
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
 

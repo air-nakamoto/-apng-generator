@@ -8,10 +8,12 @@ A. APNG生成設定の改善（3項目）
 再生スピードスライダー追加（新規）
 ループ設定UI改善（チェックボックス→トグルボタン）
 容量制限UI改善（チェックボックス→セグメントボタン）
-B. エフェクトオプション拡張（5効果）
-pixelateIn/Out, blur, rgbShift, tileIn/Out, glitchIn/Outにオプション追加
-C. 不整合解消（2効果）
-curtain, fingerprintをtransitionEffects.tsに追加
+B. エフェクトオプション拡張（4効果）
+pixelateIn/Out, rgbShift, tileIn/Out, glitchIn/Outにオプション追加
+
+※ 削除済み項目:
+- blur: focusInと重複のため削除
+- curtain, fingerprint: 不要と判断し削除
 📝 詳細仕様
 A-1. 再生スピードスライダー（新規追加）
 State追加
