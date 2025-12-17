@@ -517,8 +517,8 @@ export const transitionEffects: EffectCategory[] = [
                 hasOptions: true,
                 optionType: 'color',
                 options: [
-                    { value: 'white', label: '白', numericValue: 0 },
-                    { value: 'black', label: '黒', numericValue: 1 },
+                    { value: 'black', label: '黒', numericValue: 0 },
+                    { value: 'white', label: '白', numericValue: 1 },
                     { value: 'red', label: '赤', numericValue: 2 },
                     { value: 'outline', label: '縁取り', numericValue: 3 },
                 ],
