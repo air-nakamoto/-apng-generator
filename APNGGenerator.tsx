@@ -1184,7 +1184,7 @@ export default function APNGGenerator() {
                     red: [255, 0, 0],
                 }
 
-                const silhouetteIntensity = Math.sin(progress * Math.PI) // 0→1→0
+                const silhouetteIntensity = progress // 0→1 (固定)
 
                 if (effectOption === 'outline') {
                     // 縁取りモード: エッジ検出
@@ -2299,7 +2299,7 @@ export default function APNGGenerator() {
                             red: [255, 0, 0],
                         }
 
-                        const silhouetteInt = Math.sin(progress * Math.PI) // 0→1→0
+                        const silhouetteInt = progress // 0→1 (固定)
 
                         if (effectOption === 'outline') {
                             // 縁取りモード: エッジ検出
