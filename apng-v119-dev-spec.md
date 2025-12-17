@@ -14,9 +14,14 @@
 2. UPNG.js色数最適化の活用
 3. 圧縮率を考慮した推定式の改善
 
-### B. UI改善（2項目）
+### B. UI改善（3項目）
 1. 生成後の実サイズ表示
 2. 圧縮進捗ステータス表示
+3. ヘッダーレイアウトのコンパクト化（実装済み）
+
+### C. 新規エフェクト追加（1項目）
+1. シルエット化（silhouette）エフェクト
+   - カラーオプション: 白 / 黒 / 赤 / 縁取り
 
 ---
 
@@ -152,6 +157,70 @@ const [generatedSize, setGeneratedSize] = useState<number | null>(null)
 #### State追加
 ```typescript
 const [compressionStatus, setCompressionStatus] = useState<string | null>(null)
+```
+
+---
+
+### C-1. シルエット化（silhouette）エフェクト
+
+#### 概要
+画像を単色のシルエットに変化させる演出エフェクト
+
+#### カラーオプション
+| オプション | 効果 |
+|-----------|------|
+| `white` | 白色シルエット |
+| `black` | 黒色シルエット |
+| `red` | 赤色シルエット |
+| `outline` | 縁取りのみ（中は透明） |
+
+#### 実装方針
+```typescript
+case 'silhouette': {
+    drawScaledImage(0, 0, canvas.width, canvas.height)
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const data = imageData.data
+    
+    // シルエットの色を決定
+    const colors = {
+        white: [255, 255, 255],
+        black: [0, 0, 0],
+        red: [255, 0, 0],
+    }
+    const [r, g, b] = colors[effectOption] || colors.black
+    
+    // 不透明ピクセルを単色に変換
+    for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 0) { // 不透明なら
+            data[i] = r
+            data[i + 1] = g
+            data[i + 2] = b
+            // アルファは維持
+        }
+    }
+    
+    ctx.putImageData(imageData, 0, 0)
+    break
+}
+```
+
+#### transitionEffects.ts への追加
+```typescript
+{
+    name: 'silhouette',
+    label: 'シルエット',
+    icon: UserRound, // または適切なアイコン
+    hasDirection: false,
+    hasOptions: true,
+    optionType: 'color',
+    options: [
+        { value: 'white', label: '白', numericValue: 0 },
+        { value: 'black', label: '黒', numericValue: 1 },
+        { value: 'red', label: '赤', numericValue: 2 },
+        { value: 'outline', label: '縁取り', numericValue: 3 },
+    ],
+    defaultOption: 'black'
+}
 ```
 
 ---
