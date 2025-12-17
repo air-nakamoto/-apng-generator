@@ -2734,9 +2734,9 @@ export default function APNGGenerator() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 text-gray-800">
-            <div className="container mx-auto px-4 py-6 max-w-7xl">
-                <div className="flex flex-col items-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" className="w-full max-w-lg h-auto mb-1">
+            <div className="container mx-auto px-4 py-1 max-w-7xl">
+                <div className="flex flex-col items-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" className="w-full max-w-lg h-auto">
                         <defs>
                             <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <stop offset="0%" style={{ stopColor: "#2C3E50", stopOpacity: 1 }} />
@@ -2764,8 +2764,8 @@ export default function APNGGenerator() {
                             <tspan dx="5" style={{ fontSize: "32px", fontWeight: "normal" }}>Generator</tspan>
                         </text>
                     </svg>
-                    <p className="text-sm text-gray-600 text-center">
-                        画像からトランジション効果付きのアニメーションPNG作成できるツール
+                    <p className="text-xs text-gray-500 text-center">
+                        画像からトランジション効果付きのアニメーションPNG作成ツール
                     </p>
                 </div>
 
