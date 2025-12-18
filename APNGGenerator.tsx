@@ -1207,12 +1207,18 @@ export default function APNGGenerator() {
                             const isEdge = (alphaCenter > 128 && (alphaUp < 128 || alphaDown < 128 || alphaLeft < 128 || alphaRight < 128))
 
                             if (isEdge) {
-                                edgeData[i] = 0
-                                edgeData[i + 1] = 0
-                                edgeData[i + 2] = 0
-                                edgeData[i + 3] = Math.floor(255 * silhouetteIntensity)
+                                // エッジ部分: 元の色から黒へ変化
+                                const blend = progress
+                                edgeData[i] = Math.floor(data[i] * (1 - blend)) // 黒(0)へ
+                                edgeData[i + 1] = Math.floor(data[i + 1] * (1 - blend))
+                                edgeData[i + 2] = Math.floor(data[i + 2] * (1 - blend))
+                                edgeData[i + 3] = data[i + 3] // アルファは維持
                             } else {
-                                edgeData[i + 3] = 0 // 透明
+                                // 非エッジ部分: 元の色を維持しつつ徐々に透明に
+                                edgeData[i] = data[i]
+                                edgeData[i + 1] = data[i + 1]
+                                edgeData[i + 2] = data[i + 2]
+                                edgeData[i + 3] = Math.floor(data[i + 3] * (1 - progress))
                             }
                         }
                     }
@@ -2322,12 +2328,18 @@ export default function APNGGenerator() {
                                     const isEdge = (alphaCenter > 128 && (alphaUp < 128 || alphaDown < 128 || alphaLeft < 128 || alphaRight < 128))
 
                                     if (isEdge) {
-                                        edgeDataGen[i] = 0
-                                        edgeDataGen[i + 1] = 0
-                                        edgeDataGen[i + 2] = 0
-                                        edgeDataGen[i + 3] = Math.floor(255 * silhouetteInt)
+                                        // エッジ部分: 元の色から黒へ変化
+                                        const blend = progress
+                                        edgeDataGen[i] = Math.floor(genData[i] * (1 - blend)) // 黒(0)へ
+                                        edgeDataGen[i + 1] = Math.floor(genData[i + 1] * (1 - blend))
+                                        edgeDataGen[i + 2] = Math.floor(genData[i + 2] * (1 - blend))
+                                        edgeDataGen[i + 3] = genData[i + 3] // アルファは維持
                                     } else {
-                                        edgeDataGen[i + 3] = 0 // 透明
+                                        // 非エッジ部分: 元の色を維持しつつ徐々に透明に
+                                        edgeDataGen[i] = genData[i]
+                                        edgeDataGen[i + 1] = genData[i + 1]
+                                        edgeDataGen[i + 2] = genData[i + 2]
+                                        edgeDataGen[i + 3] = Math.floor(genData[i + 3] * (1 - progress))
                                     }
                                 }
                             }
