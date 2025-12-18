@@ -168,6 +168,8 @@ export default function APNGGenerator() {
             return
         }
 
+        if (animationRef.current) cancelAnimationFrame(animationRef.current)
+
         try {
             setIsPlaying(true)
             setError(null)
@@ -1310,10 +1312,8 @@ export default function APNGGenerator() {
             }
         }
 
-        if (isPlaying) {
-            stopPreview()
-        }
-        startPreview()
+        // 既存のアニメーションをキャンセルして再開（少し遅延させて状態更新を待つ）
+        setTimeout(() => startPreview(), 100)
         if (imageSize) {
             estimateAPNGSize(imageSize.width, imageSize.height)
         }
