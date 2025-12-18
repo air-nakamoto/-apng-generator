@@ -1296,7 +1296,7 @@ export default function APNGGenerator() {
             // 初めて選ぶエフェクトはカテゴリに応じたデフォルト
             const category = findCategoryByEffectName(newTransition)
             // 演出エフェクトはループON、ただし以下は除く
-            const noLoopEffects = ['enlarge', 'minimize', 'rgbShift', 'pulsation']
+            const noLoopEffects = ['enlarge', 'minimize', 'rgbShift', 'pulsation', 'silhouette']
             if (category === '演出（Effects）' && !noLoopEffects.includes(newTransition)) {
                 setIsLooping(true)
             } else {
