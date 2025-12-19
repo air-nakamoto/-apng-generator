@@ -13,7 +13,7 @@ export default function ManualPage() {
                         href="/"
                         className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4"
                     >
-                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" focusable="false" />
                         ツールに戻る
                     </Link>
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
@@ -22,10 +22,13 @@ export default function ManualPage() {
                     <p className="text-gray-600 dark:text-gray-300">
                         ココフォリアで使えるアニメーション立ち絵・エフェクトの作り方
                     </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        最終更新：2025年1月 | ココフォリア側のアップデートで挙動が変わる場合があります
+                    </p>
                 </div>
 
                 {/* 目次 */}
-                <nav className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
+                <nav aria-label="目次" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-3">目次</h2>
                     <ul className="space-y-2 text-sm">
                         <li>
@@ -59,7 +62,7 @@ export default function ManualPage() {
                 {/* アニメーションPNG作成手順 */}
                 <section id="steps" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <Zap className="w-5 h-5 mr-2 text-yellow-500" />
+                        <Zap className="w-5 h-5 mr-2 text-yellow-500" aria-hidden="true" focusable="false" />
                         アニメーションPNG作成手順
                     </h2>
 
@@ -86,6 +89,10 @@ export default function ManualPage() {
                                 src="/manual/step1_upload.png"
                                 alt="ステップ1: 画像選択画面"
                                 className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                loading="lazy"
+                                decoding="async"
+                                width="800"
+                                height="450"
                             />
                         </div>
                     </div>
@@ -133,6 +140,10 @@ export default function ManualPage() {
                                 src="/manual/step2_effects.png"
                                 alt="ステップ2: 効果選択画面"
                                 className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                loading="lazy"
+                                decoding="async"
+                                width="800"
+                                height="450"
                             />
                         </div>
                     </div>
@@ -164,6 +175,10 @@ export default function ManualPage() {
                                 src="/manual/step3_generate.png"
                                 alt="ステップ3: APNG生成画面"
                                 className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                loading="lazy"
+                                decoding="async"
+                                width="800"
+                                height="450"
                             />
                         </div>
                     </div>
@@ -172,29 +187,33 @@ export default function ManualPage() {
                 {/* ココフォリア設定ガイド */}
                 <section id="cocofolia" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <Settings className="w-5 h-5 mr-2 text-green-500" />
+                        <Settings className="w-5 h-5 mr-2 text-green-500" aria-hidden="true" focusable="false" />
                         ココフォリアでの使い方
                     </h2>
 
                     <div className="space-y-4">
                         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                             <div className="flex items-start">
-                                <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
+                                <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" aria-hidden="true" focusable="false" />
                                 <div>
-                                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">重要：ファイルサイズ制限（有料・無料共通）</h4>
+                                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">重要：ファイルサイズガイドライン</h4>
                                     <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-                                        用途によってファイルサイズの上限が異なります。超過するとアニメーションが再生されません。
+                                        画像のアップロード上限は5MBとされていますが、<strong>1MB超の画像は圧縮確認が表示される場合</strong>があります。
+                                        圧縮が適用されるとAPNGアニメーションが動作しなくなるため、<strong>APNGは1MB未満を目安に</strong>作成することを推奨します。
                                     </p>
                                     <div className="space-y-2 text-sm">
                                         <div className="flex items-center gap-2">
-                                            <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded font-medium">5MB以下</span>
+                                            <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded font-medium">5MB以下（推奨: 1MB未満）</span>
                                             <span className="text-yellow-700 dark:text-yellow-300">キャラクターイラスト・前景・背景</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded font-medium">1MB以下</span>
+                                            <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded font-medium">1MB未満を強く推奨</span>
                                             <span className="text-yellow-700 dark:text-yellow-300">スクリーンパネル・マーカーパネル</span>
                                         </div>
                                     </div>
+                                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
+                                        ※ 2025年頃から画像最適化プロセスの影響でAPNGが正常動作しないケースが報告されています。
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -202,74 +221,129 @@ export default function ManualPage() {
                         <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">立ち絵として使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量制限: 5MB以下 / ループ: 用途による</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 1MB未満推奨 / ループ: 用途による</p>
                             </div>
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアでキャラクターを選択</li>
                                 <li>「キャラクター」タブを開く</li>
                                 <li>生成したAPNGファイルをドラッグ&ドロップ</li>
                                 <li>立ち絵がアニメーションで表示されます</li>
                             </ol>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                <img
+                                    src="/manual/cocofolia_character.png"
+                                    alt="ココフォリアでのキャラクター立ち絵設定画面"
+                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="450"
+                                />
+                            </div>
                         </div>
 
                         <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">カットインとして使う場合</h3>
                             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
                                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                                    ⚠️ カットインには<strong>ループON必須</strong>です。ループOFFのAPNGはアニメーションが再生されません。
+                                    ⚠️ カットインは<strong>ループONが推奨</strong>されます。ループOFFの場合、再読み込みされないなど動作が不安定になることがあります。
                                 </p>
                             </div>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量制限: 5MB以下 / ループ: ON必須</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 1MB未満推奨 / ループ: ON推奨</p>
                             </div>
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアでキャラクターを選択</li>
                                 <li>「カットイン」タブを開く</li>
                                 <li>生成したAPNGファイルを設定</li>
                             </ol>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                <img
+                                    src="/manual/cocofolia_cutin.png"
+                                    alt="ココフォリアでのカットイン設定画面"
+                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="450"
+                                />
+                            </div>
                         </div>
 
                         <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">前景・背景として使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量制限: 5MB以下 / ループ: 用途による</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 1MB未満推奨 / ループ: 用途による</p>
                             </div>
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアのルーム画面右側にある「前景/背景」タブを開く</li>
                                 <li>「前景」または「背景」の「+」ボタンをクリック</li>
                                 <li>生成したAPNGファイルをドラッグ&ドロップまたは選択</li>
                                 <li>ルーム全体にアニメーション演出が適用されます</li>
                             </ol>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                <img
+                                    src="/manual/cocofolia_foreground.png"
+                                    alt="ココフォリアでの前景・背景設定画面"
+                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="450"
+                                />
+                            </div>
                         </div>
 
                         <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">スクリーンパネルとして使う場合</h3>
                             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-2">
                                 <p className="text-sm text-red-700 dark:text-red-300">
-                                    ⚠️ スクリーンパネルは<strong>1MB以下</strong>でないとアニメーションが再生されません。
+                                    ⚠️ スクリーンパネルは<strong>1MB未満を強く推奨</strong>します。1MB超の場合、圧縮が適用されアニメーションが動作しない可能性があります。
                                 </p>
                             </div>
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>画面左上の「≡」メニュー →「スクリーンパネル」を選択</li>
                                 <li>「+」ボタンで新規パネルを作成</li>
                                 <li>「画像」欄にAPNGファイルをドラッグ&ドロップ</li>
                                 <li>位置・サイズを調整して配置</li>
                             </ol>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                <img
+                                    src="/manual/cocofolia_screen_panel.png"
+                                    alt="ココフォリアでのスクリーンパネル設定画面"
+                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="450"
+                                />
+                            </div>
                         </div>
 
                         <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">マーカーパネルとして使う場合</h3>
                             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-2">
                                 <p className="text-sm text-red-700 dark:text-red-300">
-                                    ⚠️ マーカーパネルは<strong>1MB以下</strong>でないとアニメーションが再生されません。
+                                    ⚠️ マーカーパネルは<strong>1MB未満を強く推奨</strong>します。1MB超の場合、圧縮が適用されアニメーションが動作しない可能性があります。
                                 </p>
                             </div>
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>画面左上の「≡」メニュー →「マーカーパネル」を選択</li>
                                 <li>「+」ボタンで新規マーカーを作成</li>
                                 <li>「画像」欄にAPNGファイルをドラッグ&ドロップ</li>
                                 <li>マップ上の任意の場所に配置</li>
                             </ol>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                <img
+                                    src="/manual/cocofolia_marker_panel.png"
+                                    alt="ココフォリアでのマーカーパネル設定画面"
+                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="450"
+                                />
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -277,7 +351,7 @@ export default function ManualPage() {
                 {/* 推奨設定 */}
                 <section id="settings" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+                        <CheckCircle className="w-5 h-5 mr-2 text-green-500" aria-hidden="true" focusable="false" />
                         推奨設定
                     </h2>
 
@@ -293,18 +367,18 @@ export default function ManualPage() {
                             <tbody className="text-gray-800 dark:text-gray-200">
                                 <tr className="border-b dark:border-gray-700">
                                     <td className="py-2 px-3 font-medium">容量制限<br /><span className="text-xs text-gray-500">(立ち絵/前景/背景)</span></td>
-                                    <td className="py-2 px-3"><span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">5MB以下</span></td>
-                                    <td className="py-2 px-3 text-gray-600 dark:text-gray-400">高画質で使用可能</td>
+                                    <td className="py-2 px-3"><span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">1MB未満推奨</span></td>
+                                    <td className="py-2 px-3 text-gray-600 dark:text-gray-400">圧縮を避けアニメーション安定動作</td>
                                 </tr>
                                 <tr className="border-b dark:border-gray-700">
                                     <td className="py-2 px-3 font-medium">容量制限<br /><span className="text-xs text-gray-500">(スクリーン/マーカー)</span></td>
-                                    <td className="py-2 px-3"><span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded">1MB以下</span></td>
-                                    <td className="py-2 px-3 text-gray-600 dark:text-gray-400">パネル系は制限が厳しい</td>
+                                    <td className="py-2 px-3"><span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded">1MB未満を強く推奨</span></td>
+                                    <td className="py-2 px-3 text-gray-600 dark:text-gray-400">パネル系は特に注意が必要</td>
                                 </tr>
                                 <tr className="border-b dark:border-gray-700">
                                     <td className="py-2 px-3 font-medium">ループ</td>
                                     <td className="py-2 px-3"><span className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">用途による</span></td>
-                                    <td className="py-2 px-3 text-gray-600 dark:text-gray-400">カットイン→ON / 登場退場→OFF</td>
+                                    <td className="py-2 px-3 text-gray-600 dark:text-gray-400">カットイン→ON推奨 / 登場退場→OFF</td>
                                 </tr>
                                 <tr className="border-b dark:border-gray-700">
                                     <td className="py-2 px-3 font-medium">フレームレート</td>
@@ -324,78 +398,200 @@ export default function ManualPage() {
                 {/* FAQ */}
                 <section id="faq" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <HelpCircle className="w-5 h-5 mr-2 text-blue-500" />
+                        <HelpCircle className="w-5 h-5 mr-2 text-blue-500" aria-hidden="true" focusable="false" />
                         よくある質問
                     </h2>
 
-                    <div className="space-y-4">
-                        <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                    <div className="space-y-3">
+                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                <svg
+                                    className="w-5 h-5 transition-transform group-open:rotate-90"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                                 Q. アニメーションが動かない
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 pl-4">
-                                ファイルサイズ制限を超えている可能性があります。<br />
-                                ・立ち絵/前景/背景 → 5MB以下で設定<br />
-                                ・スクリーン/マーカーパネル → 1MB以下で設定<br />
-                                用途に合った容量制限を選択して再生成してください。
-                            </p>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                            </summary>
+                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                <p>ファイルサイズと圧縮が原因の可能性があります。以下を確認してください：</p>
+                                <ul className="list-disc list-inside space-y-1 ml-4">
+                                    <li>ファイルサイズが1MB未満か確認</li>
+                                    <li>ココフォリア側で圧縮が適用されていないか確認（「圧縮しますか？」で「いいえ」を選択）</li>
+                                    <li>カットインの場合、ループがONになっているか確認</li>
+                                    <li>動かない場合はNOIMAGEを試してみる（下記参照）</li>
+                                </ul>
+                            </div>
+                        </details>
+
+                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                <svg
+                                    className="w-5 h-5 transition-transform group-open:rotate-90"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                                 Q. 画質が悪い
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 pl-4">
-                                容量制限により自動で解像度が下げられます。より高画質にしたい場合は容量制限を「5MB」または「制限なし」にしてください。
-                            </p>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                            </summary>
+                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
+                                <p>
+                                    容量制限により自動で解像度が下げられます。より高画質にしたい場合は容量制限を「5MB」または「制限なし」にしてください。
+                                    ただし、ココフォリア側で圧縮が適用される可能性があるため、1MB未満を推奨します。
+                                </p>
+                            </div>
+                        </details>
+
+                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                <svg
+                                    className="w-5 h-5 transition-transform group-open:rotate-90"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                                 Q. 透過部分が真っ白になる
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 pl-4">
-                                元画像がPNG形式で透過情報を持っているか確認してください。JPG形式は透過に対応していません。
-                            </p>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                            </summary>
+                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
+                                <p>
+                                    元画像がPNG形式で透過情報を持っているか確認してください。JPG形式は透過に対応していません。
+                                </p>
+                            </div>
+                        </details>
+
+                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                <svg
+                                    className="w-5 h-5 transition-transform group-open:rotate-90"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                                 Q. ループOFFのAPNGがココフォリアで再生されない
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 pl-4">
-                                <strong>A. カットインの場合はループONが必須</strong>です。ループOFFのAPNGはカットインでは再生されません。<br />
-                                登場・退場効果を使う場合は、立ち絵やキャラクター設定では正常に動作しますが、カットインには向いていません。<br />
-                                カットイン用には必ず「ループ：ON」を選択して再生成してください。
-                            </p>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                            </summary>
+                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                <p>
+                                    <strong>カットインの場合はループONが推奨</strong>されます。ループOFFの場合、再読み込みされないなど動作が不安定になることがあります。
+                                </p>
+                                <p>
+                                    登場・退場効果を使う場合は、立ち絵やキャラクター設定では正常に動作しますが、カットインには向いていません。
+                                    カットイン用には「ループ：ON」を選択して再生成してください。
+                                </p>
+                            </div>
+                        </details>
+
+                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                <svg
+                                    className="w-5 h-5 transition-transform group-open:rotate-90"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                                 Q. スクリーンパネル・マーカーパネルでアニメーションが動かない
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 pl-4">
-                                <strong>A. パネル系は特別な設定が必要</strong>です。以下を確認してください：<br />
-                                1. ファイルサイズが<strong>1MB以下</strong>であること（超えると再生されません）<br />
-                                2. パネル設定で、APNGファイルを設定する<strong>前</strong>に「NOIMAGE」を設定する必要があります<br />
-                                3. 「容量制限：1MB以下」を選択して再生成してください
-                            </p>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                            </summary>
+                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                <p><strong>パネル系は特に注意が必要</strong>です。以下を確認してください：</p>
+                                <ul className="list-disc list-inside space-y-1 ml-4">
+                                    <li>ファイルサイズが<strong>1MB未満</strong>であること</li>
+                                    <li>動かない場合は、NOIMAGEを試してみてください（状況によっては効果的なワークアラウンドです）</li>
+                                    <li>「容量制限：1MB以下」を選択して再生成してください</li>
+                                </ul>
+                            </div>
+                        </details>
+
+                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                <svg
+                                    className="w-5 h-5 transition-transform group-open:rotate-90"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                                Q. NOIMAGEは必須ですか？
+                            </summary>
+                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                <p>
+                                    <strong>必須ではありません</strong>が、状況によっては効果的なワークアラウンドです。
+                                </p>
+                                <p>以下のケースで試してみてください：</p>
+                                <ul className="list-disc list-inside space-y-1 ml-4">
+                                    <li>非ループ素材で再生されない場合</li>
+                                    <li>再生トリガーがうまく働かない場合</li>
+                                    <li>一度NOIMAGEを挟んでから設定すると起動するという報告があります</li>
+                                </ul>
+                            </div>
+                        </details>
+
+                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                <svg
+                                    className="w-5 h-5 transition-transform group-open:rotate-90"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                                 Q. アップロード時に「圧縮しますか？」と聞かれた
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 pl-4">
-                                <strong>必ず「いいえ」を選択</strong>してください。「はい」を選ぶとアニメーション情報が失われ、動かなくなります。
-                            </p>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                            </summary>
+                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
+                                <p>
+                                    <strong>必ず「いいえ」を選択</strong>してください。「はい」を選ぶとアニメーション情報が失われ、動かなくなります。
+                                    この確認が出る場合は、ファイルサイズが1MBを超えている可能性があります。1MB未満で再生成することを推奨します。
+                                </p>
+                            </div>
+                        </details>
+
+                        <details className="group">
+                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                <svg
+                                    className="w-5 h-5 transition-transform group-open:rotate-90"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                                 Q. 急にアニメーションが動かなくなった
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 pl-4">
-                                ブラウザのキャッシュが原因の可能性があります。以下を試してください：<br />
-                                ・Ctrl+F5（またはCmd+Shift+R）で強制リロード<br />
-                                ・ブラウザのキャッシュとCookieを削除<br />
-                                ・一度ログアウトして再ログイン
-                            </p>
-                        </div>
+                            </summary>
+                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                <p>ブラウザのキャッシュが原因の可能性があります。以下を試してください：</p>
+                                <ul className="list-disc list-inside space-y-1 ml-4">
+                                    <li>Ctrl+F5（またはCmd+Shift+R）で強制リロード</li>
+                                    <li>ブラウザのキャッシュとCookieを削除</li>
+                                    <li>一度ログアウトして再ログイン</li>
+                                </ul>
+                            </div>
+                        </details>
                     </div>
                 </section>
 
@@ -412,7 +608,7 @@ export default function ManualPage() {
                             className="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                         >
                             ココフォリア公式
-                            <ExternalLink className="w-3 h-3 ml-1" />
+                            <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" focusable="false" />
                         </a>
                         <a
                             href="https://minify.ccfolia.com/"
@@ -421,7 +617,7 @@ export default function ManualPage() {
                             className="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                         >
                             ココフォリア画像圧縮ツール
-                            <ExternalLink className="w-3 h-3 ml-1" />
+                            <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" focusable="false" />
                         </a>
                         <a
                             href="https://blink-animation-tool.vercel.app/"
@@ -430,8 +626,59 @@ export default function ManualPage() {
                             className="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                         >
                             瞬きアニメーション作成ツール
-                            <ExternalLink className="w-3 h-3 ml-1" />
+                            <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" focusable="false" />
                         </a>
+                    </div>
+                </section>
+
+                {/* 意見・要望フォーム */}
+                <section id="feedback" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mt-6">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+                        ご意見・ご要望
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                        このマニュアルやツールに関するご意見・ご要望がございましたら、お気軽にお寄せください。
+                    </p>
+
+                    <div className="space-y-4">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                                </svg>
+                                GitHub Issues で報告
+                            </h3>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                                バグ報告や機能リクエストは GitHub Issues でお願いします。
+                            </p>
+                            <a
+                                href="https://github.com/air-nakamoto/-apng-generator/issues/new"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+                            >
+                                Issueを作成
+                                <ExternalLink className="w-3 h-3 ml-2" aria-hidden="true" focusable="false" />
+                            </a>
+                        </div>
+
+                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
+                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">
+                                メールで送る
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                GitHub アカウントをお持ちでない方は、メールでもお送りいただけます。
+                            </p>
+                            <a
+                                href="mailto:feedback@example.com?subject=APNG Generator マニュアルへのご意見&body=ご意見・ご要望をお書きください：%0D%0A%0D%0A"
+                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                            >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                メールを送る
+                            </a>
+                        </div>
                     </div>
                 </section>
 
