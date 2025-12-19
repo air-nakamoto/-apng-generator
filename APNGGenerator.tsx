@@ -192,8 +192,8 @@ export default function APNGGenerator() {
                         setPreviewProgress(progress)
                         animationRef.current = requestAnimationFrame(animate)
                     } else {
-                        // アニメーション終了後は元の画像を表示するためprogress=0に
-                        setPreviewProgress(0)
+                        // アニメーション終了後はエフェクトの完成状態を表示するためprogress=1に
+                        setPreviewProgress(1)
                         setIsPlaying(false)
                     }
                 }
@@ -1274,10 +1274,8 @@ export default function APNGGenerator() {
     // 初期表示・終了後表示用
     useEffect(() => {
         if (sourceImage && previewCanvasRef.current && !isPlaying) {
-            // シルエット効果でループOFF終了後は progress=0 で元の画像を表示
-            // 他のエフェクトは progress=1 で完成状態を表示
-            const shouldShowOriginal = transition === 'silhouette' && !isLooping && previewProgress === 0
-            drawPreviewFrame(shouldShowOriginal ? 0 : 1)
+            // すべてのエフェクトで progress=1 で完成状態を表示
+            drawPreviewFrame(1)
         }
     }, [sourceImage, drawPreviewFrame, isPlaying, transition, effectDirection, previewProgress, isLooping])
 
