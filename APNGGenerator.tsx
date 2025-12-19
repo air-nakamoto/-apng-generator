@@ -3117,19 +3117,19 @@ export default function APNGGenerator() {
                         />
 
                         {/* 共通設定カード */}
-                        <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200 space-y-2">
+                        <div className="bg-white p-2.5 rounded-lg shadow-lg border border-gray-200 space-y-1.5">
                             <h3 className="text-sm font-semibold text-gray-700">共通設定</h3>
 
                             {/* V118: ループトグル（横並びON/OFF） */}
                             <div>
-                                <span className="text-sm font-medium text-gray-700 block mb-2">ループ</span>
+                                <span className="text-sm font-medium text-gray-700 block mb-1.5">ループ</span>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => {
                                             setIsLooping(true)
                                             setLoopSettingsPerEffect(prev => ({ ...prev, [transition]: true }))
                                         }}
-                                        className={`w-32 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
+                                        className={`w-32 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
                                             ${isLooping
                                                 ? 'bg-blue-500 text-white shadow-md'
                                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
@@ -3144,7 +3144,7 @@ export default function APNGGenerator() {
                                             setIsLooping(false)
                                             setLoopSettingsPerEffect(prev => ({ ...prev, [transition]: false }))
                                         }}
-                                        className={`w-32 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
+                                        className={`w-32 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2
                                             ${!isLooping
                                                 ? 'bg-blue-500 text-white shadow-md'
                                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
@@ -3159,7 +3159,7 @@ export default function APNGGenerator() {
 
                             {/* V118: 容量制限セグメント（制限なし/1MB/5MB/10MB） */}
                             <div>
-                                <span className="text-sm font-medium text-gray-700 block mb-2">容量制限</span>
+                                <span className="text-sm font-medium text-gray-700 block mb-1.5">容量制限</span>
                                 <div className="flex gap-2">
                                     {[
                                         { value: null, label: '制限なし' },
@@ -3170,7 +3170,7 @@ export default function APNGGenerator() {
                                         <button
                                             key={option.label}
                                             onClick={() => setSizeLimit(option.value)}
-                                            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                                            className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200
                                                 ${sizeLimit === option.value
                                                     ? 'bg-blue-500 text-white shadow-md'
                                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
@@ -3185,7 +3185,7 @@ export default function APNGGenerator() {
 
                             {/* V118: 再生スピードスライダー */}
                             <div>
-                                <label htmlFor="speed-range" className="block text-sm font-medium text-gray-700 mb-2">
+                                <label htmlFor="speed-range" className="block text-sm font-medium text-gray-700 mb-1.5">
                                     再生スピード: {playbackSpeed.toFixed(2)}x
                                 </label>
                                 <input
@@ -3198,7 +3198,7 @@ export default function APNGGenerator() {
                                     onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
                                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                                 />
-                                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <div className="flex justify-between text-xs text-gray-500 mt-0.5">
                                     <span>0.25x</span>
                                     <span>1.0x</span>
                                     <span>2.0x</span>
@@ -3206,7 +3206,7 @@ export default function APNGGenerator() {
                             </div>
 
                             <div>
-                                <label htmlFor="fps-range" className="block text-sm font-medium text-gray-700 mb-2">
+                                <label htmlFor="fps-range" className="block text-sm font-medium text-gray-700 mb-1.5">
                                     フレームレート: {fps} fps
                                 </label>
                                 <input
