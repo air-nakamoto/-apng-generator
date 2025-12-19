@@ -85,6 +85,7 @@ export default function APNGGenerator() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [previewProgress, setPreviewProgress] = useState(0)
     const animationRef = useRef<number | null>(null)
+    const isLoopingRef = useRef<boolean>(false)
     const [error, setError] = useState<string | null>(null)
     const [generationProgress, setGenerationProgress] = useState(0)
     const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
@@ -183,7 +184,7 @@ export default function APNGGenerator() {
                 const elapsedTime = timestamp - startTime
                 const progress = elapsedTime / duration
 
-                if (isLooping) {
+                if (isLoopingRef.current) {
                     setPreviewProgress(progress % 1)
                     animationRef.current = requestAnimationFrame(animate)
                 } else {
@@ -1279,6 +1280,11 @@ export default function APNGGenerator() {
             drawPreviewFrame(shouldShowOriginal ? 0 : 1)
         }
     }, [sourceImage, drawPreviewFrame, isPlaying, transition, effectDirection, previewProgress, isLooping])
+
+    // isLoopingRefを最新の値に同期
+    useEffect(() => {
+        isLoopingRef.current = isLooping
+    }, [isLooping])
 
     // ループ設定変更時にプレビューを再開（ONに切り替えた時は自動再生開始）
     useEffect(() => {
