@@ -2906,7 +2906,7 @@ export default function APNGGenerator() {
     }, [effectDirection])
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4 sm:px-6 lg:px-8 relative">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 py-2 px-4 sm:px-6 lg:px-8 relative">
             {/* Feedback Floating Button */}
             <div className="absolute top-4 right-4 z-50">
                 <button
@@ -2917,8 +2917,8 @@ export default function APNGGenerator() {
                     <span className="text-sm font-medium">意見を送る</span>
                 </button>
             </div>
-            <div className="container mx-auto px-4 py-1 max-w-7xl">
-                <div className="flex flex-col items-center mb-2">
+            <div className="container mx-auto px-4 py-0 max-w-7xl">
+                <div className="flex flex-col items-center mb-1">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" className="w-full max-w-lg h-auto">
                         <defs>
                             <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
