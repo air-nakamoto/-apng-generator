@@ -3121,7 +3121,7 @@ export default function APNGGenerator() {
                             <h3 className="text-sm font-semibold text-gray-700 pb-2">共通設定</h3>
 
                             {/* V118: ループトグル（トグルスイッチ） */}
-                            <div className="flex items-center justify-between py-2.5">
+                            <div className="flex items-center gap-3 py-2.5">
                                 <span className="text-sm font-medium text-gray-700">ループ</span>
                                 <button
                                     onClick={() => {
@@ -3141,10 +3141,13 @@ export default function APNGGenerator() {
                                         }`}
                                     />
                                 </button>
+                                <span className="text-sm text-gray-600">
+                                    {isLooping ? '現在：ループあり' : '現在：ループなし'}
+                                </span>
                             </div>
 
                             {/* V118: 容量制限セグメント（制限なし/1MB/5MB/10MB） */}
-                            <div className="flex items-center justify-between py-2.5">
+                            <div className="flex items-center gap-3 py-2.5">
                                 <span className="text-sm font-medium text-gray-700">容量制限</span>
                                 <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50">
                                     {[
