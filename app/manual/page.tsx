@@ -121,33 +121,65 @@ export default function ManualPage() {
                         <div className="p-4 bg-white dark:bg-slate-700">
                             <div className="space-y-4">
                                 <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                                         画面右側の<strong>「トランジション効果」</strong>パネルで、タブから効果カテゴリを選択：
                                     </p>
-                                    <div className="space-y-2 mb-3">
-                                        <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-2 rounded">
-                                            <span className="font-bold text-blue-700 dark:text-blue-300 text-sm">登場</span>
-                                            <span className="text-xs text-gray-600 dark:text-gray-400">：画像が現れるアニメーション</span>
+
+                                    {/* 登場 */}
+                                    <div className="mb-4">
+                                        <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-3 rounded mb-2">
+                                            <span className="font-bold text-blue-700 dark:text-blue-300">登場</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">：画像が現れるアニメーション</span>
                                         </div>
-                                        <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-2 rounded">
-                                            <span className="font-bold text-red-700 dark:text-red-300 text-sm">退場</span>
-                                            <span className="text-xs text-gray-600 dark:text-gray-400">：画像が消えるアニメーション</span>
-                                        </div>
-                                        <div className="bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-2 rounded">
-                                            <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">演出</span>
-                                            <span className="text-xs text-gray-600 dark:text-gray-400">：ループするエフェクト</span>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                            <img
+                                                src="/manual/step2_transition_entrance.png"
+                                                alt="登場トランジション効果の例"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                                decoding="async"
+                                                width="800"
+                                                height="300"
+                                            />
                                         </div>
                                     </div>
-                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2 mb-3">
-                                        <img
-                                            src="/manual/step2_transitions.png"
-                                            alt="トランジション効果の種類"
-                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                            loading="lazy"
-                                            decoding="async"
-                                            width="800"
-                                            height="450"
-                                        />
+
+                                    {/* 退場 */}
+                                    <div className="mb-4">
+                                        <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-3 rounded mb-2">
+                                            <span className="font-bold text-red-700 dark:text-red-300">退場</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">：画像が消えるアニメーション</span>
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                            <img
+                                                src="/manual/step2_transition_exit.png"
+                                                alt="退場トランジション効果の例"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                                decoding="async"
+                                                width="800"
+                                                height="300"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* 演出 */}
+                                    <div className="mb-4">
+                                        <div className="bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-3 rounded mb-2">
+                                            <span className="font-bold text-purple-700 dark:text-purple-300">演出</span>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">：ループするエフェクト</span>
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                            <img
+                                                src="/manual/step2_transition_performance.png"
+                                                alt="演出トランジション効果の例"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                                decoding="async"
+                                                width="800"
+                                                height="300"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
