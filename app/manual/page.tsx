@@ -24,11 +24,43 @@ export default function ManualPage() {
                     </p>
                 </div>
 
-                {/* クイックスタート */}
-                <section className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
+                {/* 目次 */}
+                <nav className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
+                    <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-3">目次</h2>
+                    <ul className="space-y-2 text-sm">
+                        <li>
+                            <a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                📝 アニメーションPNG作成手順
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#cocofolia" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                🎮 ココフォリアでの使い方
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#settings" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                ⚙️ 推奨設定
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#faq" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                ❓ よくある質問
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#links" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                🔗 関連リンク
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+
+                {/* アニメーションPNG作成手順 */}
+                <section id="steps" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
                         <Zap className="w-5 h-5 mr-2 text-yellow-500" />
-                        クイックスタート（3ステップ）
+                        アニメーションPNG作成手順
                     </h2>
 
                     {/* ステップ1 */}
@@ -43,14 +75,11 @@ export default function ManualPage() {
                             </div>
                         </div>
                         <div className="p-4 bg-white dark:bg-slate-700">
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
                                 <li>画面左側の<strong>「画像選択＆プレビュー」</strong>パネルに、PNG/JPG画像をドラッグ＆ドロップ（またはクリックして選択）</li>
                                 <li>アップロードされると、プレビューキャンバスに画像が表示されます</li>
                                 <li>透過PNG画像を使用すると、背景が透明なAPNGが生成できます</li>
                             </ol>
-                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-2 text-xs text-yellow-700 dark:text-yellow-300">
-                                💡 ヒント：高解像度（4000px以上）の画像は自動的に縮小されます
-                            </div>
                         </div>
                         <div className="p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600">
                             <img
@@ -73,15 +102,21 @@ export default function ManualPage() {
                             </div>
                         </div>
                         <div className="p-4 bg-white dark:bg-slate-700">
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                            <ol className="list-decimal list-inside space-y-3 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>画面右側の<strong>「トランジション効果」</strong>パネルで、タブから効果カテゴリを選択：
-                                    <ul className="ml-6 mt-1 space-y-1 list-disc">
-                                        <li><span className="text-blue-600 dark:text-blue-400">登場</span>：画像が現れるアニメーション（フェードイン、スライドインなど）</li>
-                                        <li><span className="text-red-600 dark:text-red-400">退場</span>：画像が消えるアニメーション（フェードアウト、斬撃など）</li>
-                                        <li><span className="text-purple-600 dark:text-purple-400">演出</span>：ループするエフェクト（振動、グリッチなど）</li>
-                                    </ul>
+                                    <div className="ml-6 mt-2 space-y-2">
+                                        <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-2 rounded">
+                                            <span className="font-bold text-blue-700 dark:text-blue-300">登場</span>：画像が現れるアニメーション（フェードイン、スライドインなど）
+                                        </div>
+                                        <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-2 rounded">
+                                            <span className="font-bold text-red-700 dark:text-red-300">退場</span>：画像が消えるアニメーション（フェードアウト、斬撃など）
+                                        </div>
+                                        <div className="bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-2 rounded">
+                                            <span className="font-bold text-purple-700 dark:text-purple-300">演出</span>：ループするエフェクト（振動、グリッチなど）
+                                        </div>
+                                    </div>
                                 </li>
-                                <li>効果ボタンをクリックして選択すると、プレビューが自動再生されます</li>
+                                <li>効果ボタンをクリックして選択すると、プレビューが自動で再生されます（「プレビュー」ボタンを押しても再生できます）</li>
                                 <li><strong>「効果オプション」</strong>で方向や強度を調整できます</li>
                                 <li><strong>「共通設定」</strong>で以下を設定：
                                     <ul className="ml-6 mt-1 space-y-1 list-disc">
@@ -115,7 +150,7 @@ export default function ManualPage() {
                         </div>
                         <div className="p-4 bg-white dark:bg-slate-700">
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                <li><strong>「プレビュー」</strong>ボタンでアニメーションを確認（「停止」で止められます）</li>
+                                <li>効果を選択すると自動でプレビューが再生されます（手動で確認したい場合は<strong>「プレビュー」</strong>ボタンをクリック）</li>
                                 <li>問題なければ<strong>「APNG生成」</strong>ボタンをクリック</li>
                                 <li>生成が完了すると自動的にAPNGファイルがダウンロードされます</li>
                                 <li>ダウンロードしたファイルをココフォリアにアップロードして使用</li>
@@ -134,57 +169,8 @@ export default function ManualPage() {
                     </div>
                 </section>
 
-                {/* 効果ガイド */}
-                <section className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <Image className="w-5 h-5 mr-2 text-blue-500" />
-                        効果ガイド
-                    </h2>
-
-                    <div className="space-y-4">
-                        <div className="border-l-4 border-blue-500 pl-4">
-                            <h3 className="font-semibold text-gray-800 dark:text-white">登場効果</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                画像が画面に現れる時のアニメーション
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-xs">フェードイン</span>
-                                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-xs">スライドイン</span>
-                                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-xs">ズームアップ</span>
-                                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-xs">ワイプイン</span>
-                            </div>
-                        </div>
-
-                        <div className="border-l-4 border-red-500 pl-4">
-                            <h3 className="font-semibold text-gray-800 dark:text-white">退場効果</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                画像が画面から消える時のアニメーション
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                                <span className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded text-xs">フェードアウト</span>
-                                <span className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded text-xs">スライドアウト</span>
-                                <span className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded text-xs">ズームアウト</span>
-                                <span className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded text-xs">斬撃</span>
-                            </div>
-                        </div>
-
-                        <div className="border-l-4 border-purple-500 pl-4">
-                            <h3 className="font-semibold text-gray-800 dark:text-white">演出効果</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                その場で変化するループアニメーション
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                                <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded text-xs">振動</span>
-                                <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded text-xs">脈動</span>
-                                <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded text-xs">グリッチ</span>
-                                <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded text-xs">集中線</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
                 {/* ココフォリア設定ガイド */}
-                <section className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
+                <section id="cocofolia" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
                         <Settings className="w-5 h-5 mr-2 text-green-500" />
                         ココフォリアでの使い方
@@ -220,7 +206,7 @@ export default function ManualPage() {
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
                                 <li>ココフォリアでキャラクターを選択</li>
-                                <li>「立ち絵」タブを開く</li>
+                                <li>「キャラクター」タブを開く</li>
                                 <li>生成したAPNGファイルをドラッグ&ドロップ</li>
                                 <li>立ち絵がアニメーションで表示されます</li>
                             </ol>
@@ -249,10 +235,9 @@ export default function ManualPage() {
                                 <p className="text-xs text-gray-500 dark:text-gray-400">容量制限: 5MB以下 / ループ: 用途による</p>
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                <li>画面左上の「≡」メニューを開く</li>
-                                <li>「前景」または「背景」を選択</li>
-                                <li>「画像を追加」をクリック</li>
-                                <li>生成したAPNGファイルをアップロード</li>
+                                <li>ココフォリアのルーム画面右側にある「前景/背景」タブを開く</li>
+                                <li>「前景」または「背景」の「+」ボタンをクリック</li>
+                                <li>生成したAPNGファイルをドラッグ&ドロップまたは選択</li>
                                 <li>ルーム全体にアニメーション演出が適用されます</li>
                             </ol>
                         </div>
@@ -290,7 +275,7 @@ export default function ManualPage() {
                 </section>
 
                 {/* 推奨設定 */}
-                <section className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
+                <section id="settings" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
                         <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
                         推奨設定
@@ -337,7 +322,7 @@ export default function ManualPage() {
                 </section>
 
                 {/* FAQ */}
-                <section className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
+                <section id="faq" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
                         <HelpCircle className="w-5 h-5 mr-2 text-blue-500" />
                         よくある質問
@@ -373,11 +358,23 @@ export default function ManualPage() {
                         </div>
                         <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
-                                Q. カットインでアニメーションが1回しか再生されない
+                                Q. ループOFFのAPNGがココフォリアで再生されない
                             </h3>
                             <p className="text-sm text-gray-600 dark:text-gray-300 pl-4">
-                                カットインには<strong>ループON</strong>のAPNGが必須です。ループOFFのAPNGはカットインでは再生されません。<br />
-                                ツールで「ループ：ON」を選択して再生成してください。
+                                <strong>A. カットインの場合はループONが必須</strong>です。ループOFFのAPNGはカットインでは再生されません。<br />
+                                登場・退場効果を使う場合は、立ち絵やキャラクター設定では正常に動作しますが、カットインには向いていません。<br />
+                                カットイン用には必ず「ループ：ON」を選択して再生成してください。
+                            </p>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
+                                Q. スクリーンパネル・マーカーパネルでアニメーションが動かない
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 pl-4">
+                                <strong>A. パネル系は特別な設定が必要</strong>です。以下を確認してください：<br />
+                                1. ファイルサイズが<strong>1MB以下</strong>であること（超えると再生されません）<br />
+                                2. パネル設定で、APNGファイルを設定する<strong>前</strong>に「NOIMAGE」を設定する必要があります<br />
+                                3. 「容量制限：1MB以下」を選択して再生成してください
                             </p>
                         </div>
                         <div>
@@ -403,7 +400,7 @@ export default function ManualPage() {
                 </section>
 
                 {/* 関連リンク */}
-                <section className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
+                <section id="links" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
                         関連リンク
                     </h2>
