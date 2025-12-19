@@ -2421,7 +2421,10 @@ export default function APNGGenerator() {
                 delays.push(1000 / fps)
 
                 setGenerationProgress((i + 1) / frameCount * 0.8)
-                await new Promise(resolve => setTimeout(resolve, 10))
+                // 5フレームごとにUIに制御を戻す（パフォーマンス向上）
+                if (i % 5 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0))
+                }
             }
 
             if (!isLooping) {
@@ -2988,45 +2991,43 @@ export default function APNGGenerator() {
                                         </button>
                                     </Popover.Trigger>
                                     <Popover.Portal>
-                                        <Popover.Content className="bg-white p-5 rounded-xl shadow-xl border border-gray-200 max-w-md z-[60]">
-                                            <h4 className="font-bold text-gray-800 mb-3 text-center">使い方ガイド</h4>
-                                            <div className="space-y-3 mb-4">
-                                                <div className="flex items-start gap-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                                                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <span className="text-white font-bold text-sm">1</span>
+                                        <Popover.Content className="bg-white p-4 rounded-xl shadow-xl border border-gray-200 max-w-xs z-[60]">
+                                            <h4 className="text-sm font-bold text-gray-700 mb-3 text-center">使い方（クイックガイド）</h4>
+                                            <div className="space-y-2.5 mb-3">
+                                                <div className="flex items-start gap-2">
+                                                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                        <span className="text-white font-bold text-xs">1</span>
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-gray-800 text-sm">画像を選択</p>
-                                                        <p className="text-xs text-gray-600">PNG/JPG画像をドラッグ&ドロップまたはクリックで選択</p>
+                                                        <p className="text-base font-semibold text-gray-800">画像を選択</p>
+                                                        <p className="text-xs text-gray-500">PNG/JPG画像をドラッグ＆ドロップ</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-start gap-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                                                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <span className="text-white font-bold text-sm">2</span>
+                                                <div className="flex items-start gap-2">
+                                                    <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                        <span className="text-white font-bold text-xs">2</span>
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-gray-800 text-sm">効果・設定を選択</p>
-                                                        <p className="text-xs text-gray-600">登場・退場・演出から効果を選び、ループ・容量制限・FPSを調整</p>
+                                                        <p className="text-base font-semibold text-gray-800">効果・設定を選択</p>
+                                                        <p className="text-xs text-gray-500">登場・退場・演出から選択し、オプションを調整</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-start gap-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                                                    <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <span className="text-white font-bold text-sm">3</span>
+                                                <div className="flex items-start gap-2">
+                                                    <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                        <span className="text-white font-bold text-xs">3</span>
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-gray-800 text-sm">APNG生成</p>
-                                                        <p className="text-xs text-gray-600">プレビューで確認後、「APNG生成」ボタンでダウンロード</p>
+                                                        <p className="text-base font-semibold text-gray-800">APNG生成</p>
+                                                        <p className="text-xs text-gray-500">ボタンクリックでダウンロード</p>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="border-t pt-3">
-                                                <a
-                                                    href="/manual"
-                                                    className="block text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
-                                                >
-                                                    📖 詳細マニュアルを見る
-                                                </a>
-                                            </div>
+                                            <a
+                                                href="/manual"
+                                                className="flex items-center justify-center gap-1 w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                                            >
+                                                📖 詳細マニュアルを見る
+                                            </a>
                                             <Popover.Arrow className="fill-white" />
                                         </Popover.Content>
                                     </Popover.Portal>
@@ -3180,7 +3181,7 @@ export default function APNGGenerator() {
                                         <button
                                             key={option.label}
                                             onClick={() => setSizeLimit(option.value)}
-                                            className={`px-3 py-1 text-xs font-medium transition-all duration-200 ${index === 0 ? 'rounded-l-lg' : ''
+                                            className={`px-4 py-1.5 text-sm font-medium transition-all duration-200 ${index === 0 ? 'rounded-l-lg' : ''
                                                 } ${index === 3 ? 'rounded-r-lg' : ''
                                                 } ${sizeLimit === option.value
                                                     ? 'bg-blue-500 text-white shadow-sm'
@@ -3287,7 +3288,8 @@ export default function APNGGenerator() {
                                             <Settings className="w-8 h-8 text-blue-600 animate-spin" />
                                         </div>
                                         <p className="mt-4 text-sm text-gray-600 text-center">
-                                            しばらくお待ちください。この処理には数秒かかる場合があります。
+                                            生成中... {Math.round(generationProgress * 100)}%<br />
+                                            <span className="text-xs text-gray-400">画像サイズやエフェクトによって時間がかかる場合があります</span>
                                         </p>
                                     </>
                                 ) : (
@@ -3314,10 +3316,18 @@ export default function APNGGenerator() {
                 }
 
                 {/* 注意書き */}
-                <div className="mt-8 text-sm text-gray-500 text-center">
+                <div className="mt-8 mb-12 text-sm text-gray-500 text-center">
                     <p>※本WEBツールは試験的に作成し、テスト公開しているものとなります。</p>
-                    <p>想定外の動作や、エラーが発生する可能性があります。</p>
-                    <p>不具合や改善点、ご意見ございましたら、お手数ですがフィードバックをお寄せください。今後の参考にさせていただきます。</p>
+                    <p>
+                        不具合や改善点、ご意見ございましたら、お手数ですが
+                        <button
+                            onClick={() => setIsFeedbackModalOpen(true)}
+                            className="text-blue-600 hover:text-blue-800 underline font-medium mx-1"
+                        >
+                            意見を送る
+                        </button>
+                        からフィードバックをお寄せください。今後の参考にさせていただきます。
+                    </p>
                 </div>
             </div >
             {/* SVGフィルターの追加 */}
