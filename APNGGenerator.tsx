@@ -2942,7 +2942,7 @@ export default function APNGGenerator() {
                             <animate attributeName="opacity" values="1;0.8;1" dur="2s" repeatCount="indefinite" />
                         </rect>
 
-                        <text x="80" y="50" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="#2C3E50" dominantBaseline="middle">
+                        <text x="80" y="53" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="#2C3E50" dominantBaseline="auto">
                             <tspan style={{ letterSpacing: "1px" }}>APNG</tspan>
                             <tspan dx="5" style={{ fontSize: "32px", fontWeight: "normal" }}>Generator</tspan>
                         </text>
