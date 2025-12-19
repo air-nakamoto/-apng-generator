@@ -21,7 +21,6 @@ import {
     // 退場効果用
     MoveLeft,
     PanelRightOpen,
-    ZoomOut,
     DoorOpen,
     Zap,
     Scissors,  // 斬撃用
@@ -84,7 +83,19 @@ export const transitionEffects: EffectCategory[] = [
             { name: 'fadeIn', label: 'フェードイン', icon: CircleFadingPlus, hasDirection: false },
             { name: 'slideIn', label: 'スライドイン', icon: MoveRight, hasDirection: true, directions: ['up', 'down', 'left', 'right'] },
             { name: 'wipeIn', label: 'ワイプイン', icon: PanelLeftOpen, hasDirection: true, directions: ['up', 'down', 'left', 'right'] },
-            { name: 'zoomIn', label: 'ズームイン', icon: ZoomIn, hasDirection: false },
+            {
+                name: 'zoomUp',
+                label: 'ズームアップ',
+                icon: ZoomIn,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'direction',
+                options: [
+                    { value: 'up', label: 'アップ', numericValue: 0 },
+                    { value: 'down', label: 'ダウン', numericValue: 1 },
+                ],
+                defaultOption: 'up'
+            },
             { name: 'doorClose', label: '閉扉', icon: DoorClosed, hasDirection: false },
             {
                 name: 'tvStaticIn',
@@ -239,7 +250,20 @@ export const transitionEffects: EffectCategory[] = [
             { name: 'fadeOut', label: 'フェードアウト', icon: CircleFadingPlus, hasDirection: false },
             { name: 'slideOut', label: 'スライドアウト', icon: MoveLeft, hasDirection: true, directions: ['up', 'down', 'left', 'right'] },
             { name: 'wipeOut', label: 'ワイプアウト', icon: PanelRightOpen, hasDirection: true, directions: ['up', 'down', 'left', 'right'] },
-            { name: 'zoomOut', label: 'ズームアウト', icon: ZoomOut, hasDirection: false },
+            {
+                name: 'zoomUpOut',
+                label: 'ズームアウト',
+                icon: ZoomIn,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'direction',
+                options: [
+                    { value: 'up', label: 'アップ', numericValue: 0 },
+                    { value: 'down', label: 'ダウン', numericValue: 1 },
+                ],
+                defaultOption: 'up'
+            },
+
             { name: 'doorOpen', label: '開扉', icon: DoorOpen, hasDirection: false },
             {
                 name: 'tvStaticOut',
