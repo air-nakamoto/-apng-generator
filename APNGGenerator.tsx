@@ -2,9 +2,10 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Settings, Upload, Info, Play, Pause, Download, Repeat, ArrowRightToLine } from 'lucide-react'
+import { Settings, Upload, Info, Play, Pause, Download, Repeat, ArrowRightToLine, MessageSquare } from 'lucide-react'
 import * as Popover from '@radix-ui/react-popover'
 import { TransitionEffectsSelector } from './components/TransitionEffectsSelector'
+import { FeedbackModal } from './components/FeedbackModal'
 import { findEffectByName, findCategoryByEffectName } from './constants/transitionEffects'
 
 // @ts-ignore
@@ -94,6 +95,7 @@ export default function APNGGenerator() {
     const previewContainerRef = useRef<HTMLDivElement>(null)
     const previewCanvasRef = useRef<HTMLCanvasElement>(null)
     const [optimizedSize, setOptimizedSize] = useState<{ width: number; height: number } | null>(null)
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
 
 
 
@@ -189,7 +191,8 @@ export default function APNGGenerator() {
                         setPreviewProgress(progress)
                         animationRef.current = requestAnimationFrame(animate)
                     } else {
-                        setPreviewProgress(1)
+                        // アニメーション終了後は元の画像を表示するためprogress=0に
+                        setPreviewProgress(0)
                         setIsPlaying(false)
                     }
                 }
@@ -308,37 +311,44 @@ export default function APNGGenerator() {
                         break
                     case 'up':
                         ctx.beginPath()
-                        ctx.rect(0, 0, canvas.width, canvas.height * progress)
+                        ctx.rect(0, canvas.height * (1 - progress), canvas.width, canvas.height * progress)
                         ctx.clip()
                         break
                     case 'down':
                     default:
                         ctx.beginPath()
-                        ctx.rect(0, canvas.height * (1 - progress), canvas.width, canvas.height * progress)
+                        ctx.rect(0, 0, canvas.width, canvas.height * progress)
                         ctx.clip()
                         break
                 }
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
-            case 'zoomIn':
-                const scaleIn = 0.5 + progress * 0.5
+            case 'zoomUp': {
+                // アップ: 小→通常 (0.5→1.0), ダウン: 大→通常 (1.5→1.0)
+                const isUp = effectOption === 'up'
+                const scaleZoomUp = isUp ? (0.5 + progress * 0.5) : (1.5 - progress * 0.5)
                 ctx.save()
                 ctx.translate(canvas.width / 2, canvas.height / 2)
-                ctx.scale(scaleIn, scaleIn)
+                ctx.scale(scaleZoomUp, scaleZoomUp)
                 ctx.translate(-canvas.width / 2, -canvas.height / 2)
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
-            case 'zoomOut':
-                const scaleOut = 1.5 - progress * 0.5
+            }
+            case 'zoomUpOut': {
+                // アップ: 通常→大 (1.0→1.5) + フェードアウト, ダウン: 通常→小 (1.0→0.5) + フェードアウト
+                const isUpOut = effectOption === 'up'
+                const scaleZoomUpOut = isUpOut ? (1.0 + progress * 0.5) : (1.0 - progress * 0.5)
                 ctx.save()
+                ctx.globalAlpha = 1.0 - progress
                 ctx.translate(canvas.width / 2, canvas.height / 2)
-                ctx.scale(scaleOut, scaleOut)
+                ctx.scale(scaleZoomUpOut, scaleZoomUpOut)
                 ctx.translate(-canvas.width / 2, -canvas.height / 2)
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
+            }
             case 'doorClose':
                 const halfW = canvas.width / 2
                 ctx.drawImage(sourceImage, 0, 0, sourceImage.width / 2, sourceImage.height,
@@ -1176,6 +1186,10 @@ export default function APNGGenerator() {
             // V119: シルエット
             case 'silhouette': {
                 drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                // progress=0なら元の画像をそのまま表示
+                if (progress === 0) break
+
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                 const data = imageData.data
 
@@ -1256,13 +1270,15 @@ export default function APNGGenerator() {
         }
     }, [previewProgress, drawPreviewFrame, sourceImage])
 
-    // 初期表示・終了後表示用（最終フレームを表示）
+    // 初期表示・終了後表示用
     useEffect(() => {
         if (sourceImage && previewCanvasRef.current && !isPlaying) {
-            // プレビュー停止時は完成状態（progress=1）を表示
-            drawPreviewFrame(1)
+            // シルエット効果でループOFF終了後は progress=0 で元の画像を表示
+            // 他のエフェクトは progress=1 で完成状態を表示
+            const shouldShowOriginal = transition === 'silhouette' && !isLooping && previewProgress === 0
+            drawPreviewFrame(shouldShowOriginal ? 0 : 1)
         }
-    }, [sourceImage, drawPreviewFrame, isPlaying, transition, effectDirection])
+    }, [sourceImage, drawPreviewFrame, isPlaying, transition, effectDirection, previewProgress, isLooping])
 
     // ループ設定変更時にプレビューを再開（ONに切り替えた時は自動再生開始）
     useEffect(() => {
@@ -1545,8 +1561,9 @@ export default function APNGGenerator() {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
                         break
-                    case 'zoomIn':
-                        const scaleIn = 0.5 + progress * 0.5
+                    case 'zoomUp': {
+                        const isUp = effectOption === 'up'
+                        const scaleIn = isUp ? (0.5 + progress * 0.5) : (1.5 - progress * 0.5)
                         ctx.drawImage(sourceImage,
                             canvas.width / 2 - (canvas.width / 2) * scaleIn,
                             canvas.height / 2 - (canvas.height / 2) * scaleIn,
@@ -1554,15 +1571,20 @@ export default function APNGGenerator() {
                             canvas.height * scaleIn
                         )
                         break
-                    case 'zoomOut':
-                        const scaleOut = 1.5 - progress * 0.5
+                    }
+                    case 'zoomUpOut': {
+                        const isUpOut = effectOption === 'up'
+                        const scaleOut = isUpOut ? (1.0 + progress * 0.5) : (1.0 - progress * 0.5)
+                        ctx.globalAlpha = 1.0 - progress
                         ctx.drawImage(sourceImage,
                             canvas.width / 2 - (canvas.width / 2) * scaleOut,
                             canvas.height / 2 - (canvas.height / 2) * scaleOut,
                             canvas.width * scaleOut,
                             canvas.height * scaleOut
                         )
+                        ctx.globalAlpha = 1.0
                         break
+                    }
                     case 'rotate':
                         const rotateDir = effectOption === 'right' ? 1 : -1
                         ctx.save()
@@ -2295,6 +2317,10 @@ export default function APNGGenerator() {
                     // V119: シルエット
                     case 'silhouette': {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
+
+                        // progress=0なら元の画像をそのまま表示
+                        if (progress === 0) break
+
                         const genImageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                         const genData = genImageData.data
 
@@ -2454,12 +2480,18 @@ export default function APNGGenerator() {
                 return { ...baseStyle, clipPath: `inset(0 0 ${100 - previewProgress * 100}% 0)` }
             case 'wipeUp':
                 return { ...baseStyle, clipPath: `inset(${100 - previewProgress * 100}% 0 0 0)` }
-            case 'zoomIn':
-                const scaleIn = 0.5 + previewProgress * 0.5
-                return { ...baseStyle, transform: `translate(-50%, -50%) scale(${scaleIn})` }
-            case 'zoomOut':
-                const scaleOut = 1.5 - previewProgress * 0.5
-                return { ...baseStyle, transform: `translate(-50%, -50%) scale(${scaleOut})` }
+            case 'zoomUp': {
+                // アップ: 小→通常, ダウン: 大→通常
+                const isUp = effectOption === 'up'
+                const scaleZoomUp = isUp ? (0.5 + previewProgress * 0.5) : (1.5 - previewProgress * 0.5)
+                return { ...baseStyle, transform: `translate(-50%, -50%) scale(${scaleZoomUp})` }
+            }
+            case 'zoomUpOut': {
+                // アップ: 通常→大 + フェードアウト, ダウン: 通常→小 + フェードアウト
+                const isUpOut = effectOption === 'up'
+                const scaleZoomUpOut = isUpOut ? (1.0 + previewProgress * 0.5) : (1.0 - previewProgress * 0.5)
+                return { ...baseStyle, transform: `translate(-50%, -50%) scale(${scaleZoomUpOut})`, opacity: 1 - previewProgress }
+            }
             case 'rotate':
                 const rotDir = effectOption === 'right' ? 1 : -1
                 return { ...baseStyle, transform: `translate(-50%, -50%) rotate(${previewProgress * 360 * rotDir}deg)` }
@@ -2582,10 +2614,10 @@ export default function APNGGenerator() {
                     case 'right':
                         return { ...baseStyle, clipPath: `inset(0 ${(1 - previewProgress) * 100}% 0 0)` }
                     case 'up':
-                        return { ...baseStyle, clipPath: `inset(${(1 - previewProgress) * 100}% 0 0 0)` }
+                        return { ...baseStyle, clipPath: `inset(0 0 ${(1 - previewProgress) * 100}% 0)` }
                     case 'down':
                     default:
-                        return { ...baseStyle, clipPath: `inset(0 0 ${(1 - previewProgress) * 100}% 0)` }
+                        return { ...baseStyle, clipPath: `inset(${(1 - previewProgress) * 100}% 0 0 0)` }
                 }
 
             // ワイプアウト（方向対応）
@@ -2596,10 +2628,10 @@ export default function APNGGenerator() {
                     case 'right':
                         return { ...baseStyle, clipPath: `inset(0 0 0 ${previewProgress * 100}%)` }
                     case 'up':
-                        return { ...baseStyle, clipPath: `inset(0 0 ${previewProgress * 100}% 0)` }
+                        return { ...baseStyle, clipPath: `inset(${previewProgress * 100}% 0 0 0)` }
                     case 'down':
                     default:
-                        return { ...baseStyle, clipPath: `inset(${previewProgress * 100}% 0 0 0)` }
+                        return { ...baseStyle, clipPath: `inset(0 0 ${previewProgress * 100}% 0)` }
                 }
 
             // 振動（方向対応）
@@ -2874,7 +2906,17 @@ export default function APNGGenerator() {
     }, [effectDirection])
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 text-gray-800">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4 sm:px-6 lg:px-8 relative">
+            {/* Feedback Floating Button */}
+            <div className="absolute top-4 right-4 z-50">
+                <button
+                    onClick={() => setIsFeedbackModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-full shadow-sm transition-all hover:scale-105 active:scale-95 group"
+                >
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="text-sm font-medium">意見を送る</span>
+                </button>
+            </div>
             <div className="container mx-auto px-4 py-1 max-w-7xl">
                 <div className="flex flex-col items-center mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" className="w-full max-w-lg h-auto">
@@ -2923,18 +2965,45 @@ export default function APNGGenerator() {
                                         </button>
                                     </Popover.Trigger>
                                     <Popover.Portal>
-                                        <Popover.Content className="bg-white p-4 rounded-lg shadow-lg border border-gray-200 max-w-sm">
-                                            <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600">
-                                                <li>画像を選択または枠内にドラッグ&ドロップします</li>
-                                                <li>タブ（登場・退場・演出）からトランジション効果を選びます</li>
-                                                <li>効果オプション（方向、サイズ、強度など）を設定します</li>
-                                                <li>ループをON/OFFで選択します</li>
-                                                <li>容量制限を選択します（制限なし/1MB/5MB/10MB）</li>
-                                                <li>再生スピードを調整します（0.25x～2x）</li>
-                                                <li>フレームレートを調整します（高いほど滑らかになります）</li>
-                                                <li>プレビューで確認します</li>
-                                                <li>APNG生成ボタンでファイルを生成します</li>
-                                            </ol>
+                                        <Popover.Content className="bg-white p-5 rounded-xl shadow-xl border border-gray-200 max-w-md z-[60]">
+                                            <h4 className="font-bold text-gray-800 mb-3 text-center">使い方ガイド</h4>
+                                            <div className="space-y-3 mb-4">
+                                                <div className="flex items-start gap-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                        <span className="text-white font-bold text-sm">1</span>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-gray-800 text-sm">画像を選択</p>
+                                                        <p className="text-xs text-gray-600">PNG/JPG画像をドラッグ&ドロップまたはクリックで選択</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                                        <span className="text-white font-bold text-sm">2</span>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-gray-800 text-sm">効果・設定を選択</p>
+                                                        <p className="text-xs text-gray-600">登場・退場・演出から効果を選び、ループ・容量制限・FPSを調整</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                                                    <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                                        <span className="text-white font-bold text-sm">3</span>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-gray-800 text-sm">APNG生成</p>
+                                                        <p className="text-xs text-gray-600">プレビューで確認後、「APNG生成」ボタンでダウンロード</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="border-t pt-3">
+                                                <a
+                                                    href="/manual"
+                                                    className="block text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+                                                >
+                                                    📖 詳細マニュアルを見る
+                                                </a>
+                                            </div>
                                             <Popover.Arrow className="fill-white" />
                                         </Popover.Content>
                                     </Popover.Portal>
@@ -3173,54 +3242,56 @@ export default function APNGGenerator() {
                             )}
                         </div>
                     </div>
-                </div>
+                </div >
 
 
 
                 <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-                {generationState !== 'idle' && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full">
-                            {generationState === 'generating' ? (
-                                <>
-                                    <h2 className="text-2xl font-bold mb-4 text-gray-800">APNG生成中</h2>
-                                    <div className="mb-6">
-                                        <div className="h-2 bg-gray-200 rounded-full">
-                                            <div
-                                                className="h-2 bg-blue-600 rounded-full transition-all duration-300 ease-in-out"
-                                                style={{ width: `${generationProgress * 100}%` }}
-                                            ></div>
+                {
+                    generationState !== 'idle' && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full">
+                                {generationState === 'generating' ? (
+                                    <>
+                                        <h2 className="text-2xl font-bold mb-4 text-gray-800">APNG生成中</h2>
+                                        <div className="mb-6">
+                                            <div className="h-2 bg-gray-200 rounded-full">
+                                                <div
+                                                    className="h-2 bg-blue-600 rounded-full transition-all duration-300 ease-in-out"
+                                                    style={{ width: `${generationProgress * 100}%` }}
+                                                ></div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center justify-center">
-                                        <Settings className="w-8 h-8 text-blue-600 animate-spin" />
-                                    </div>
-                                    <p className="mt-4 text-sm text-gray-600 text-center">
-                                        しばらくお待ちください。この処理には数秒かかる場合があります。
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <h2 className="text-2xl font-bold mb-4 text-gray-800 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-8 h-8 mr-2 text-green-500">
-                                            <path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L6.04,7.5L12,10.85L17.96,7.5L12,4.15M5,15.91L11,19.29V12.58L5,9.21V15.91M19,15.91V9.21L13,12.58V19.29L19,15.91Z" fill="currentColor" />
-                                            <path d="M14,14.5L11,12.5L9,14.5L11,16.5L14,14.5Z" fill="currentColor" />
-                                        </svg>
-                                        生成完了
-                                    </h2>
-                                    <p className="mb-6 text-gray-600 text-center">APNGの生成が完了しました。ダウンロードを確認してください。</p>
-                                    <button
-                                        onClick={() => setGenerationState('idle')}
-                                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                                    >
-                                        OK
-                                    </button>
-                                </>
-                            )}
+                                        <div className="flex items-center justify-center">
+                                            <Settings className="w-8 h-8 text-blue-600 animate-spin" />
+                                        </div>
+                                        <p className="mt-4 text-sm text-gray-600 text-center">
+                                            しばらくお待ちください。この処理には数秒かかる場合があります。
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h2 className="text-2xl font-bold mb-4 text-gray-800 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-8 h-8 mr-2 text-green-500">
+                                                <path d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L6.04,7.5L12,10.85L17.96,7.5L12,4.15M5,15.91L11,19.29V12.58L5,9.21V15.91M19,15.91V9.21L13,12.58V19.29L19,15.91Z" fill="currentColor" />
+                                                <path d="M14,14.5L11,12.5L9,14.5L11,16.5L14,14.5Z" fill="currentColor" />
+                                            </svg>
+                                            生成完了
+                                        </h2>
+                                        <p className="mb-6 text-gray-600 text-center">APNGの生成が完了しました。ダウンロードを確認してください。</p>
+                                        <button
+                                            onClick={() => setGenerationState('idle')}
+                                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                                        >
+                                            OK
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* 注意書き */}
                 <div className="mt-8 text-sm text-gray-500 text-center">
@@ -3228,17 +3299,18 @@ export default function APNGGenerator() {
                     <p>想定外の動作や、エラーが発生する可能性があります。</p>
                     <p>不具合や改善点、ご意見ございましたら、お手数ですがフィードバックをお寄せください。今後の参考にさせていただきます。</p>
                 </div>
-            </div>
+            </div >
             {/* SVGフィルターの追加 */}
-            <svg className="hidden">
+            < svg className="hidden" >
                 <filter id="glitch">
                     <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise" />
                     <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
                     <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0" />
                     <feComposite operator="in" in2="SourceGraphic" />
                 </filter>
-            </svg>
+            </svg >
             <canvas ref={canvasRef} style={{ display: 'none' }} />
-        </div>
+            <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} version="V120" />
+        </div >
     )
 }
