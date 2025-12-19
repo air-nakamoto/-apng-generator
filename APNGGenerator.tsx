@@ -79,6 +79,7 @@ export default function APNGGenerator() {
     const [loopSettingsPerEffect, setLoopSettingsPerEffect] = useState<Record<string, boolean>>({}) // エフェクトごとのループ設定記憶
     // V118: 新規ステート
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0)
+    const [speedSettingsPerEffect, setSpeedSettingsPerEffect] = useState<Record<string, number>>({}) // エフェクトごとの再生スピード記憶
     const [sizeLimit, setSizeLimit] = useState<number | null>(null)  // null=制限なし, 1/5/10=MB制限
     const [effectOption, setEffectOption] = useState<string>('medium')
     const [effectIntensity, setEffectIntensity] = useState<string>('medium')
@@ -86,6 +87,7 @@ export default function APNGGenerator() {
     const [previewProgress, setPreviewProgress] = useState(0)
     const animationRef = useRef<number | null>(null)
     const isLoopingRef = useRef<boolean>(false)
+    const playbackSpeedRef = useRef<number>(1.0)
     const [error, setError] = useState<string | null>(null)
     const [generationProgress, setGenerationProgress] = useState(0)
     const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
@@ -177,7 +179,7 @@ export default function APNGGenerator() {
             setIsPlaying(true)
             setError(null)
             let startTime: number | null = null
-            const duration = 1000 / playbackSpeed // V118: 再生スピード対応
+            const duration = 1000 / playbackSpeedRef.current // V118: 再生スピード対応（useRefで最新値を参照）
 
             const animate = (timestamp: number) => {
                 if (!startTime) startTime = timestamp
@@ -1284,6 +1286,11 @@ export default function APNGGenerator() {
         isLoopingRef.current = isLooping
     }, [isLooping])
 
+    // playbackSpeedRefを最新の値に同期
+    useEffect(() => {
+        playbackSpeedRef.current = playbackSpeed
+    }, [playbackSpeed])
+
     // ループ設定変更時にプレビューを再開（ONに切り替えた時は自動再生開始）
     useEffect(() => {
         if (sourceImage) {
@@ -1332,7 +1339,19 @@ export default function APNGGenerator() {
             }
         }
 
+        // エフェクトごとの再生スピード設定を確認
+        if (speedSettingsPerEffect.hasOwnProperty(newTransition)) {
+            const savedSpeed = speedSettingsPerEffect[newTransition]
+            setPlaybackSpeed(savedSpeed)
+            playbackSpeedRef.current = savedSpeed // refも即時更新
+        } else {
+            // 初めて選ぶエフェクトはデフォルト速度
+            setPlaybackSpeed(1.0)
+            playbackSpeedRef.current = 1.0 // refも即時更新
+        }
+
         // 既存のアニメーションをキャンセルして再開（少し遅延させて状態更新を待つ）
+        stopPreview()
         setTimeout(() => startPreview(), 100)
         if (imageSize) {
             estimateAPNGSize(imageSize.width, imageSize.height)
@@ -2905,12 +2924,12 @@ export default function APNGGenerator() {
     useEffect(() => {
         if (isPlaying && sourceImage) {
             stopPreview()
-            startPreview()
+            setTimeout(() => startPreview(), 50)
         }
     }, [effectDirection])
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 py-2 px-4 sm:px-6 lg:px-8 relative">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 py-1 px-4 sm:px-6 lg:px-8 relative">
             {/* Feedback Floating Button */}
             <div className="absolute top-4 right-4 z-50">
                 <button
@@ -2922,7 +2941,7 @@ export default function APNGGenerator() {
                 </button>
             </div>
             <div className="container mx-auto px-4 py-0 max-w-7xl">
-                <div className="flex flex-col items-center mb-1">
+                <div className="flex flex-col items-center mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" className="w-full max-w-lg h-auto">
                         <defs>
                             <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -2951,7 +2970,7 @@ export default function APNGGenerator() {
                             <tspan dx="5" style={{ fontSize: "32px", fontWeight: "normal" }}>Generator</tspan>
                         </text>
                     </svg>
-                    <p className="text-xs text-gray-500 text-center">
+                    <p className="text-xs text-gray-500 text-center -mt-5">
                         画像からトランジション効果付きのアニメーションPNG作成ツール
                     </p>
                 </div>
@@ -3133,16 +3152,14 @@ export default function APNGGenerator() {
                                         setIsLooping(newValue)
                                         setLoopSettingsPerEffect(prev => ({ ...prev, [transition]: newValue }))
                                     }}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                                        isLooping ? 'bg-blue-500' : 'bg-gray-300'
-                                    }`}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isLooping ? 'bg-blue-500' : 'bg-gray-300'
+                                        }`}
                                     role="switch"
                                     aria-checked={isLooping}
                                 >
                                     <span
-                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                                            isLooping ? 'translate-x-6' : 'translate-x-1'
-                                        }`}
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${isLooping ? 'translate-x-6' : 'translate-x-1'
+                                            }`}
                                     />
                                 </button>
                                 <span className="text-sm text-gray-600">
@@ -3163,15 +3180,12 @@ export default function APNGGenerator() {
                                         <button
                                             key={option.label}
                                             onClick={() => setSizeLimit(option.value)}
-                                            className={`px-3 py-1 text-xs font-medium transition-all duration-200 ${
-                                                index === 0 ? 'rounded-l-lg' : ''
-                                            } ${
-                                                index === 3 ? 'rounded-r-lg' : ''
-                                            } ${
-                                                sizeLimit === option.value
+                                            className={`px-3 py-1 text-xs font-medium transition-all duration-200 ${index === 0 ? 'rounded-l-lg' : ''
+                                                } ${index === 3 ? 'rounded-r-lg' : ''
+                                                } ${sizeLimit === option.value
                                                     ? 'bg-blue-500 text-white shadow-sm'
                                                     : 'text-gray-600 hover:bg-gray-100'
-                                            }`}
+                                                }`}
                                         >
                                             {option.label}
                                         </button>
@@ -3193,7 +3207,14 @@ export default function APNGGenerator() {
                                         max="2"
                                         step="0.05"
                                         value={playbackSpeed}
-                                        onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+                                        onChange={(e) => {
+                                            const newSpeed = Number(e.target.value)
+                                            setPlaybackSpeed(newSpeed)
+                                            playbackSpeedRef.current = newSpeed // refも即時更新
+                                            setSpeedSettingsPerEffect(prev => ({ ...prev, [transition]: newSpeed }))
+                                            stopPreview()
+                                            setTimeout(() => startPreview(), 50)
+                                        }}
                                         className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                                     />
                                     <span className="text-xs text-gray-400">2.0x</span>
