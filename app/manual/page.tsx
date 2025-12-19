@@ -30,15 +30,9 @@ export default function ManualPage() {
                         <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" focusable="false" />
                         ツールに戻る
                     </Link>
-                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
+                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
                         APNG Generator 使い方ガイド
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-300">
-                        ココフォリアで使えるアニメーション立ち絵・エフェクトの作り方
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        最終更新：2025年1月 | ココフォリア側のアップデートで挙動が変わる場合があります
-                    </p>
                 </div>
 
                 {/* 目次 */}
@@ -92,16 +86,18 @@ export default function ManualPage() {
                             </div>
                         </div>
                         <div className="p-4 bg-white dark:bg-slate-700">
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>画面左側の<strong>「画像選択＆プレビュー」</strong>パネルに、PNG/JPG画像をドラッグ＆ドロップ（またはクリックして選択）</li>
                                 <li>アップロードされると、プレビューキャンバスに画像が表示されます</li>
-                                <li>透過PNG画像を使用すると、背景が透明なAPNGが生成できます</li>
                             </ol>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                ※透過PNG画像を使用すると、背景が透明なAPNGが生成できます
+                            </p>
                         </div>
                         <div className="p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600">
                             <img
                                 src="/manual/step1_upload.png"
-                                alt="ステップ1: 画像選択画面"
+                                alt="画像選択パネルの位置を示す画面"
                                 className="w-full rounded border border-gray-200 dark:border-gray-600"
                                 loading="lazy"
                                 decoding="async"
@@ -123,42 +119,76 @@ export default function ManualPage() {
                             </div>
                         </div>
                         <div className="p-4 bg-white dark:bg-slate-700">
-                            <ol className="list-decimal list-inside space-y-3 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                <li>画面右側の<strong>「トランジション効果」</strong>パネルで、タブから効果カテゴリを選択：
-                                    <div className="ml-6 mt-2 space-y-2">
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                        画面右側の<strong>「トランジション効果」</strong>パネルで、タブから効果カテゴリを選択：
+                                    </p>
+                                    <div className="space-y-2 mb-3">
                                         <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-2 rounded">
-                                            <span className="font-bold text-blue-700 dark:text-blue-300">登場</span>：画像が現れるアニメーション（フェードイン、スライドインなど）
+                                            <span className="font-bold text-blue-700 dark:text-blue-300 text-sm">登場</span>
+                                            <span className="text-xs text-gray-600 dark:text-gray-400">：画像が現れるアニメーション</span>
                                         </div>
                                         <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-2 rounded">
-                                            <span className="font-bold text-red-700 dark:text-red-300">退場</span>：画像が消えるアニメーション（フェードアウト、斬撃など）
+                                            <span className="font-bold text-red-700 dark:text-red-300 text-sm">退場</span>
+                                            <span className="text-xs text-gray-600 dark:text-gray-400">：画像が消えるアニメーション</span>
                                         </div>
                                         <div className="bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-2 rounded">
-                                            <span className="font-bold text-purple-700 dark:text-purple-300">演出</span>：ループするエフェクト（振動、グリッチなど）
+                                            <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">演出</span>
+                                            <span className="text-xs text-gray-600 dark:text-gray-400">：ループするエフェクト</span>
                                         </div>
                                     </div>
-                                </li>
-                                <li>効果ボタンをクリックして選択すると、プレビューが自動で再生されます（「プレビュー」ボタンを押しても再生できます）</li>
-                                <li><strong>「効果オプション」</strong>で方向や強度を調整できます</li>
-                                <li><strong>「共通設定」</strong>で以下を設定：
-                                    <ul className="ml-6 mt-1 space-y-1 list-disc">
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2 mb-3">
+                                        <img
+                                            src="/manual/step2_transitions.png"
+                                            alt="トランジション効果の種類"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                            decoding="async"
+                                            width="800"
+                                            height="450"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                        <strong>「効果オプション」</strong>で方向や強度を調整できます
+                                    </p>
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2 mb-3">
+                                        <img
+                                            src="/manual/step2_effect_options.png"
+                                            alt="効果オプション設定画面"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                            decoding="async"
+                                            width="800"
+                                            height="300"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                        <strong>「共通設定」</strong>で以下を設定：
+                                    </p>
+                                    <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1 list-disc list-inside mb-2">
                                         <li><strong>ループ</strong>：ON=繰り返し再生 / OFF=1回のみ再生</li>
                                         <li><strong>容量制限</strong>：用途に合わせて1MB/5MB/制限なしを選択</li>
-                                        <li><strong>FPS</strong>：フレームレート（20-30推奨）</li>
-                                        <li><strong>再生速度</strong>：アニメーションの速さ</li>
                                     </ul>
-                                </li>
-                            </ol>
-                        </div>
-                        <div className="p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600">
-                            <img
-                                src="/manual/step2_effects.png"
-                                alt="ステップ2: 効果選択画面"
-                                className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                loading="lazy"
-                                decoding="async"
-                                width="800"
-                                height="450"
-                            />
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <img
+                                            src="/manual/step2_common_settings.png"
+                                            alt="共通設定画面"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                            decoding="async"
+                                            width="800"
+                                            height="300"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -178,7 +208,6 @@ export default function ManualPage() {
                                 <li>効果を選択すると自動でプレビューが再生されます（手動で確認したい場合は<strong>「プレビュー」</strong>ボタンをクリック）</li>
                                 <li>問題なければ<strong>「APNG生成」</strong>ボタンをクリック</li>
                                 <li>生成が完了すると自動的にAPNGファイルがダウンロードされます</li>
-                                <li>ダウンロードしたファイルをココフォリアにアップロードして使用</li>
                             </ol>
                             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-xs text-green-700 dark:text-green-300">
                                 ✅ 生成後、ファイルサイズが表示されます。容量制限を超えた場合は自動で圧縮されます。
@@ -212,22 +241,20 @@ export default function ManualPage() {
                                 <div>
                                     <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">重要：ファイルサイズガイドライン</h4>
                                     <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-                                        画像のアップロード上限は5MBとされていますが、<strong>1MB超の画像は圧縮確認が表示される場合</strong>があります。
-                                        圧縮が適用されるとAPNGアニメーションが動作しなくなるため、<strong>APNGは1MB未満を目安に</strong>作成することを推奨します。
+                                        画像のアップロード上限を超えると圧縮確認が表示される場合があります。
+                                        圧縮が適用されるとAPNGアニメーションが動作しなくなるため、
+                                        ココフォリアでAPNGを使う場合は、以下ファイル容量を目安にお願いします。
                                     </p>
                                     <div className="space-y-2 text-sm">
                                         <div className="flex items-center gap-2">
-                                            <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded font-medium">5MB以下（推奨: 1MB未満）</span>
+                                            <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded font-medium">5MB以下</span>
                                             <span className="text-yellow-700 dark:text-yellow-300">キャラクターイラスト・前景・背景</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded font-medium">1MB未満を強く推奨</span>
+                                            <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded font-medium">1MB以下</span>
                                             <span className="text-yellow-700 dark:text-yellow-300">スクリーンパネル・マーカーパネル</span>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
-                                        ※ 2025年頃から画像最適化プロセスの影響でAPNGが正常動作しないケースが報告されています。
-                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -235,7 +262,7 @@ export default function ManualPage() {
                         <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">立ち絵として使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 1MB未満推奨 / ループ: 用途による</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: 用途による</p>
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアでキャラクターを選択</li>
@@ -258,13 +285,14 @@ export default function ManualPage() {
 
                         <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">カットインとして使う場合</h3>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: ON</p>
+                            </div>
                             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
                                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                                    ⚠️ カットインは<strong>ループONが推奨</strong>されます。ループOFFの場合、再読み込みされないなど動作が不安定になることがあります。
+                                    ※カットイン用のAPNGはループONでお願いします。<br />
+                                    （現状、ループOFFの場合、カットインでアニメーションが読み込みされないため）
                                 </p>
-                            </div>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 1MB未満推奨 / ループ: ON推奨</p>
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアでキャラクターを選択</li>
@@ -287,7 +315,7 @@ export default function ManualPage() {
                         <div>
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">前景・背景として使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 1MB未満推奨 / ループ: 用途による</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: 用途による</p>
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアのルーム画面右側にある「前景/背景」タブを開く</li>
@@ -309,54 +337,59 @@ export default function ManualPage() {
                         </div>
 
                         <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">スクリーンパネルとして使う場合</h3>
+                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">スクリーンパネル／マーカーパネルとして使う場合</h3>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 1MB未満推奨 / ループ: 用途による</p>
+                            </div>
                             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-2">
                                 <p className="text-sm text-red-700 dark:text-red-300">
-                                    ⚠️ スクリーンパネルは<strong>1MB未満を強く推奨</strong>します。1MB超の場合、圧縮が適用されアニメーションが動作しない可能性があります。
+                                    ⚠️ スクリーンパネルは1MB未満を選択お願いします。<br />
+                                    （1MB超の場合、圧縮が適用される可能性があり、現状圧縮されるとアニメーションが動作しません）
                                 </p>
                             </div>
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                <li>画面左上の「≡」メニュー →「スクリーンパネル」を選択</li>
-                                <li>「+」ボタンで新規パネルを作成</li>
-                                <li>「画像」欄にAPNGファイルをドラッグ&ドロップ</li>
-                                <li>位置・サイズを調整して配置</li>
-                            </ol>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                <img
-                                    src="/manual/cocofolia_screen_panel.png"
-                                    alt="ココフォリアでのスクリーンパネル設定画面"
-                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                    loading="lazy"
-                                    decoding="async"
-                                    width="800"
-                                    height="450"
-                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                <div>
+                                    <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">スクリーンパネル</h4>
+                                    <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                        <li>画面左上の「≡」メニュー →「スクリーンパネル」を選択</li>
+                                        <li>「+」ボタンで新規パネルを作成</li>
+                                        <li>「画像」欄にAPNGファイルをドラッグ&ドロップ</li>
+                                        <li>位置・サイズを調整して配置</li>
+                                    </ol>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">マーカーパネル</h4>
+                                    <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                        <li>画面左上の「≡」メニュー →「マーカーパネル」を選択</li>
+                                        <li>「+」ボタンで新規マーカーを作成</li>
+                                        <li>「画像」欄にAPNGファイルをドラッグ&ドロップ</li>
+                                        <li>マップ上の任意の場所に配置</li>
+                                    </ol>
+                                </div>
                             </div>
-                        </div>
-
-                        <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">マーカーパネルとして使う場合</h3>
-                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-2">
-                                <p className="text-sm text-red-700 dark:text-red-300">
-                                    ⚠️ マーカーパネルは<strong>1MB未満を強く推奨</strong>します。1MB超の場合、圧縮が適用されアニメーションが動作しない可能性があります。
-                                </p>
-                            </div>
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                <li>画面左上の「≡」メニュー →「マーカーパネル」を選択</li>
-                                <li>「+」ボタンで新規マーカーを作成</li>
-                                <li>「画像」欄にAPNGファイルをドラッグ&ドロップ</li>
-                                <li>マップ上の任意の場所に配置</li>
-                            </ol>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                <img
-                                    src="/manual/cocofolia_marker_panel.png"
-                                    alt="ココフォリアでのマーカーパネル設定画面"
-                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                    loading="lazy"
-                                    decoding="async"
-                                    width="800"
-                                    height="450"
-                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                    <img
+                                        src="/manual/cocofolia_screen_panel.png"
+                                        alt="ココフォリアでのスクリーンパネル設定画面"
+                                        className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="800"
+                                        height="450"
+                                    />
+                                </div>
+                                <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                    <img
+                                        src="/manual/cocofolia_marker_panel.png"
+                                        alt="ココフォリアでのマーカーパネル設定画面"
+                                        className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="800"
+                                        height="450"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -646,10 +679,13 @@ export default function ManualPage() {
                 </section>
 
                 {/* フッター */}
-                <div className="text-center mt-8 text-sm text-gray-500">
-                    <Link href="/" className="text-blue-600 hover:underline">
-                        ← APNG Generator に戻る
-                    </Link>
+                <div className="text-center mt-8 space-y-2">
+                    <p className="text-xs text-gray-400">最終更新：2025年1月</p>
+                    <div className="text-sm text-gray-500">
+                        <Link href="/" className="text-blue-600 hover:underline">
+                            ← APNG Generator に戻る
+                        </Link>
+                    </div>
                 </div>
             </div>
             <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} version="V120 Manual" />
