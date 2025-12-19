@@ -107,7 +107,7 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                             key={tab.index}
                             onClick={() => setActiveTab(tab.index)}
                             className={`
-                                flex-1 flex items-center justify-center gap-2 py-3 px-4
+                                flex-1 flex items-center justify-center gap-2 py-2 px-4
                                 font-medium text-sm transition-all duration-200
                                 ${isActive
                                     ? 'bg-blue-500 text-white'
@@ -123,7 +123,7 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
             </div>
 
             {/* 効果グリッド */}
-            <div className="p-4">
+            <div className="p-3">
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
                     {currentCategory.effects.map((effect) => {
                         const Icon = effect.icon
@@ -136,7 +136,7 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                                 onClick={() => handleEffectSelect(effect.name)}
                                 className={`
                                     relative flex flex-col items-center justify-center p-2 rounded-lg
-                                    transition-all duration-200 min-h-[60px] overflow-hidden
+                                    transition-all duration-200 min-h-[56px] overflow-hidden
                                     ${isSelected
                                         ? 'bg-blue-500 text-white ring-2 ring-blue-300 shadow-md'
                                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -164,7 +164,7 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
 
             {/* 効果オプションセクション */}
             <hr className="border-gray-200" />
-            <div className="p-4 bg-blue-50">
+            <div className="p-3 bg-blue-50">
                 <h4 className="text-sm font-medium text-gray-700 mb-3 relative inline-block">
                     効果オプション
                     <span
