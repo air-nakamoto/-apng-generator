@@ -1,11 +1,25 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Upload, MousePointer, Download, AlertTriangle, CheckCircle, Zap, Image, Settings, HelpCircle, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Upload, MousePointer, Download, AlertTriangle, CheckCircle, Zap, Image, Settings, HelpCircle, ExternalLink, MessageSquare } from 'lucide-react'
+import { FeedbackModal } from '../../components/FeedbackModal'
 
 export default function ManualPage() {
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4 relative">
+            {/* Feedback Floating Button */}
+            <div className="absolute top-4 right-4 z-50">
+                <button
+                    onClick={() => setIsFeedbackModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-full shadow-sm transition-all hover:scale-105 active:scale-95 group"
+                >
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="text-sm font-medium">意見を送る</span>
+                </button>
+            </div>
             <div className="max-w-4xl mx-auto">
                 {/* ヘッダー */}
                 <div className="mb-8">
@@ -631,57 +645,6 @@ export default function ManualPage() {
                     </div>
                 </section>
 
-                {/* 意見・要望フォーム */}
-                <section id="feedback" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mt-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
-                        ご意見・ご要望
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                        このマニュアルやツールに関するご意見・ご要望がございましたら、お気軽にお寄せください。
-                    </p>
-
-                    <div className="space-y-4">
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                            <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                    <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                                </svg>
-                                GitHub Issues で報告
-                            </h3>
-                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                                バグ報告や機能リクエストは GitHub Issues でお願いします。
-                            </p>
-                            <a
-                                href="https://github.com/air-nakamoto/-apng-generator/issues/new"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-700 text-white rounded-lg text-sm hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
-                            >
-                                Issueを作成
-                                <ExternalLink className="w-3 h-3 ml-2" aria-hidden="true" focusable="false" />
-                            </a>
-                        </div>
-
-                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">
-                                メールで送る
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                GitHub アカウントをお持ちでない方は、メールでもお送りいただけます。
-                            </p>
-                            <a
-                                href="mailto:feedback@example.com?subject=APNG Generator マニュアルへのご意見&body=ご意見・ご要望をお書きください：%0D%0A%0D%0A"
-                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-                            >
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                メールを送る
-                            </a>
-                        </div>
-                    </div>
-                </section>
-
                 {/* フッター */}
                 <div className="text-center mt-8 text-sm text-gray-500">
                     <Link href="/" className="text-blue-600 hover:underline">
@@ -689,6 +652,7 @@ export default function ManualPage() {
                     </Link>
                 </div>
             </div>
+            <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} version="V120 Manual" />
         </div>
     )
 }
