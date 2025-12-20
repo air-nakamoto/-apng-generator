@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2C3E50"/>
+      <stop offset="100%" stop-color="#3498DB"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 六角形（中央配置） -->
+  <path d="M32,4 L56,18 L56,46 L32,60 L8,46 L8,18 Z"
+        fill="none"
+        stroke="url(#gradient)"
+        stroke-width="4"/>
+  
+  <!-- ピクセルブロック（六角形内に配置） -->
+  <rect x="22" y="28" width="10" height="10" fill="#3498DB" opacity="0.4"/>
+  <rect x="27" y="22" width="10" height="10" fill="#3498DB" opacity="0.7"/>
+  <rect x="32" y="16" width="10" height="10" fill="#3498DB" opacity="1"/>
+</svg>

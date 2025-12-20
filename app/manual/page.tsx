@@ -2,11 +2,37 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Upload, MousePointer, Download, AlertTriangle, CheckCircle, Zap, Image, Settings, HelpCircle, ExternalLink, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Upload, MousePointer, Download, AlertTriangle, CheckCircle, Zap, Image, Settings, HelpCircle, ExternalLink, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
 import { FeedbackModal } from '../../components/FeedbackModal'
 
 export default function ManualPage() {
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
+    const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set([1])) // ステップ1はデフォルトで開く
+    const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+
+    const toggleStep = (step: number) => {
+        setExpandedSteps(prev => {
+            const newSet = new Set(prev)
+            if (newSet.has(step)) {
+                newSet.delete(step)
+            } else {
+                newSet.add(step)
+            }
+            return newSet
+        })
+    }
+
+    const toggleSection = (section: string) => {
+        setExpandedSections(prev => {
+            const newSet = new Set(prev)
+            if (newSet.has(section)) {
+                newSet.delete(section)
+            } else {
+                newSet.add(section)
+            }
+            return newSet
+        })
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4 relative">
@@ -48,6 +74,33 @@ export default function ManualPage() {
                             <a href="#cocofolia" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
                                 🎮 ココフォリアでの使い方
                             </a>
+                            <ul className="ml-5 mt-1 space-y-1">
+                                <li>
+                                    <a href="#cocofolia-character" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ 立ち絵として使う
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#cocofolia-cutin" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ カットインとして使う
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#cocofolia-foreground" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ 前景・背景として使う
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#cocofolia-panel" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ スクリーン/マーカーパネル
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="/effects" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                ✨ トランジション効果一覧
+                            </a>
                         </li>
                         <li>
                             <a href="#settings" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
@@ -75,63 +128,127 @@ export default function ManualPage() {
                     </h2>
 
                     {/* ステップ1 */}
-                    <div className="mb-6 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
-                        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 flex items-center gap-3">
+                    <div className="mb-4 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
+                        <button
+                            onClick={() => toggleStep(1)}
+                            className="w-full bg-blue-50 dark:bg-blue-900/30 p-3 flex items-center gap-3 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                        >
                             <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold">1</span>
                             </div>
-                            <div>
+                            <div className="flex-1 text-left">
                                 <h3 className="font-semibold text-gray-800 dark:text-white">画像を選択</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">「画像選択＆プレビュー」パネルで画像を読み込みます</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">PNG/JPG画像をドラッグ＆ドロップ</p>
                             </div>
-                        </div>
-                        <div className="p-4 bg-white dark:bg-slate-700">
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                <li>画面左側の<strong>「画像選択＆プレビュー」</strong>パネルに、PNG/JPG画像をドラッグ＆ドロップ（またはクリックして選択）</li>
-                                <li>アップロードされると、プレビューキャンバスに画像が表示されます</li>
-                            </ol>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                ※透過PNG画像を使用すると、背景が透明なAPNGが生成できます
-                            </p>
-                        </div>
-                        <div className="p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600">
-                            <img
-                                src="/manual/step1_upload.png"
-                                alt="画像選択パネルの位置を示す画面"
-                                className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                loading="lazy"
-                                decoding="async"
-                                width="800"
-                                height="450"
-                            />
-                        </div>
+                            {expandedSteps.has(1) ? (
+                                <ChevronUp className="w-5 h-5 text-gray-400" />
+                            ) : (
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                            )}
+                        </button>
+                        {expandedSteps.has(1) && (
+                            <>
+                                <div className="p-4 bg-white dark:bg-slate-700">
+                                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 mb-3 text-sm text-green-700 dark:text-green-300">
+                                        💡 <strong>ポイント:</strong> 透過PNG画像を使うと、背景が透明なAPNGが作れます
+                                    </div>
+                                    <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                        <li>画面左側の<strong>「画像選択＆プレビュー」</strong>パネルに画像をドロップ</li>
+                                        <li>プレビューキャンバスに画像が表示されます</li>
+                                    </ol>
+                                </div>
+                                <button
+                                    onClick={() => toggleSection('step1-image')}
+                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center justify-center gap-2"
+                                >
+                                    {expandedSections.has('step1-image') ? '画面を隠す' : '画面を見る'}
+                                    {expandedSections.has('step1-image') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                </button>
+                                {expandedSections.has('step1-image') && (
+                                    <div className="p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600">
+                                        <img
+                                            src="/manual/step1_upload.png"
+                                            alt="画像選択パネルの位置を示す画面"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                            decoding="async"
+                                            width="800"
+                                            height="450"
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
 
                     {/* ステップ2 */}
-                    <div className="mb-6 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
-                        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 flex items-center gap-3">
+                    <div className="mb-4 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
+                        <button
+                            onClick={() => toggleStep(2)}
+                            className="w-full bg-blue-50 dark:bg-blue-900/30 p-3 flex items-center gap-3 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                        >
                             <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold">2</span>
                             </div>
-                            <div>
+                            <div className="flex-1 text-left">
                                 <h3 className="font-semibold text-gray-800 dark:text-white">トランジション効果を選択</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">登場・退場・演出の中から好みの効果を選びます</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">登場・退場・演出から選択 + 共通設定を調整</p>
                             </div>
-                        </div>
-                        <div className="p-4 bg-white dark:bg-slate-700">
-                            <div className="space-y-4">
-                                <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                        画面右側の<strong>「トランジション効果」</strong>パネルで、タブから効果カテゴリを選択：
-                                    </p>
+                            {expandedSteps.has(2) ? (
+                                <ChevronUp className="w-5 h-5 text-gray-400" />
+                            ) : (
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                            )}
+                        </button>
+                        {expandedSteps.has(2) && (
+                            <div className="p-4 bg-white dark:bg-slate-700">
+                                {/* カテゴリ簡潔表示 */}
+                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                    <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-2 rounded">
+                                        <span className="font-bold text-blue-700 dark:text-blue-300 text-sm">登場</span>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">現れる効果</p>
+                                    </div>
+                                    <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-2 rounded">
+                                        <span className="font-bold text-red-700 dark:text-red-300 text-sm">退場</span>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">消える効果</p>
+                                    </div>
+                                    <div className="bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-2 rounded">
+                                        <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">演出</span>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">ループ効果</p>
+                                    </div>
+                                </div>
 
-                                    {/* 登場 */}
-                                    <div className="mb-4">
-                                        <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-3 rounded mb-2">
-                                            <span className="font-bold text-blue-700 dark:text-blue-300">登場</span>
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">：画像が現れるアニメーション</span>
-                                        </div>
-                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                {/* 効果一覧へのリンク */}
+                                <Link
+                                    href="/effects"
+                                    className="flex items-center justify-center gap-2 w-full py-2 mb-4 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/70 transition-colors text-sm font-medium"
+                                >
+                                    ✨ 全効果一覧を見る
+                                    <ExternalLink className="w-4 h-4" />
+                                </Link>
+
+                                {/* 重要ポイント */}
+                                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3 mb-4">
+                                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">⚙️ 共通設定のポイント</p>
+                                    <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                                        <li>• <strong>ループ ON</strong>：カットイン向け（繰り返し再生）</li>
+                                        <li>• <strong>ループ OFF</strong>：立ち絵向け（1回再生）</li>
+                                        <li>• <strong>容量制限</strong>：立ち絵/前景/背景→5MB / パネル→1MB</li>
+                                    </ul>
+                                </div>
+
+                                {/* 詳細画像の折りたたみ */}
+                                <button
+                                    onClick={() => toggleSection('step2-images')}
+                                    className="w-full p-2 bg-gray-50 dark:bg-slate-600 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-500 flex items-center justify-center gap-2 rounded"
+                                >
+                                    {expandedSections.has('step2-images') ? '画面を隠す' : '各タブの画面を見る'}
+                                    {expandedSections.has('step2-images') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                </button>
+                                {expandedSections.has('step2-images') && (
+                                    <div className="mt-3 space-y-3">
+                                        <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">登場タブ</p>
                                             <img
                                                 src="/manual/step2_transition_entrance.png"
                                                 alt="登場トランジション効果の例"
@@ -142,18 +259,11 @@ export default function ManualPage() {
                                                 height="300"
                                             />
                                         </div>
-                                    </div>
-
-                                    {/* 退場 */}
-                                    <div className="mb-4">
-                                        <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-3 rounded mb-2">
-                                            <span className="font-bold text-red-700 dark:text-red-300">退場</span>
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">：画像が消えるアニメーション</span>
-                                        </div>
-                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">共通設定</p>
                                             <img
-                                                src="/manual/step2_transition_exit.png"
-                                                alt="退場トランジション効果の例"
+                                                src="/manual/step2_common_settings.png"
+                                                alt="共通設定画面"
                                                 className="w-full rounded border border-gray-200 dark:border-gray-600"
                                                 loading="lazy"
                                                 decoding="async"
@@ -162,100 +272,64 @@ export default function ManualPage() {
                                             />
                                         </div>
                                     </div>
-
-                                    {/* 演出 */}
-                                    <div className="mb-4">
-                                        <div className="bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-3 rounded mb-2">
-                                            <span className="font-bold text-purple-700 dark:text-purple-300">演出</span>
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">：ループするエフェクト</span>
-                                        </div>
-                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                            <img
-                                                src="/manual/step2_transition_performance.png"
-                                                alt="演出トランジション効果の例"
-                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                                loading="lazy"
-                                                decoding="async"
-                                                width="800"
-                                                height="300"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                        <strong>「効果オプション」</strong>で方向や強度を調整できます
-                                    </p>
-                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2 mb-3">
-                                        <img
-                                            src="/manual/step2_effect_options.png"
-                                            alt="効果オプション設定画面"
-                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                            loading="lazy"
-                                            decoding="async"
-                                            width="800"
-                                            height="300"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                        <strong>「共通設定」</strong>で以下を設定：
-                                    </p>
-                                    <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1 list-disc list-inside mb-2">
-                                        <li><strong>ループ</strong>：ON=繰り返し再生 / OFF=1回のみ再生</li>
-                                        <li><strong>容量制限</strong>：用途に合わせて1MB/5MB/制限なしを選択</li>
-                                    </ul>
-                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                        <img
-                                            src="/manual/step2_common_settings.png"
-                                            alt="共通設定画面"
-                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                            loading="lazy"
-                                            decoding="async"
-                                            width="800"
-                                            height="300"
-                                        />
-                                    </div>
-                                </div>
+                                )}
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* ステップ3 */}
                     <div className="border border-indigo-200 dark:border-indigo-800 rounded-lg overflow-hidden">
-                        <div className="bg-indigo-50 dark:bg-indigo-900/30 p-3 flex items-center gap-3">
+                        <button
+                            onClick={() => toggleStep(3)}
+                            className="w-full bg-indigo-50 dark:bg-indigo-900/30 p-3 flex items-center gap-3 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                        >
                             <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold">3</span>
                             </div>
-                            <div>
+                            <div className="flex-1 text-left">
                                 <h3 className="font-semibold text-gray-800 dark:text-white">プレビュー確認 & APNG生成</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">仕上がりを確認してダウンロードします</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">「APNG生成」ボタンでダウンロード</p>
                             </div>
-                        </div>
-                        <div className="p-4 bg-white dark:bg-slate-700">
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                <li>効果を選択すると自動でプレビューが再生されます（手動で確認したい場合は<strong>「プレビュー」</strong>ボタンをクリック）</li>
-                                <li>問題なければ<strong>「APNG生成」</strong>ボタンをクリック</li>
-                                <li>生成が完了すると自動的にAPNGファイルがダウンロードされます</li>
-                            </ol>
-                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-xs text-green-700 dark:text-green-300">
-                                ✅ 生成後、ファイルサイズが表示されます。容量制限を超えた場合は自動で圧縮されます。
-                            </div>
-                        </div>
-                        <div className="p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600">
-                            <img
-                                src="/manual/step3_generate.png"
-                                alt="ステップ3: APNG生成画面"
-                                className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                loading="lazy"
-                                decoding="async"
-                                width="800"
-                                height="450"
-                            />
-                        </div>
+                            {expandedSteps.has(3) ? (
+                                <ChevronUp className="w-5 h-5 text-gray-400" />
+                            ) : (
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                            )}
+                        </button>
+                        {expandedSteps.has(3) && (
+                            <>
+                                <div className="p-4 bg-white dark:bg-slate-700">
+                                    <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                        <li>効果を選択すると自動でプレビュー再生</li>
+                                        <li><strong>「APNG生成」</strong>ボタンをクリック</li>
+                                        <li>自動的にダウンロードされます</li>
+                                    </ol>
+                                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
+                                        ✅ 容量制限を超えた場合は自動で圧縮されます
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => toggleSection('step3-image')}
+                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center justify-center gap-2"
+                                >
+                                    {expandedSections.has('step3-image') ? '画面を隠す' : '画面を見る'}
+                                    {expandedSections.has('step3-image') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                </button>
+                                {expandedSections.has('step3-image') && (
+                                    <div className="p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600">
+                                        <img
+                                            src="/manual/step3_generate.png"
+                                            alt="ステップ3: APNG生成画面"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                            decoding="async"
+                                            width="800"
+                                            height="450"
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </section>
 
@@ -291,7 +365,7 @@ export default function ManualPage() {
                             </div>
                         </div>
 
-                        <div>
+                        <div id="cocofolia-character">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">立ち絵として使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: 用途による</p>
@@ -315,7 +389,7 @@ export default function ManualPage() {
                             </div>
                         </div>
 
-                        <div>
+                        <div id="cocofolia-cutin">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">カットインとして使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: ON</p>
@@ -344,7 +418,7 @@ export default function ManualPage() {
                             </div>
                         </div>
 
-                        <div>
+                        <div id="cocofolia-foreground">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">前景・背景として使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: 用途による</p>
@@ -368,7 +442,7 @@ export default function ManualPage() {
                             </div>
                         </div>
 
-                        <div>
+                        <div id="cocofolia-panel">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">スクリーンパネル／マーカーパネルとして使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 1MB未満推奨 / ループ: 用途による</p>
@@ -446,8 +520,8 @@ export default function ManualPage() {
                             <tbody className="text-gray-800 dark:text-gray-200">
                                 <tr className="border-b dark:border-gray-700">
                                     <td className="py-2 px-3 font-medium">容量制限<br /><span className="text-xs text-gray-500">(立ち絵/前景/背景)</span></td>
-                                    <td className="py-2 px-3"><span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">1MB未満推奨</span></td>
-                                    <td className="py-2 px-3 text-gray-600 dark:text-gray-400">圧縮を避けアニメーション安定動作</td>
+                                    <td className="py-2 px-3"><span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">5MB以下</span></td>
+                                    <td className="py-2 px-3 text-gray-600 dark:text-gray-400">ココフォリアのアップロード上限内で高画質を維持</td>
                                 </tr>
                                 <tr className="border-b dark:border-gray-700">
                                     <td className="py-2 px-3 font-medium">容量制限<br /><span className="text-xs text-gray-500">(スクリーン/マーカー)</span></td>
@@ -481,196 +555,168 @@ export default function ManualPage() {
                         よくある質問
                     </h2>
 
+                    {/* よくある問題トップ表示 */}
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                        <p className="font-bold text-red-700 dark:text-red-300 mb-2 flex items-center">
+                            <AlertTriangle className="w-4 h-4 mr-2" />
+                            最もよくある問題
+                        </p>
+                        <ul className="text-sm text-red-600 dark:text-red-400 space-y-1">
+                            <li>• <strong>圧縮確認で「はい」を選んでしまった</strong> → 「いいえ」を選択し直してください</li>
+                            <li>• <strong>カットインが動かない</strong> → ループをONにして再生成してください</li>
+                            <li>• <strong>パネルでアニメーションが動かない</strong> → 1MB未満で再生成してください</li>
+                        </ul>
+                    </div>
+
+                    {/* カテゴリタブ */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {['すべて', 'アニメーション問題', 'ココフォリア', '設定・画質'].map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setExpandedSections(prev => {
+                                    const newSet = new Set(prev)
+                                    newSet.forEach(s => { if (s.startsWith('faq-cat-')) newSet.delete(s) })
+                                    newSet.add(`faq-cat-${cat}`)
+                                    return newSet
+                                })}
+                                className={`px-3 py-1 text-sm rounded-full transition-colors ${(expandedSections.has(`faq-cat-${cat}`) || (!Array.from(expandedSections).some(s => s.startsWith('faq-cat-')) && cat === 'すべて'))
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="space-y-3">
-                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                <svg
-                                    className="w-5 h-5 transition-transform group-open:rotate-90"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                Q. アニメーションが動かない
-                            </summary>
-                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                <p>ファイルサイズと圧縮が原因の可能性があります。以下を確認してください：</p>
-                                <ul className="list-disc list-inside space-y-1 ml-4">
-                                    <li>ファイルサイズが1MB未満か確認</li>
-                                    <li>ココフォリア側で圧縮が適用されていないか確認（「圧縮しますか？」で「いいえ」を選択）</li>
-                                    <li>カットインの場合、ループがONになっているか確認</li>
-                                    <li>動かない場合はNOIMAGEを試してみる（下記参照）</li>
-                                </ul>
-                            </div>
-                        </details>
+                        {/* Q1: アニメーションが動かない - カテゴリ: アニメーション問題 */}
+                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-アニメーション問題') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                    <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
+                                    Q. アニメーションが動かない
+                                </summary>
+                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                    <p>以下を確認してください：</p>
+                                    <ul className="list-disc list-inside space-y-1 ml-4">
+                                        <li>ココフォリアで「圧縮しますか？」→<strong>「いいえ」</strong>を選択</li>
+                                        <li>カットインの場合は<strong>ループON</strong>で生成</li>
+                                        <li>パネル系は<strong>1MB未満</strong>で生成</li>
+                                    </ul>
+                                </div>
+                            </details>
+                        )}
 
-                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                <svg
-                                    className="w-5 h-5 transition-transform group-open:rotate-90"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                Q. 画質が悪い
-                            </summary>
-                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
-                                <p>
-                                    容量制限により自動で解像度が下げられます。より高画質にしたい場合は容量制限を「5MB」または「制限なし」にしてください。
-                                    ただし、ココフォリア側で圧縮が適用される可能性があるため、1MB未満を推奨します。
-                                </p>
-                            </div>
-                        </details>
+                        {/* Q2: 画質が悪い - カテゴリ: 設定・画質 */}
+                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-設定・画質') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-1.5 py-0.5 rounded">設定</span>
+                                    Q. 画質が悪い
+                                </summary>
+                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                    <p>容量制限により自動で解像度が下がります。用途に応じて設定を調整：</p>
+                                    <ul className="list-disc list-inside space-y-1 ml-4">
+                                        <li><strong>立ち絵/前景/背景</strong>：「5MB」を選択可</li>
+                                        <li><strong>スクリーン/マーカーパネル</strong>：「1MB」推奨</li>
+                                    </ul>
+                                </div>
+                            </details>
+                        )}
 
-                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                <svg
-                                    className="w-5 h-5 transition-transform group-open:rotate-90"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                Q. 透過部分が真っ白になる
-                            </summary>
-                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
-                                <p>
-                                    元画像がPNG形式で透過情報を持っているか確認してください。JPG形式は透過に対応していません。
-                                </p>
-                            </div>
-                        </details>
+                        {/* Q3: 透過部分が真っ白 - カテゴリ: 設定・画質 */}
+                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-設定・画質') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-1.5 py-0.5 rounded">設定</span>
+                                    Q. 透過部分が真っ白になる
+                                </summary>
+                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
+                                    <p>元画像が<strong>PNG形式で透過情報を持っているか</strong>確認してください。JPG形式は透過に対応していません。</p>
+                                </div>
+                            </details>
+                        )}
 
-                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                <svg
-                                    className="w-5 h-5 transition-transform group-open:rotate-90"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                Q. ループOFFのAPNGがココフォリアで再生されない
-                            </summary>
-                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                <p>
-                                    <strong>カットインの場合はループONが推奨</strong>されます。ループOFFの場合、再読み込みされないなど動作が不安定になることがあります。
-                                </p>
-                                <p>
-                                    登場・退場効果を使う場合は、立ち絵やキャラクター設定では正常に動作しますが、カットインには向いていません。
-                                    カットイン用には「ループ：ON」を選択して再生成してください。
-                                </p>
-                            </div>
-                        </details>
+                        {/* Q4: ループOFFで再生されない - カテゴリ: ココフォリア */}
+                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">ココフォ</span>
+                                    Q. ループOFFのAPNGが再生されない
+                                </summary>
+                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                    <p><strong>カットインにはループONが推奨</strong>です。ループOFFは立ち絵の登場演出向けです。</p>
+                                </div>
+                            </details>
+                        )}
 
-                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                <svg
-                                    className="w-5 h-5 transition-transform group-open:rotate-90"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                Q. スクリーンパネル・マーカーパネルでアニメーションが動かない
-                            </summary>
-                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                <p><strong>パネル系は特に注意が必要</strong>です。以下を確認してください：</p>
-                                <ul className="list-disc list-inside space-y-1 ml-4">
-                                    <li>ファイルサイズが<strong>1MB未満</strong>であること</li>
-                                    <li>動かない場合は、NOIMAGEを試してみてください（状況によっては効果的なワークアラウンドです）</li>
-                                    <li>「容量制限：1MB以下」を選択して再生成してください</li>
-                                </ul>
-                            </div>
-                        </details>
+                        {/* Q5: パネルで動かない - カテゴリ: ココフォリア */}
+                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">ココフォ</span>
+                                    Q. スクリーン/マーカーパネルで動かない
+                                </summary>
+                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                    <p>パネル系は特に厳格です：</p>
+                                    <ul className="list-disc list-inside space-y-1 ml-4">
+                                        <li>ファイルサイズを<strong>1MB未満</strong>にする</li>
+                                        <li>動かない場合はNOIMAGE→再設定を試す</li>
+                                    </ul>
+                                </div>
+                            </details>
+                        )}
 
-                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                <svg
-                                    className="w-5 h-5 transition-transform group-open:rotate-90"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                Q. NOIMAGEは必須ですか？
-                            </summary>
-                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                <p>
-                                    <strong>必須ではありません</strong>が、状況によっては効果的なワークアラウンドです。
-                                </p>
-                                <p>以下のケースで試してみてください：</p>
-                                <ul className="list-disc list-inside space-y-1 ml-4">
-                                    <li>非ループ素材で再生されない場合</li>
-                                    <li>再生トリガーがうまく働かない場合</li>
-                                    <li>一度NOIMAGEを挟んでから設定すると起動するという報告があります</li>
-                                </ul>
-                            </div>
-                        </details>
+                        {/* Q6: 2回目以降再生されない - カテゴリ: アニメーション問題 */}
+                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-アニメーション問題') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                    <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
+                                    Q. 非ループAPNGが2回目以降再生されない
+                                </summary>
+                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                    <p><strong>原因:</strong> ブラウザキャッシュにより再ダウンロードされない</p>
+                                    <p><strong>対処法:</strong></p>
+                                    <ul className="list-disc list-inside space-y-1 ml-4">
+                                        <li>NOIMAGE→再設定</li>
+                                        <li>強制リロード（Ctrl+F5 / Cmd+Shift+R）</li>
+                                        <li>カットインは<strong>ループON</strong>で生成</li>
+                                    </ul>
+                                </div>
+                            </details>
+                        )}
 
-                        <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                <svg
-                                    className="w-5 h-5 transition-transform group-open:rotate-90"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                Q. アップロード時に「圧縮しますか？」と聞かれた
-                            </summary>
-                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
-                                <p>
-                                    <strong>必ず「いいえ」を選択</strong>してください。「はい」を選ぶとアニメーション情報が失われ、動かなくなります。
-                                    この確認が出る場合は、ファイルサイズが1MBを超えている可能性があります。1MB未満で再生成することを推奨します。
-                                </p>
-                            </div>
-                        </details>
+                        {/* Q7: 圧縮確認 - カテゴリ: ココフォリア */}
+                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
+                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">ココフォ</span>
+                                    Q. 「圧縮しますか？」と聞かれた
+                                </summary>
+                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
+                                    <p><strong className="text-red-600 dark:text-red-400">必ず「いいえ」を選択</strong>してください。「はい」を選ぶとアニメーションが動かなくなります。</p>
+                                </div>
+                            </details>
+                        )}
 
-                        <details className="group">
-                            <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                <svg
-                                    className="w-5 h-5 transition-transform group-open:rotate-90"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                                Q. 急にアニメーションが動かなくなった
-                            </summary>
-                            <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                <p>ブラウザのキャッシュが原因の可能性があります。以下を試してください：</p>
-                                <ul className="list-disc list-inside space-y-1 ml-4">
-                                    <li>Ctrl+F5（またはCmd+Shift+R）で強制リロード</li>
-                                    <li>ブラウザのキャッシュとCookieを削除</li>
-                                    <li>一度ログアウトして再ログイン</li>
-                                </ul>
-                            </div>
-                        </details>
+                        {/* Q8: 急に動かなくなった - カテゴリ: アニメーション問題 */}
+                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-アニメーション問題') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                            <details className="group">
+                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                    <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
+                                    Q. 急にアニメーションが動かなくなった
+                                </summary>
+                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                    <p>ブラウザキャッシュが原因の可能性：</p>
+                                    <ul className="list-disc list-inside space-y-1 ml-4">
+                                        <li>強制リロード（Ctrl+F5 / Cmd+Shift+R）</li>
+                                        <li>キャッシュとCookieを削除</li>
+                                        <li>再ログイン</li>
+                                    </ul>
+                                </div>
+                            </details>
+                        )}
                     </div>
                 </section>
 
