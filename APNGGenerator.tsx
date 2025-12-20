@@ -3009,7 +3009,12 @@ export default function APNGGenerator() {
                                                     </div>
                                                     <div>
                                                         <p className="text-base font-semibold text-gray-800">効果・設定を選択</p>
-                                                        <p className="text-xs text-gray-500">登場・退場・演出から選択し、オプションを調整</p>
+                                                        <p className="text-xs text-gray-500 mb-1">登場・退場・演出から選択し、効果オプションや共通設定を調整</p>
+                                                        <div className="text-xs text-gray-600 space-y-0.5 pl-2">
+                                                            <p>・ループ設定：ON / OFF</p>
+                                                            <p>・容量制限：制限なし / 1MB / 5MB / 10MB</p>
+                                                            <p>・スピードやフレームレート</p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-start gap-2">

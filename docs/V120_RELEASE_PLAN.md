@@ -75,18 +75,17 @@ APNG Generator V120の全体的な改善計画。実装済み機能と今後の�
 
 ---
 
-### ファビコン・OGP設定
+### ファビコン・OGP設定 ✅ 完了
 
 #### ファビコン
-- [ ] favicon.ico（16x16, 32x32 マルチサイズ）
-- [ ] apple-touch-icon.png（180x180）
-- [ ] favicon-16x16.png
-- [ ] favicon-32x32.png
+- [x] favicon-512.png（512x512）
+- [x] apple-touch-icon.png（512x512）
+- [x] favicon.svg（SVGファビコン）
 
 #### OGP画像
-- [ ] og-image.png（1200x630）
-- [ ] Twitter Card設定
-- [ ] app/layout.tsx に metadata 追加
+- [x] og-image.png（1200x630）
+- [x] Twitter Card設定
+- [x] app/layout.tsx に metadata 追加
 
 **必要なmetadata:**
 ```tsx
