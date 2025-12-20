@@ -2,8 +2,21 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Upload, MousePointer, Download, AlertTriangle, CheckCircle, Zap, Image, Settings, HelpCircle, ExternalLink, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Upload, MousePointer, Download, AlertTriangle, CheckCircle, Zap, Image, Settings, HelpCircle, ExternalLink, MessageSquare, ChevronDown, ChevronUp, ArrowUp } from 'lucide-react'
 import { FeedbackModal } from '../../components/FeedbackModal'
+
+// 目次へ戻るリンクコンポーネント
+const BackToToc = () => (
+    <div className="flex justify-end mt-4 pt-2 border-t border-gray-100 dark:border-gray-700">
+        <a
+            href="#toc"
+            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+        >
+            <ArrowUp className="w-3 h-3" />
+            目次へ戻る
+        </a>
+    </div>
+)
 
 export default function ManualPage() {
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
@@ -34,6 +47,7 @@ export default function ManualPage() {
         })
     }
 
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4 relative">
             {/* Feedback Floating Button */}
@@ -62,7 +76,7 @@ export default function ManualPage() {
                 </div>
 
                 {/* 目次 */}
-                <nav aria-label="目次" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
+                <nav id="toc" aria-label="目次" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-3">目次</h2>
                     <ul className="space-y-2 text-sm">
                         <li>
@@ -76,8 +90,13 @@ export default function ManualPage() {
                             </a>
                             <ul className="ml-5 mt-1 space-y-1">
                                 <li>
-                                    <a href="#cocofolia-character" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
-                                        └ 立ち絵として使う
+                                    <a href="#cocofolia-foreground" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ 前景・背景として使う
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#cocofolia-panel" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ スクリーン/マーカーパネル
                                     </a>
                                 </li>
                                 <li>
@@ -86,13 +105,8 @@ export default function ManualPage() {
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#cocofolia-foreground" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
-                                        └ 前景・背景として使う
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#cocofolia-panel" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
-                                        └ スクリーン/マーカーパネル
+                                    <a href="#cocofolia-character" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ 立ち絵として使う
                                     </a>
                                 </li>
                             </ul>
@@ -331,6 +345,7 @@ export default function ManualPage() {
                             </>
                         )}
                     </div>
+                    <BackToToc />
                 </section>
 
                 {/* ココフォリア設定ガイド */}
@@ -365,59 +380,7 @@ export default function ManualPage() {
                             </div>
                         </div>
 
-                        <div id="cocofolia-character">
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">立ち絵として使う場合</h3>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: 用途による</p>
-                            </div>
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                <li>ココフォリアでキャラクターを選択</li>
-                                <li>「キャラクター」タブを開く</li>
-                                <li>生成したAPNGファイルをドラッグ&ドロップ</li>
-                                <li>立ち絵がアニメーションで表示されます</li>
-                            </ol>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                <img
-                                    src="/manual/cocofolia_character.png"
-                                    alt="ココフォリアでのキャラクター立ち絵設定画面"
-                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                    loading="lazy"
-                                    decoding="async"
-                                    width="800"
-                                    height="450"
-                                />
-                            </div>
-                        </div>
-
-                        <div id="cocofolia-cutin">
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">カットインとして使う場合</h3>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: ON</p>
-                            </div>
-                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
-                                <p className="text-sm text-blue-700 dark:text-blue-300">
-                                    ※カットイン用のAPNGはループONでお願いします。<br />
-                                    （現状、ループOFFの場合、カットインでアニメーションが読み込みされないため）
-                                </p>
-                            </div>
-                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                <li>ココフォリアでキャラクターを選択</li>
-                                <li>「カットイン」タブを開く</li>
-                                <li>生成したAPNGファイルを設定</li>
-                            </ol>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                <img
-                                    src="/manual/cocofolia_cutin.png"
-                                    alt="ココフォリアでのカットイン設定画面"
-                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                    loading="lazy"
-                                    decoding="async"
-                                    width="800"
-                                    height="450"
-                                />
-                            </div>
-                        </div>
-
+                        {/* 1. 前景・背景 */}
                         <div id="cocofolia-foreground">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">前景・背景として使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
@@ -442,6 +405,7 @@ export default function ManualPage() {
                             </div>
                         </div>
 
+                        {/* 2. スクリーン/マーカーパネル */}
                         <div id="cocofolia-panel">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">スクリーンパネル／マーカーパネルとして使う場合</h3>
                             <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
@@ -498,7 +462,63 @@ export default function ManualPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* 3. カットイン */}
+                        <div id="cocofolia-cutin">
+                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">カットインとして使う場合</h3>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: ON</p>
+                            </div>
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
+                                <p className="text-sm text-blue-700 dark:text-blue-300">
+                                    ※カットイン用のAPNGはループONでお願いします。<br />
+                                    （現状、ループOFFの場合、カットインでアニメーションが読み込みされないため）
+                                </p>
+                            </div>
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                <li>ココフォリアでキャラクターを選択</li>
+                                <li>「カットイン」タブを開く</li>
+                                <li>生成したAPNGファイルを設定</li>
+                            </ol>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                <img
+                                    src="/manual/cocofolia_cutin.png"
+                                    alt="ココフォリアでのカットイン設定画面"
+                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="450"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 4. 立ち絵 */}
+                        <div id="cocofolia-character">
+                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">立ち絵として使う場合</h3>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: 用途による</p>
+                            </div>
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                <li>ココフォリアでキャラクターを選択</li>
+                                <li>「キャラクター」タブを開く</li>
+                                <li>生成したAPNGファイルをドラッグ&ドロップ</li>
+                                <li>立ち絵がアニメーションで表示されます</li>
+                            </ol>
+                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                <img
+                                    src="/manual/cocofolia_character.png"
+                                    alt="ココフォリアでのキャラクター立ち絵設定画面"
+                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="450"
+                                />
+                            </div>
+                        </div>
                     </div>
+                    <BackToToc />
                 </section>
 
                 {/* 推奨設定 */}
@@ -546,6 +566,7 @@ export default function ManualPage() {
                             </tbody>
                         </table>
                     </div>
+                    <BackToToc />
                 </section>
 
                 {/* FAQ */}
@@ -580,8 +601,8 @@ export default function ManualPage() {
                                     return newSet
                                 })}
                                 className={`px-3 py-1 text-sm rounded-full transition-colors ${(expandedSections.has(`faq-cat-${cat}`) || (!Array.from(expandedSections).some(s => s.startsWith('faq-cat-')) && cat === 'すべて'))
-                                        ? 'bg-blue-500 text-white'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                     }`}
                             >
                                 {cat}
@@ -718,6 +739,7 @@ export default function ManualPage() {
                             </details>
                         )}
                     </div>
+                    <BackToToc />
                 </section>
 
                 {/* 関連リンク */}
@@ -754,6 +776,7 @@ export default function ManualPage() {
                             <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" focusable="false" />
                         </a>
                     </div>
+                    <BackToToc />
                 </section>
 
                 {/* フッター */}
