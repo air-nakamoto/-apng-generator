@@ -385,20 +385,56 @@ export default function ManualPage() {
                                 <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB未満推奨</strong> / 🔄 ループ: <strong>用途による</strong></p>
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                <li>ココフォリアのルーム画面右側にある「前景/背景」タブを開く</li>
-                                <li>「前景」または「背景」の「+」ボタンをクリック</li>
-                                <li>生成したAPNGファイルをドラッグ&ドロップまたは選択</li>
+                                <li>ココフォリアのルーム画面のなにもない所で<strong>右クリック</strong></li>
+                                <li><strong>「前景・背景を変更」</strong>をクリック</li>
+                                <li><strong>「背景」</strong>（または前景）を選択し、設定したい画像をアップロード</li>
+                                <li>設定する画像を選択する</li>
                                 <li>ルーム全体にアニメーション演出が適用されます</li>
                             </ol>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                            {/* 2枚の画像を横並び */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                <div className="rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                    <img
+                                        src="/manual/cocofolia_rightclick_menu.png"
+                                        alt="ココフォリアで右クリック→前景・背景を変更"
+                                        className="w-full"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="600"
+                                        height="400"
+                                    />
+                                </div>
+                                <div className="rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                    <img
+                                        src="/manual/cocofolia_select_image.png"
+                                        alt="背景を選択して画像をアップロード"
+                                        className="w-full"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="800"
+                                        height="400"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* 前景・背景の補足説明 */}
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-3">
+                                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">💡 補足：前景・背景の仕組み</p>
+                                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                                    <li>• <strong>背景を設定</strong>すると、自動的に前景にも同じ画像が設定されます</li>
+                                    <li>• さらに<strong>前景を設定</strong>すると、背景と同じ画像の上に前景が重ねて表示されます</li>
+                                </ul>
+                            </div>
+                            {/* 前景・背景の図解 */}
+                            <div className="max-w-[70%] mx-auto mb-3 rounded overflow-hidden border border-gray-200 dark:border-gray-600">
                                 <img
-                                    src="/manual/cocofolia_foreground.png"
-                                    alt="ココフォリアでの前景・背景設定画面"
-                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                    src="/manual/foreground_background_explanation.png"
+                                    alt="前景・背景レイヤーの仕組み図解"
+                                    className="w-full"
                                     loading="lazy"
                                     decoding="async"
-                                    width="800"
-                                    height="450"
+                                    width="1024"
+                                    height="576"
                                 />
                             </div>
                         </div>
