@@ -83,6 +83,23 @@ export default function ManualPage() {
                             <a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
                                 📝 アニメーションPNG作成手順
                             </a>
+                            <ul className="ml-5 mt-1 space-y-1">
+                                <li>
+                                    <a href="#step1" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ 1. 画像を選択
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#step2" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ 2. トランジション効果を選択
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#step3" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-300">
+                                        └ 3. プレビュー確認 & APNG生成
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li>
                             <a href="#cocofolia" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
@@ -142,11 +159,8 @@ export default function ManualPage() {
                     </h2>
 
                     {/* ステップ1 */}
-                    <div className="mb-4 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
-                        <button
-                            onClick={() => toggleStep(1)}
-                            className="w-full bg-blue-50 dark:bg-blue-900/30 p-3 flex items-center gap-3 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                        >
+                    <div id="step1" className="mb-4 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 flex items-center gap-3">
                             <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold">1</span>
                             </div>
@@ -154,53 +168,32 @@ export default function ManualPage() {
                                 <h3 className="font-semibold text-gray-800 dark:text-white">画像を選択</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-300">PNG/JPG画像をドラッグ＆ドロップ</p>
                             </div>
-                            {expandedSteps.has(1) ? (
-                                <ChevronUp className="w-5 h-5 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                            )}
-                        </button>
-                        {expandedSteps.has(1) && (
-                            <>
-                                <div className="p-4 bg-white dark:bg-slate-700">
-                                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 mb-3 text-sm text-green-700 dark:text-green-300">
-                                        💡 <strong>ポイント:</strong> 透過PNG画像を使うと、背景が透明なAPNGが作れます
-                                    </div>
-                                    <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                        <li>画面左側の<strong>「画像選択＆プレビュー」</strong>パネルに画像をドロップ</li>
-                                        <li>プレビューキャンバスに画像が表示されます</li>
-                                    </ol>
-                                </div>
-                                <button
-                                    onClick={() => toggleSection('step1-image')}
-                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center justify-center gap-2"
-                                >
-                                    {expandedSections.has('step1-image') ? '画面を隠す' : '画面を見る'}
-                                    {expandedSections.has('step1-image') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                </button>
-                                {expandedSections.has('step1-image') && (
-                                    <div className="p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600">
-                                        <img
-                                            src="/manual/step1_upload.png"
-                                            alt="画像選択パネルの位置を示す画面"
-                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                            loading="lazy"
-                                            decoding="async"
-                                            width="800"
-                                            height="450"
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        )}
+                        </div>
+                        <div className="p-4 bg-white dark:bg-slate-700">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                <li>画面左側の<strong>「画像選択＆プレビュー」</strong>パネルに画像をドロップ</li>
+                                <li>プレビューキャンバスに画像が表示されます</li>
+                            </ol>
+                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 mb-3 text-sm text-green-700 dark:text-green-300">
+                                💡 <strong>ポイント:</strong> 透過PNG画像を使うと、背景が透明なAPNGが作れます
+                            </div>
+                            <div className="max-w-[70%] mx-auto rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                <img
+                                    src="/manual/step1_upload.png"
+                                    alt="画像選択パネルの位置を示す画面"
+                                    className="w-full"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="450"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* ステップ2 */}
-                    <div className="mb-4 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
-                        <button
-                            onClick={() => toggleStep(2)}
-                            className="w-full bg-blue-50 dark:bg-blue-900/30 p-3 flex items-center gap-3 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                        >
+                    <div id="step2" className="mb-4 border border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 flex items-center gap-3">
                             <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold">2</span>
                             </div>
@@ -208,95 +201,93 @@ export default function ManualPage() {
                                 <h3 className="font-semibold text-gray-800 dark:text-white">トランジション効果を選択</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-300">登場・退場・演出から選択 + 共通設定を調整</p>
                             </div>
-                            {expandedSteps.has(2) ? (
-                                <ChevronUp className="w-5 h-5 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                            )}
-                        </button>
-                        {expandedSteps.has(2) && (
-                            <div className="p-4 bg-white dark:bg-slate-700">
-                                {/* カテゴリ簡潔表示 */}
-                                <div className="grid grid-cols-3 gap-2 mb-4">
-                                    <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-2 rounded">
-                                        <span className="font-bold text-blue-700 dark:text-blue-300 text-sm">登場</span>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">現れる効果</p>
-                                    </div>
-                                    <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-2 rounded">
-                                        <span className="font-bold text-red-700 dark:text-red-300 text-sm">退場</span>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">消える効果</p>
-                                    </div>
-                                    <div className="bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-2 rounded">
-                                        <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">演出</span>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">ループ効果</p>
-                                    </div>
+                        </div>
+                        <div className="p-4 bg-white dark:bg-slate-700">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                <li>画像をセットしたら、<strong>登場・退場・演出</strong>から選択</li>
+                                <li>各トランジションを選択すると、セットした画像がプレビュー再生される</li>
+                                <li>効果オプションがあるもの（上下左右、大中小など）は、効果オプションを選ぶ</li>
+                            </ol>
+
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                                <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-2 rounded">
+                                    <span className="font-bold text-blue-700 dark:text-blue-300 text-sm">登場</span>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">現れる効果</p>
                                 </div>
-
-                                {/* 効果一覧へのリンク */}
-                                <Link
-                                    href="/effects"
-                                    className="flex items-center justify-center gap-2 w-full py-2 mb-4 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/70 transition-colors text-sm font-medium"
-                                >
-                                    ✨ 全効果一覧を見る
-                                    <ExternalLink className="w-4 h-4" />
-                                </Link>
-
-                                {/* 重要ポイント */}
-                                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3 mb-4">
-                                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">⚙️ 共通設定のポイント</p>
-                                    <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                                        <li>• <strong>ループ ON</strong>：カットイン向け（繰り返し再生）</li>
-                                        <li>• <strong>ループ OFF</strong>：立ち絵向け（1回再生）</li>
-                                        <li>• <strong>容量制限</strong>：立ち絵/前景/背景→5MB / パネル→1MB</li>
-                                    </ul>
+                                <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-2 rounded">
+                                    <span className="font-bold text-red-700 dark:text-red-300 text-sm">退場</span>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">消える効果</p>
                                 </div>
-
-                                {/* 詳細画像の折りたたみ */}
-                                <button
-                                    onClick={() => toggleSection('step2-images')}
-                                    className="w-full p-2 bg-gray-50 dark:bg-slate-600 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-500 flex items-center justify-center gap-2 rounded"
-                                >
-                                    {expandedSections.has('step2-images') ? '画面を隠す' : '各タブの画面を見る'}
-                                    {expandedSections.has('step2-images') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                </button>
-                                {expandedSections.has('step2-images') && (
-                                    <div className="mt-3 space-y-3">
-                                        <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">登場タブ</p>
-                                            <img
-                                                src="/manual/step2_transition_entrance.png"
-                                                alt="登場トランジション効果の例"
-                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                                loading="lazy"
-                                                decoding="async"
-                                                width="800"
-                                                height="300"
-                                            />
-                                        </div>
-                                        <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">共通設定</p>
-                                            <img
-                                                src="/manual/step2_common_settings.png"
-                                                alt="共通設定画面"
-                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                                loading="lazy"
-                                                decoding="async"
-                                                width="800"
-                                                height="300"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
+                                <div className="bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500 p-2 rounded">
+                                    <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">演出</span>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">ループ効果</p>
+                                </div>
                             </div>
-                        )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                <div className="rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                    <img
+                                        src="/manual/step2_transition_entrance.png"
+                                        alt="登場トランジション効果の選択画面"
+                                        className="w-full"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="800"
+                                        height="300"
+                                    />
+                                </div>
+                                <div className="rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                    <img
+                                        src="/manual/step2_effect_options.png"
+                                        alt="効果オプション（方向など）の選択画面"
+                                        className="w-full"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="800"
+                                        height="200"
+                                    />
+                                </div>
+                            </div>
+
+                            <Link
+                                href="/effects"
+                                className="flex items-center justify-center gap-2 w-full py-2 mb-3 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/70 transition-colors text-sm font-medium"
+                            >
+                                ✨ 全効果一覧を見る
+                                <ExternalLink className="w-4 h-4" />
+                            </Link>
+
+                            <ol start={4} className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                <li>共通設定を必要に応じて調整</li>
+                            </ol>
+
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3 mb-3">
+                                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">⚙️ 共通設定のポイント</p>
+                                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                                    <li>• <strong>ループ ON</strong>：アニメーションを繰り返し再生</li>
+                                    <li>• <strong>ループ OFF</strong>：アニメーションを1回だけ再生</li>
+                                    <li>• <strong>容量制限</strong>：生成するファイルサイズの上限を設定（例：5MBを選択すると5MB以下に自動調整されます）</li>
+                                    <li>• <strong>再生スピード</strong>：アニメーションの速度（0.25x〜2.0x）</li>
+                                    <li>• <strong>フレームレート</strong>：1秒あたりのコマ数（10〜40fps）。高いほど滑らかだがファイルサイズ増</li>
+                                </ul>
+                            </div>
+                            <div className="max-w-[70%] mx-auto rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                <img
+                                    src="/manual/step2_common_settings.png"
+                                    alt="共通設定画面"
+                                    className="w-full"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="200"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* ステップ3 */}
-                    <div className="border border-indigo-200 dark:border-indigo-800 rounded-lg overflow-hidden">
-                        <button
-                            onClick={() => toggleStep(3)}
-                            className="w-full bg-indigo-50 dark:bg-indigo-900/30 p-3 flex items-center gap-3 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
-                        >
+                    <div id="step3" className="border border-indigo-200 dark:border-indigo-800 rounded-lg overflow-hidden">
+                        <div className="bg-indigo-50 dark:bg-indigo-900/30 p-3 flex items-center gap-3">
                             <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold">3</span>
                             </div>
@@ -304,46 +295,53 @@ export default function ManualPage() {
                                 <h3 className="font-semibold text-gray-800 dark:text-white">プレビュー確認 & APNG生成</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-300">「APNG生成」ボタンでダウンロード</p>
                             </div>
-                            {expandedSteps.has(3) ? (
-                                <ChevronUp className="w-5 h-5 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                            )}
-                        </button>
-                        {expandedSteps.has(3) && (
-                            <>
-                                <div className="p-4 bg-white dark:bg-slate-700">
-                                    <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                        <li>効果を選択すると自動でプレビュー再生</li>
-                                        <li><strong>「APNG生成」</strong>ボタンをクリック</li>
-                                        <li>自動的にダウンロードされます</li>
-                                    </ol>
-                                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
-                                        ✅ 容量制限を超えた場合は自動で圧縮されます
-                                    </div>
+                        </div>
+                        <div className="p-4 bg-white dark:bg-slate-700">
+                            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                <li>効果を選択すると自動でプレビュー再生</li>
+                                <li><strong>「APNG生成」</strong>ボタンをクリック</li>
+                                <li>自動的にダウンロードされます</li>
+                            </ol>
+                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300 mb-3">
+                                ✅ 容量制限を超えた場合は自動で圧縮されます
+                            </div>
+                            <div className="max-w-[70%] mx-auto rounded overflow-hidden border border-gray-200 dark:border-gray-600 mb-3">
+                                <img
+                                    src="/manual/step3_generate_button.png"
+                                    alt="APNG生成ボタンの位置（上下どちらでもOK）"
+                                    className="w-full"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="800"
+                                    height="450"
+                                />
+                            </div>
+                            {/* 生成中・完了の横並び画像 */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className="rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                    <img
+                                        src="/manual/step3_generating.png"
+                                        alt="APNG生成中の画面"
+                                        className="w-full"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="400"
+                                        height="300"
+                                    />
                                 </div>
-                                <button
-                                    onClick={() => toggleSection('step3-image')}
-                                    className="w-full p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center justify-center gap-2"
-                                >
-                                    {expandedSections.has('step3-image') ? '画面を隠す' : '画面を見る'}
-                                    {expandedSections.has('step3-image') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                </button>
-                                {expandedSections.has('step3-image') && (
-                                    <div className="p-2 bg-gray-50 dark:bg-slate-700 border-t border-gray-200 dark:border-gray-600">
-                                        <img
-                                            src="/manual/step3_generate.png"
-                                            alt="ステップ3: APNG生成画面"
-                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                            loading="lazy"
-                                            decoding="async"
-                                            width="800"
-                                            height="450"
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        )}
+                                <div className="rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                    <img
+                                        src="/manual/step3_complete.png"
+                                        alt="APNG生成完了の画面"
+                                        className="w-full"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="400"
+                                        height="300"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <BackToToc />
                 </section>
@@ -383,8 +381,8 @@ export default function ManualPage() {
                         {/* 1. 前景・背景 */}
                         <div id="cocofolia-foreground">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">前景・背景として使う場合</h3>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: 用途による</p>
+                            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-2">
+                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB未満推奨</strong> / 🔄 ループ: <strong>用途による</strong></p>
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアのルーム画面右側にある「前景/背景」タブを開く</li>
@@ -408,8 +406,8 @@ export default function ManualPage() {
                         {/* 2. スクリーン/マーカーパネル */}
                         <div id="cocofolia-panel">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">スクリーンパネル／マーカーパネルとして使う場合</h3>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 1MB未満推奨 / ループ: 用途による</p>
+                            <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 rounded-lg p-3 mb-2">
+                                <p className="text-sm font-medium text-orange-700 dark:text-orange-300">📦 容量目安: <strong>1MB未満推奨</strong> / 🔄 ループ: <strong>用途による</strong></p>
                             </div>
                             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-2">
                                 <p className="text-sm text-red-700 dark:text-red-300">
@@ -466,8 +464,8 @@ export default function ManualPage() {
                         {/* 3. カットイン */}
                         <div id="cocofolia-cutin">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">カットインとして使う場合</h3>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: ON</p>
+                            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-2">
+                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB未満推奨</strong> / 🔄 ループ: <strong>ON</strong></p>
                             </div>
                             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
                                 <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -496,8 +494,8 @@ export default function ManualPage() {
                         {/* 4. 立ち絵 */}
                         <div id="cocofolia-character">
                             <h3 className="font-semibold text-gray-800 dark:text-white mb-2">立ち絵として使う場合</h3>
-                            <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 mb-2">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">容量目安: 5MB未満推奨 / ループ: 用途による</p>
+                            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-2">
+                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB未満推奨</strong> / 🔄 ループ: <strong>用途による</strong></p>
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアでキャラクターを選択</li>
