@@ -166,136 +166,126 @@ export default function EffectsPage() {
                                 <p className="text-sm opacity-90">{category.description}</p>
                             </div>
 
-                            <div className={`bg-white dark:bg-slate-800 rounded-b-lg shadow-lg border ${getCategoryBorderClass(color)} border-t-0`}>
-                                <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                                    {category.effects.map((effect) => {
-                                        const IconComponent = effect.icon
-                                        const isExpanded = expandedEffects.has(effect.name)
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-2">
+                                {category.effects.map((effect) => {
+                                    const IconComponent = effect.icon
+                                    const isExpanded = expandedEffects.has(effect.name)
 
-                                        return (
-                                            <div key={effect.name} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                                                <button
-                                                    onClick={() => toggleEffect(effect.name)}
-                                                    className="w-full px-4 py-3 flex items-center justify-between text-left"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-10 h-10 rounded-lg ${getCategoryBgClass(color)} bg-opacity-10 flex items-center justify-center`}>
-                                                            <IconComponent className={`w-5 h-5 ${color === 'blue' ? 'text-blue-500' : color === 'red' ? 'text-red-500' : 'text-purple-500'}`} />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-semibold text-gray-800 dark:text-white">
-                                                                {effect.label}
-                                                            </h3>
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                                {effect.name}
-                                                            </p>
-                                                        </div>
+                                    return (
+                                        <div key={effect.name} className={`rounded-lg border ${getCategoryBorderClass(color)} hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors`}>
+                                            <button
+                                                onClick={() => toggleEffect(effect.name)}
+                                                className="w-full px-3 py-2 flex items-center justify-between text-left"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-8 h-8 rounded-lg ${getCategoryBgClass(color)} bg-opacity-10 flex items-center justify-center flex-shrink-0`}>
+                                                        <IconComponent className={`w-4 h-4 ${color === 'blue' ? 'text-blue-500' : color === 'red' ? 'text-red-500' : 'text-purple-500'}`} />
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        {effect.hasDirection && (
-                                                            <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
-                                                                方向選択
-                                                            </span>
+                                                    <div className="min-w-0">
+                                                        <h3 className="font-semibold text-gray-800 dark:text-white text-sm truncate">
+                                                            {effect.label}
+                                                        </h3>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                            {effect.name}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 flex-shrink-0">
+                                                    {effect.hasDirection && (
+                                                        <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
+                                                            方向
+                                                        </span>
+                                                    )}
+                                                    {effect.hasOptions && (
+                                                        <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">
+                                                            OP
+                                                        </span>
+                                                    )}
+                                                    {isExpanded ? (
+                                                        <ChevronUp className="w-4 h-4 text-gray-400" />
+                                                    ) : (
+                                                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                                                    )}
+                                                </div>
+                                            </button>
+
+                                            {isExpanded && (
+                                                <div className="px-3 pb-3">
+                                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3">
+                                                        <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">
+                                                            {getEffectDescription(effect.name)}
+                                                        </p>
+
+                                                        {/* 方向選択 */}
+                                                        {effect.hasDirection && effect.directions && (
+                                                            <div className="mb-2">
+                                                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+                                                                    方向:
+                                                                </span>
+                                                                <div className="flex gap-1 flex-wrap">
+                                                                    {effect.directions.map(dir => (
+                                                                        <span
+                                                                            key={dir}
+                                                                            className="inline-flex items-center gap-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded"
+                                                                        >
+                                                                            {getDirectionIcon(dir)}
+                                                                            {dir === 'up' ? '上' : dir === 'down' ? '下' : dir === 'left' ? '左' : dir === 'right' ? '右' : dir === 'vertical' ? '縦' : dir === 'horizontal' ? '横' : 'ランダム'}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
                                                         )}
-                                                        {effect.hasOptions && (
-                                                            <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">
-                                                                オプション
-                                                            </span>
+
+                                                        {/* オプション */}
+                                                        {effect.hasOptions && effect.options && (
+                                                            <div className="mb-2">
+                                                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+                                                                    {effect.optionType === 'size' ? 'サイズ' :
+                                                                        effect.optionType === 'intensity' ? '強度' :
+                                                                            effect.optionType === 'count' ? '分割数' :
+                                                                                effect.optionType === 'shape' ? '形状' :
+                                                                                    effect.optionType === 'direction' ? '方向' :
+                                                                                        effect.optionType === 'transparency' ? '透明度' :
+                                                                                            effect.optionType === 'speed' ? '速度' :
+                                                                                                effect.optionType === 'color' ? '色' : 'オプション'}:
+                                                                </span>
+                                                                <div className="flex gap-1 flex-wrap">
+                                                                    {effect.options.map(opt => (
+                                                                        <span
+                                                                            key={opt.value}
+                                                                            className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300"
+                                                                        >
+                                                                            {opt.label}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
                                                         )}
-                                                        {isExpanded ? (
-                                                            <ChevronUp className="w-5 h-5 text-gray-400" />
-                                                        ) : (
-                                                            <ChevronDown className="w-5 h-5 text-gray-400" />
+
+                                                        {/* 強度オプション（2段階） */}
+                                                        {effect.hasIntensity && effect.intensityOptions && (
+                                                            <div>
+                                                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+                                                                    強度:
+                                                                </span>
+                                                                <div className="flex gap-1 flex-wrap">
+                                                                    {effect.intensityOptions.map(opt => (
+                                                                        <span
+                                                                            key={opt.value}
+                                                                            className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300"
+                                                                        >
+                                                                            {opt.label}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
                                                         )}
                                                     </div>
-                                                </button>
-
-                                                {isExpanded && (
-                                                    <div className="px-4 pb-4 pt-0">
-                                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-4 ml-13">
-                                                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                                                {getEffectDescription(effect.name)}
-                                                            </p>
-
-                                                            {/* 方向選択 */}
-                                                            {effect.hasDirection && effect.directions && (
-                                                                <div className="mb-3">
-                                                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
-                                                                        方向:
-                                                                    </span>
-                                                                    <div className="flex gap-1 flex-wrap">
-                                                                        {effect.directions.map(dir => (
-                                                                            <span
-                                                                                key={dir}
-                                                                                className="inline-flex items-center gap-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded"
-                                                                            >
-                                                                                {getDirectionIcon(dir)}
-                                                                                {dir === 'up' ? '上' : dir === 'down' ? '下' : dir === 'left' ? '左' : dir === 'right' ? '右' : dir === 'vertical' ? '縦' : dir === 'horizontal' ? '横' : 'ランダム'}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* オプション */}
-                                                            {effect.hasOptions && effect.options && (
-                                                                <div className="mb-3">
-                                                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
-                                                                        {effect.optionType === 'size' ? 'サイズ' :
-                                                                            effect.optionType === 'intensity' ? '強度' :
-                                                                                effect.optionType === 'count' ? '分割数' :
-                                                                                    effect.optionType === 'shape' ? '形状' :
-                                                                                        effect.optionType === 'direction' ? '方向' :
-                                                                                            effect.optionType === 'transparency' ? '透明度' :
-                                                                                                effect.optionType === 'speed' ? '速度' :
-                                                                                                    effect.optionType === 'color' ? '色' : 'オプション'}:
-                                                                    </span>
-                                                                    <div className="flex gap-1 flex-wrap">
-                                                                        {effect.options.map(opt => (
-                                                                            <span
-                                                                                key={opt.value}
-                                                                                className={`text-xs px-2 py-1 rounded ${opt.value === effect.defaultOption
-                                                                                    ? 'bg-green-500 text-white'
-                                                                                    : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
-                                                                                    }`}
-                                                                            >
-                                                                                {opt.label}
-                                                                                {opt.value === effect.defaultOption && ' (デフォルト)'}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* 強度オプション（2段階） */}
-                                                            {effect.hasIntensity && effect.intensityOptions && (
-                                                                <div>
-                                                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
-                                                                        強度/透明度:
-                                                                    </span>
-                                                                    <div className="flex gap-1 flex-wrap">
-                                                                        {effect.intensityOptions.map(opt => (
-                                                                            <span
-                                                                                key={opt.value}
-                                                                                className={`text-xs px-2 py-1 rounded ${opt.value === effect.defaultIntensity
-                                                                                    ? 'bg-green-500 text-white'
-                                                                                    : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
-                                                                                    }`}
-                                                                            >
-                                                                                {opt.label}
-                                                                                {opt.value === effect.defaultIntensity && ' (デフォルト)'}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )
-                                    })}
-                                </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </section>
                     )
