@@ -70,9 +70,15 @@ export default function ManualPage() {
                         <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" focusable="false" />
                         ツールに戻る
                     </Link>
-                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                        APNG Generator 使い方ガイド
-                    </h1>
+                    <div className="flex items-center gap-4">
+                        <img src="/icon.svg" alt="APNG Generator" className="h-12 w-12" />
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+                                APNG Generator
+                            </h1>
+                            <p className="text-lg text-gray-600 dark:text-gray-400">使い方ガイド</p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* 目次 */}
@@ -80,8 +86,8 @@ export default function ManualPage() {
                     <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-3">目次</h2>
                     <ul className="space-y-2 text-sm">
                         <li>
-                            <a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                                📝 アニメーションPNG作成手順
+                            <a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
+                                <Zap className="w-4 h-4 text-yellow-500" /> アニメーションPNG作成手順
                             </a>
                             <ul className="ml-5 mt-1 space-y-1">
                                 <li>
@@ -102,8 +108,8 @@ export default function ManualPage() {
                             </ul>
                         </li>
                         <li>
-                            <a href="#cocofolia" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                                🎮 ココフォリアでの使い方
+                            <a href="#cocofolia" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
+                                <Settings className="w-4 h-4 text-green-500" /> ココフォリアでの使い方
                             </a>
                             <ul className="ml-5 mt-1 space-y-1">
                                 <li>
@@ -129,23 +135,23 @@ export default function ManualPage() {
                             </ul>
                         </li>
                         <li>
-                            <a href="/effects" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                                ✨ トランジション効果一覧
+                            <a href="/effects" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
+                                <Zap className="w-4 h-4 text-purple-500" /> トランジション効果一覧
                             </a>
                         </li>
                         <li>
-                            <a href="#settings" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                                ⚙️ 推奨設定
+                            <a href="#settings" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
+                                <CheckCircle className="w-4 h-4 text-green-500" /> 推奨設定
                             </a>
                         </li>
                         <li>
-                            <a href="#faq" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                                ❓ よくある質問
+                            <a href="#faq" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
+                                <HelpCircle className="w-4 h-4 text-blue-500" /> よくある質問
                             </a>
                         </li>
                         <li>
-                            <a href="#links" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                                🔗 関連リンク
+                            <a href="#links" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
+                                <ExternalLink className="w-4 h-4 text-gray-500" /> 関連リンク
                             </a>
                         </li>
                     </ul>
@@ -380,9 +386,11 @@ export default function ManualPage() {
 
                         {/* 1. 前景・背景 */}
                         <div id="cocofolia-foreground">
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">前景・背景として使う場合</h3>
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-3 pl-3 py-2 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/30 rounded-r">
+                                🖼️ 前景・背景として使う場合
+                            </h3>
                             <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-2">
-                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB未満推奨</strong> / 🔄 ループ: <strong>用途による</strong></p>
+                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB以下</strong> / 🔄 ループ: <strong>用途による</strong></p>
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアのルーム画面のなにもない所で<strong>右クリック</strong></li>
@@ -441,9 +449,11 @@ export default function ManualPage() {
 
                         {/* 2. スクリーン/マーカーパネル */}
                         <div id="cocofolia-panel">
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">スクリーンパネル／マーカーパネルとして使う場合</h3>
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-3 pl-3 py-2 border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/30 rounded-r">
+                                📺 スクリーンパネル／マーカーパネルとして使う場合
+                            </h3>
                             <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 rounded-lg p-3 mb-2">
-                                <p className="text-sm font-medium text-orange-700 dark:text-orange-300">📦 容量目安: <strong>1MB未満推奨</strong> / 🔄 ループ: <strong>用途による</strong></p>
+                                <p className="text-sm font-medium text-orange-700 dark:text-orange-300">📦 容量目安: <strong>1MB未満（圧縮回避のため必須）</strong> / 🔄 ループ: <strong>用途による</strong></p>
                             </div>
                             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-2">
                                 <p className="text-sm text-red-700 dark:text-red-300">
@@ -499,9 +509,11 @@ export default function ManualPage() {
 
                         {/* 3. カットイン */}
                         <div id="cocofolia-cutin">
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">カットインとして使う場合</h3>
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-3 pl-3 py-2 border-l-4 border-purple-500 bg-purple-50 dark:bg-purple-900/30 rounded-r">
+                                ⚡ カットインとして使う場合
+                            </h3>
                             <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-2">
-                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB未満推奨</strong> / 🔄 ループ: <strong>ON</strong></p>
+                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB以下</strong> / 🔄 ループ: <strong>ON（必須）</strong></p>
                             </div>
                             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
                                 <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -529,9 +541,11 @@ export default function ManualPage() {
 
                         {/* 4. 立ち絵 */}
                         <div id="cocofolia-character">
-                            <h3 className="font-semibold text-gray-800 dark:text-white mb-2">立ち絵として使う場合</h3>
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-3 pl-3 py-2 border-l-4 border-green-500 bg-green-50 dark:bg-green-900/30 rounded-r">
+                                🧍 立ち絵として使う場合
+                            </h3>
                             <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-2">
-                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB未満推奨</strong> / 🔄 ループ: <strong>用途による</strong></p>
+                                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">📦 容量目安: <strong>5MB以下</strong> / 🔄 ループ: <strong>用途による</strong></p>
                             </div>
                             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                 <li>ココフォリアでキャラクターを選択</li>
@@ -730,14 +744,25 @@ export default function ManualPage() {
                                     <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
                                     Q. 非ループAPNGが2回目以降再生されない
                                 </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                    <p><strong>原因:</strong> ブラウザキャッシュにより再ダウンロードされない</p>
+                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-3">
+                                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                                        <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">💡 非ループAPNGとは？</p>
+                                        <p className="text-yellow-700 dark:text-yellow-300 text-xs">ループOFFで生成したAPNGで、アニメーションが1回だけ再生されて止まるタイプの画像です。</p>
+                                    </div>
+                                    <p><strong>原因:</strong> ブラウザのキャッシュにより、同じURLの画像は再ダウンロードされず、アニメーションが最初のフレームで止まった状態で表示されます。</p>
                                     <p><strong>対処法:</strong></p>
-                                    <ul className="list-disc list-inside space-y-1 ml-4">
-                                        <li>NOIMAGE→再設定</li>
-                                        <li>強制リロード（Ctrl+F5 / Cmd+Shift+R）</li>
-                                        <li>カットインは<strong>ループON</strong>で生成</li>
-                                    </ul>
+                                    <ol className="list-decimal list-inside space-y-2 ml-4">
+                                        <li><strong>「NOIMAGE」経由で再設定</strong><br />
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">画像を一度「NOIMAGE」に設定してから、再度APNGを設定する</span>
+                                        </li>
+                                        <li><strong>強制リロード</strong><br />
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">Windows: Ctrl+F5 / Mac: Cmd+Shift+R</span>
+                                        </li>
+                                    </ol>
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                                        <p className="font-medium text-blue-700 dark:text-blue-300">✅ 推奨</p>
+                                        <p className="text-blue-600 dark:text-blue-400 text-xs">カットインなど繰り返し再生が必要な場合は<strong>ループON</strong>で生成してください。</p>
+                                    </div>
                                 </div>
                             </details>
                         )}
@@ -757,7 +782,7 @@ export default function ManualPage() {
 
                         {/* Q8: 急に動かなくなった - カテゴリ: アニメーション問題 */}
                         {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-アニメーション問題') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group">
+                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
                                 <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
                                     <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
                                     Q. 急にアニメーションが動かなくなった
@@ -772,13 +797,108 @@ export default function ManualPage() {
                                 </div>
                             </details>
                         )}
+
+                        {/* スクリーンパネル/マーカーパネル専用セクション */}
+                        <div className="mt-6 pt-4 border-t-2 border-orange-200 dark:border-orange-800">
+                            <h3 className="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                                <span className="text-orange-500">📺</span>
+                                スクリーンパネル／マーカーパネル専用FAQ
+                            </h3>
+
+                            {/* 制限事項比較表 */}
+                            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
+                                <p className="font-bold text-orange-800 dark:text-orange-200 mb-2">⚠️ 制限事項まとめ</p>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-orange-200 dark:border-orange-700">
+                                                <th className="text-left py-1 px-2 text-orange-700 dark:text-orange-300">項目</th>
+                                                <th className="text-center py-1 px-2 text-orange-700 dark:text-orange-300">スクリーンパネル</th>
+                                                <th className="text-center py-1 px-2 text-orange-700 dark:text-orange-300">マーカーパネル</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-gray-700 dark:text-gray-300">
+                                            <tr className="border-b border-orange-100 dark:border-orange-800">
+                                                <td className="py-1 px-2">容量制限</td>
+                                                <td className="text-center py-1 px-2">1MB未満</td>
+                                                <td className="text-center py-1 px-2">1MB未満</td>
+                                            </tr>
+                                            <tr className="border-b border-orange-100 dark:border-orange-800">
+                                                <td className="py-1 px-2">ループON</td>
+                                                <td className="text-center py-1 px-2">✅ 必須</td>
+                                                <td className="text-center py-1 px-2">⭕ 任意</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-1 px-2">ループOFF</td>
+                                                <td className="text-center py-1 px-2">❌ 実質不可</td>
+                                                <td className="text-center py-1 px-2">⭕ 可能（※）</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">※ 非ループの2回目以降再生にはNOIMAGE→再設定が必要</p>
+                            </div>
+
+                            {/* Q9: スクリーンパネルで非ループ */}
+                            {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                                <details className="group border-b border-gray-200 dark:border-gray-700 pb-3 mb-3">
+                                    <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                        <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">ココフォ</span>
+                                        Q. スクリーンパネルで非ループAPNGを使いたい
+                                    </summary>
+                                    <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                        <p className="text-red-600 dark:text-red-400 font-medium">❌ 実質使用不可です</p>
+                                        <p>スクリーンパネルでは非ループAPNGが正常に動作しません。ブラウザキャッシュの影響で初回以降アニメーションが再生されなくなります。</p>
+                                        <p className="font-medium">✅ 必ずループONで生成してください。</p>
+                                    </div>
+                                </details>
+                            )}
+
+                            {/* Q10: マーカーパネルで非ループ */}
+                            {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                                <details className="group border-b border-gray-200 dark:border-gray-700 pb-3 mb-3">
+                                    <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                        <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">ココフォ</span>
+                                        Q. マーカーパネルで非ループAPNGを使いたい
+                                    </summary>
+                                    <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                        <p className="text-green-600 dark:text-green-400 font-medium">⭕ 使用可能です（条件あり）</p>
+                                        <p>マーカーパネルでは非ループAPNGを使用できますが、<strong>2回目以降の再生</strong>には以下の手順が必要です：</p>
+                                        <ol className="list-decimal list-inside space-y-1 ml-4">
+                                            <li>一度「NOIMAGE」に設定</li>
+                                            <li>再度APNGを設定</li>
+                                        </ol>
+                                    </div>
+                                </details>
+                            )}
+
+                            {/* Q11: パネルでAPNGが動かない */}
+                            {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
+                                <details className="group">
+                                    <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
+                                        <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
+                                        Q. スクリーン/マーカーパネルでAPNGが動かない
+                                    </summary>
+                                    <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                                        <p><strong>チェックリスト:</strong></p>
+                                        <ul className="list-disc list-inside space-y-1 ml-4">
+                                            <li>✅ 容量が<strong>1MB未満</strong>で生成されているか</li>
+                                            <li>✅ スクリーンパネルの場合は<strong>ループON</strong>で生成されているか</li>
+                                            <li>✅ アップロード時に「圧縮しますか？」で<strong>「いいえ」</strong>を選択したか</li>
+                                        </ul>
+                                        <p className="text-red-600 dark:text-red-400 text-xs">※ 1つでも該当しない場合は再生成してください</p>
+                                    </div>
+                                </details>
+                            )}
+                        </div>
                     </div>
                     <BackToToc />
                 </section>
 
                 {/* 関連リンク */}
                 <section id="links" className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
+                        <ExternalLink className="w-5 h-5 mr-2 text-gray-500" aria-hidden="true" focusable="false" />
                         関連リンク
                     </h2>
                     <div className="flex flex-wrap gap-3">
