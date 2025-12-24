@@ -655,220 +655,156 @@ export default function ManualPage() {
                         よくある質問
                     </h2>
 
-                    {/* よくある問題トップ表示 */}
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                        <p className="font-bold text-red-700 dark:text-red-300 mb-2 flex items-center">
-                            <AlertTriangle className="w-4 h-4 mr-2" />
-                            最もよくある問題
-                        </p>
-                        <ul className="text-sm text-red-600 dark:text-red-400 space-y-1">
-                            <li>• <strong>圧縮確認で「はい」を選んでしまった</strong> → 「いいえ」を選択し直してください</li>
-                            <li>• <strong>カットインが動かない</strong> → ループをONにして再生成してください</li>
-                            <li>• <strong>パネルでアニメーションが動かない</strong> → 1MB未満で再生成してください</li>
-                        </ul>
-                    </div>
 
-                    {/* カテゴリタブ */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        {['すべて', 'アニメーション問題', 'ココフォリア', '設定・画質'].map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setExpandedSections(prev => {
-                                    const newSet = new Set(prev)
-                                    newSet.forEach(s => { if (s.startsWith('faq-cat-')) newSet.delete(s) })
-                                    newSet.add(`faq-cat-${cat}`)
-                                    return newSet
-                                })}
-                                className={`px-3 py-1 text-sm rounded-full transition-colors ${(expandedSections.has(`faq-cat-${cat}`) || (!Array.from(expandedSections).some(s => s.startsWith('faq-cat-')) && cat === 'すべて'))
-                                    ? 'bg-blue-500 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                    }`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="space-y-3">
-                        {/* Q1: アニメーションが動かない - カテゴリ: アニメーション問題 */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-アニメーション問題') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
-                                    Q. アニメーションが動かない
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                    <p>以下を確認してください：</p>
-                                    <ul className="list-disc list-inside space-y-1 ml-4">
-                                        <li>ココフォリアで「圧縮しますか？」→<strong>「いいえ」</strong>を選択</li>
-                                        <li>カットインの場合は<strong>ループON</strong>で生成</li>
-                                        <li>パネル系は<strong>1MB未満</strong>で生成</li>
+                    <div className="space-y-4">
+                        {/* FAQ1: トラブルシューティング（Q1, Q8, Q11を統合） */}
+                        <details className="group border border-red-200 dark:border-red-800 rounded-lg overflow-hidden" open>
+                            <summary className="cursor-pointer font-bold text-gray-800 dark:text-white hover:text-red-600 dark:hover:text-red-400 transition list-none flex items-center gap-2 bg-red-50 dark:bg-red-900/20 p-3">
+                                <span className="text-lg">🚨</span>
+                                <span className="flex-1">アニメーションが動かない / 重い / 表示されない</span>
+                            </summary>
+                            <div className="p-4 bg-white dark:bg-slate-700 text-sm text-gray-600 dark:text-gray-300 space-y-3">
+                                <p className="font-medium text-gray-800 dark:text-white">✅ チェックリスト（上から順に確認）</p>
+                                <ul className="space-y-2">
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-red-500 font-bold">1.</span>
+                                        <div>
+                                            <strong>容量は1MB未満か？</strong>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">スクリーン/マーカーパネルは1MB未満が必須。超えている場合は容量設定を「1MB」に。</p>
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-red-500 font-bold">2.</span>
+                                        <div>
+                                            <strong>アップロード時に「圧縮しますか？」で「いいえ」を選んだか？</strong>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">「はい」を選ぶと静止画になります。</p>
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-red-500 font-bold">3.</span>
+                                        <div>
+                                            <strong>カットイン / スクリーンパネルはループONか？</strong>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">これらの用途ではループOFF（非ループ）は正常に動作しません。</p>
+                                        </div>
+                                    </li>
+                                </ul>
+                                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3">
+                                    <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">🔄 突然動かなくなった場合</p>
+                                    <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1">
+                                        <li>• 強制リロード（Windows: Ctrl+F5 / Mac: Cmd+Shift+R）</li>
+                                        <li>• ブラウザのキャッシュ / Cookieを削除</li>
+                                        <li>• ルームのデータ量過多の可能性（不要な素材を削除）</li>
                                     </ul>
                                 </div>
-                            </details>
-                        )}
+                            </div>
+                        </details>
 
-                        {/* Q2: 画質が悪い - カテゴリ: 設定・画質 */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-設定・画質') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-1.5 py-0.5 rounded">設定</span>
-                                    Q. 画質が悪い
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                    <p>容量制限により自動で解像度が下がります。用途に応じて設定を調整：</p>
-                                    <ul className="list-disc list-inside space-y-1 ml-4">
-                                        <li><strong>立ち絵/前景/背景</strong>：「5MB」を選択可</li>
-                                        <li><strong>スクリーン/マーカーパネル</strong>：「1MB」推奨</li>
+                        {/* FAQ2: アップロード時の注意（Q7を維持・強化） */}
+                        <details className="group border border-orange-200 dark:border-orange-800 rounded-lg overflow-hidden">
+                            <summary className="cursor-pointer font-bold text-gray-800 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 transition list-none flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 p-3">
+                                <span className="text-lg">⚠️</span>
+                                <span className="flex-1">「圧縮しますか？」と聞かれたら</span>
+                            </summary>
+                            <div className="p-4 bg-white dark:bg-slate-700 text-sm text-gray-600 dark:text-gray-300 space-y-3">
+                                <p className="text-red-600 dark:text-red-400 font-bold text-base">必ず「いいえ」を選択してください！</p>
+                                <p>「はい」を選ぶとAPNGが静止画に変換され、アニメーションしなくなります。</p>
+                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-3">
+                                    <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">💡 このポップアップが出る理由</p>
+                                    <p className="text-xs text-blue-600 dark:text-blue-400">ファイルサイズが1MBを超えている可能性があります。APNG Generatorで容量設定を「1MB」に設定し直してください。</p>
+                                </div>
+                            </div>
+                        </details>
+
+                        {/* FAQ3: 画質・表示設定（Q2, Q3を統合） */}
+                        <details className="group border border-yellow-200 dark:border-yellow-800 rounded-lg overflow-hidden">
+                            <summary className="cursor-pointer font-bold text-gray-800 dark:text-white hover:text-yellow-600 dark:hover:text-yellow-400 transition list-none flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 p-3">
+                                <span className="text-lg">🖼️</span>
+                                <span className="flex-1">画質が悪い / 透過部分が白くなる</span>
+                            </summary>
+                            <div className="p-4 bg-white dark:bg-slate-700 text-sm text-gray-600 dark:text-gray-300 space-y-3">
+                                <div>
+                                    <p className="font-medium text-gray-800 dark:text-white mb-1">📉 画質が悪い場合</p>
+                                    <p>容量制限に収めるため、自動で解像度がリサイズされます。これは仕様です。</p>
+                                    <ul className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-1">
+                                        <li>• <strong>立ち絵/前景/背景</strong>：「5MB」を選択可（高画質）</li>
+                                        <li>• <strong>スクリーン/マーカーパネル</strong>：「1MB」必須（画質は妥協）</li>
                                     </ul>
                                 </div>
-                            </details>
-                        )}
-
-                        {/* Q3: 透過部分が真っ白 - カテゴリ: 設定・画質 */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-設定・画質') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-1.5 py-0.5 rounded">設定</span>
-                                    Q. 透過部分が真っ白になる
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
-                                    <p>元画像が<strong>PNG形式で透過情報を持っているか</strong>確認してください。JPG形式は透過に対応していません。</p>
+                                <div>
+                                    <p className="font-medium text-gray-800 dark:text-white mb-1">⬜ 透過部分が白くなる場合</p>
+                                    <p>元画像が<strong>PNG形式で透過情報を持っているか</strong>確認してください。</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">JPG形式は透過に対応していません。必ずPNGを使用してください。</p>
                                 </div>
-                            </details>
-                        )}
+                            </div>
+                        </details>
 
-                        {/* Q4: ループOFFで再生されない - カテゴリ: ココフォリア */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">ココフォ</span>
-                                    Q. ループOFFのAPNGが再生されない
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                    <p><strong>カットインにはループONが推奨</strong>です。ループOFFは立ち絵の登場演出向けです。</p>
+                        {/* FAQ4: 非ループ素材の高度な使い方（Q4, Q6, Q9, Q10を統合） */}
+                        <details className="group border border-purple-200 dark:border-purple-800 rounded-lg overflow-hidden">
+                            <summary className="cursor-pointer font-bold text-gray-800 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition list-none flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 p-3">
+                                <span className="text-lg">🔄</span>
+                                <span className="flex-1">非ループ（1回再生）素材を使いたい</span>
+                            </summary>
+                            <div className="p-4 bg-white dark:bg-slate-700 text-sm text-gray-600 dark:text-gray-300 space-y-4">
+                                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3">
+                                    <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">💡 非ループAPNGとは？</p>
+                                    <p className="text-xs text-yellow-700 dark:text-yellow-300">ループOFFで生成したAPNGで、アニメーションが1回だけ再生されて止まるタイプの画像です。</p>
                                 </div>
-                            </details>
-                        )}
 
-
-
-                        {/* Q6: 2回目以降再生されない - カテゴリ: アニメーション問題 */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-アニメーション問題') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
-                                    Q. 非ループAPNGが2回目以降再生されない
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-3">
-                                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                                        <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">💡 非ループAPNGとは？</p>
-                                        <p className="text-yellow-700 dark:text-yellow-300 text-xs">ループOFFで生成したAPNGで、アニメーションが1回だけ再生されて止まるタイプの画像です。</p>
+                                {/* 用途別対応表 */}
+                                <div>
+                                    <p className="font-medium text-gray-800 dark:text-white mb-2">📋 用途別の対応状況</p>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-xs border-collapse">
+                                            <thead>
+                                                <tr className="bg-gray-100 dark:bg-gray-600">
+                                                    <th className="border border-gray-300 dark:border-gray-500 p-2 text-left">用途</th>
+                                                    <th className="border border-gray-300 dark:border-gray-500 p-2 text-center">非ループ利用</th>
+                                                    <th className="border border-gray-300 dark:border-gray-500 p-2 text-left">備考</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 font-medium">スクリーンパネル</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 text-center text-red-600 dark:text-red-400 font-bold">❌</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2">初回のみ再生。ループON推奨。</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 font-medium">マーカーパネル</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 text-center text-green-600 dark:text-green-400 font-bold">⭕</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2">可能。2回目はNOIMAGE経由で再設定。</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 font-medium">カットイン</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 text-center text-red-600 dark:text-red-400 font-bold">❌</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2">再生されません。必ずループON。</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 font-medium">立ち絵（登場演出）</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 text-center text-green-600 dark:text-green-400 font-bold">⭕</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2">最適。1回だけ再生して静止。</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 font-medium">前景/背景</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2 text-center text-green-600 dark:text-green-400 font-bold">⭕</td>
+                                                    <td className="border border-gray-300 dark:border-gray-500 p-2">可能。1回再生後は静止画として表示。</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <p><strong>原因:</strong> ブラウザのキャッシュにより、同じURLの画像は再ダウンロードされず、アニメーションが最初のフレームで止まった状態で表示されます。</p>
-                                    <p><strong>対処法:</strong></p>
-                                    <ol className="list-decimal list-inside space-y-2 ml-4">
-                                        <li><strong>「NOIMAGE」経由で再設定</strong><br />
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">画像を一度「NOIMAGE」に設定してから、再度APNGを設定する</span>
-                                        </li>
-                                        <li><strong>強制リロード</strong><br />
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">Windows: Ctrl+F5 / Mac: Cmd+Shift+R</span>
-                                        </li>
+                                </div>
+
+                                {/* NOIMAGE経由の再生法 */}
+                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-3">
+                                    <p className="font-medium text-blue-700 dark:text-blue-300 mb-2">🎬 マーカーパネルで非ループを繰り返し再生する方法（Web事例）</p>
+                                    <ol className="text-xs text-blue-600 dark:text-blue-400 space-y-2">
+                                        <li><strong>1.</strong> 「NOIMAGE」のシーンを作成（マーカーパネルを配置し、画像は「No Image」を選択）</li>
+                                        <li><strong>2.</strong> そのシーンを複製し、複製したシーンのマーカーパネルに非ループAPNGを設定</li>
+                                        <li><strong>3.</strong> 「NOIMAGE」シーン → 「APNG設定済み」シーンの順に切り替えると再生される</li>
                                     </ol>
-                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                                        <p className="font-medium text-blue-700 dark:text-blue-300">✅ 推奨</p>
-                                        <p className="text-blue-600 dark:text-blue-400 text-xs">カットインなど繰り返し再生が必要な場合は<strong>ループON</strong>で生成してください。</p>
-                                    </div>
+                                    <p className="text-xs text-blue-500 dark:text-blue-300 mt-2">💡 毎回再生させたい場合は、必ずこの順番で切り替えてください。</p>
                                 </div>
-                            </details>
-                        )}
-
-                        {/* Q7: 圧縮確認 - カテゴリ: ココフォリア */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">ココフォ</span>
-                                    Q. 「圧縮しますか？」と聞かれた
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300">
-                                    <p><strong className="text-red-600 dark:text-red-400">必ず「いいえ」を選択</strong>してください。「はい」を選ぶとアニメーションが動かなくなります。</p>
-                                </div>
-                            </details>
-                        )}
-
-                        {/* Q8: 急に動かなくなった - カテゴリ: アニメーション問題 */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-アニメーション問題') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
-                                    Q. 急にアニメーションが動かなくなった
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                    <p>ブラウザキャッシュが原因の可能性：</p>
-                                    <ul className="list-disc list-inside space-y-1 ml-4">
-                                        <li>強制リロード（Ctrl+F5 / Cmd+Shift+R）</li>
-                                        <li>キャッシュとCookieを削除</li>
-                                        <li>再ログイン</li>
-                                    </ul>
-                                </div>
-                            </details>
-                        )}
-
-                        {/* スクリーンパネル/マーカーパネル関連 */}
-
-
-                        {/* Q9: スクリーンパネルで非ループ */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3 mb-3">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">ココフォ</span>
-                                    Q. スクリーンパネルで非ループAPNGを使いたい
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                    <p className="text-red-600 dark:text-red-400 font-medium">❌ 実質使用不可です</p>
-                                    <p>スクリーンパネルでは非ループAPNGが正常に動作しません。ブラウザキャッシュの影響で初回以降アニメーションが再生されなくなります。</p>
-                                    <p className="font-medium">✅ 必ずループONで生成してください。</p>
-                                </div>
-                            </details>
-                        )}
-
-                        {/* Q10: マーカーパネルで非ループ */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group border-b border-gray-200 dark:border-gray-700 pb-3 mb-3">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">ココフォ</span>
-                                    Q. マーカーパネルで非ループAPNGを使いたい
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                    <p className="text-green-600 dark:text-green-400 font-medium">⭕ 使用可能です（条件あり）</p>
-                                    <p>マーカーパネルでは非ループAPNGを使用できますが、<strong>2回目以降の再生</strong>には以下の手順が必要です：</p>
-                                    <ol className="list-decimal list-inside space-y-1 ml-4">
-                                        <li>一度「NOIMAGE」に設定</li>
-                                        <li>再度APNGを設定</li>
-                                    </ol>
-                                </div>
-                            </details>
-                        )}
-
-                        {/* Q11: パネルでAPNGが動かない */}
-                        {(expandedSections.has('faq-cat-すべて') || expandedSections.has('faq-cat-ココフォリア') || !Array.from(expandedSections).some(s => s.startsWith('faq-cat-'))) && (
-                            <details className="group">
-                                <summary className="cursor-pointer font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition list-none flex items-center gap-2">
-                                    <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded">問題</span>
-                                    Q. スクリーン/マーカーパネルでAPNGが動かない
-                                </summary>
-                                <div className="mt-3 ml-7 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                                    <p><strong>チェックリスト:</strong></p>
-                                    <ul className="list-disc list-inside space-y-1 ml-4">
-                                        <li>✅ 容量が<strong>1MB未満</strong>で生成されているか</li>
-                                        <li>✅ スクリーンパネルの場合は<strong>ループON</strong>で生成されているか</li>
-                                        <li>✅ アップロード時に「圧縮しますか？」で<strong>「いいえ」</strong>を選択したか</li>
-                                    </ul>
-                                    <p className="text-red-600 dark:text-red-400 text-xs">※ 1つでも該当しない場合は再生成してください</p>
-                                </div>
-                            </details>
-                        )}
-
+                            </div>
+                        </details>
                     </div>
                     <BackToToc />
                 </section>
