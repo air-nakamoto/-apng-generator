@@ -979,8 +979,12 @@ export default function APNGGenerator() {
             case 'flash':
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 const flashIntensity = Math.sin(progress * Math.PI)
+                // 透過部分を保持するため、source-atopモードで閃光を描画
+                ctx.save()
+                ctx.globalCompositeOperation = 'source-atop'
                 ctx.fillStyle = `rgba(255, 255, 255, ${flashIntensity * 0.8})`
                 ctx.fillRect(0, 0, canvas.width, canvas.height)
+                ctx.restore()
                 break
             case 'rgbShift': {
                 // RGBシフト: effectOptionで強度を決定（small=2, medium=6, large=12）
@@ -1036,6 +1040,9 @@ export default function APNGGenerator() {
                 // effectOptionで太さを決定（thin=1, medium=2, thick=4）
                 const scanlineThickness = effectOption === 'thin' ? 1 : effectOption === 'thick' ? 4 : 2
                 const scanlineSpacing = scanlineThickness * 2
+                // 透過部分を保持するため、source-atopモードでスキャンラインを描画
+                ctx.save()
+                ctx.globalCompositeOperation = 'source-atop'
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
                 for (let y = 0; y < canvas.height; y += scanlineSpacing) {
                     ctx.fillRect(0, y, canvas.width, scanlineThickness)
@@ -1048,6 +1055,7 @@ export default function APNGGenerator() {
                 scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0)')
                 ctx.fillStyle = scanGrad
                 ctx.fillRect(0, scanOffset - 30, canvas.width, 60)
+                ctx.restore()
                 break
             }
             case 'vignette':
@@ -1065,8 +1073,12 @@ export default function APNGGenerator() {
                 const vigGrad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, vigRadius)
                 vigGrad.addColorStop(0, 'transparent')
                 vigGrad.addColorStop(1, `rgba(0, 0, 0, ${vigAlpha})`)
+                // 透過部分を保持するため、source-atopモードでビネットを描画
+                ctx.save()
+                ctx.globalCompositeOperation = 'source-atop'
                 ctx.fillStyle = vigGrad
                 ctx.fillRect(0, 0, canvas.width, canvas.height)
+                ctx.restore()
                 break
             case 'pulsation':
                 // 脈動: エッジ部分に色のフリンジ（上下左右にズレ）
@@ -1116,6 +1128,10 @@ export default function APNGGenerator() {
                 // 元画像を描画
                 drawScaledImage(0, 0, canvas.width, canvas.height)
 
+                // 透過部分を保持するため、source-atopモードでエフェクトを描画
+                ctx.save()
+                ctx.globalCompositeOperation = 'source-atop'
+
                 // 周辺のぼかし（ビネット風）強め
                 const clVigGrad = ctx.createRadialGradient(
                     canvas.width / 2, canvas.height / 2, canvas.width * 0.15,
@@ -1158,6 +1174,7 @@ export default function APNGGenerator() {
                     ctx.closePath()
                     ctx.fill()
                 }
+                ctx.restore()
                 break
             }
             case 'glitch': {
@@ -1663,6 +1680,10 @@ export default function APNGGenerator() {
                     case 'concentrationLines': {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
 
+                        // 透過部分を保持するため、source-atopモードでエフェクトを描画
+                        ctx.save()
+                        ctx.globalCompositeOperation = 'source-atop'
+
                         // 周辺のぼかし強め
                         const clVigGrad = ctx.createRadialGradient(
                             canvas.width / 2, canvas.height / 2, canvas.width * 0.15,
@@ -1704,6 +1725,7 @@ export default function APNGGenerator() {
                             ctx.closePath()
                             ctx.fill()
                         }
+                        ctx.restore()
                         break
                     }
                     case 'bounce':
@@ -2275,6 +2297,9 @@ export default function APNGGenerator() {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         const scanlineThickness = effectOption === 'thin' ? 1 : effectOption === 'thick' ? 4 : 2
                         const scanlineSpacing = scanlineThickness * 2
+                        // 透過部分を保持するため、source-atopモードでスキャンラインを描画
+                        ctx.save()
+                        ctx.globalCompositeOperation = 'source-atop'
                         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
                         for (let y = 0; y < canvas.height; y += scanlineSpacing) {
                             ctx.fillRect(0, y, canvas.width, scanlineThickness)
@@ -2287,6 +2312,7 @@ export default function APNGGenerator() {
                         scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0)')
                         ctx.fillStyle = scanGrad
                         ctx.fillRect(0, scanOffset - 30, canvas.width, 60)
+                        ctx.restore()
                         break
                     }
 
@@ -2297,8 +2323,12 @@ export default function APNGGenerator() {
                         vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)')
                         vigGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0)')
                         vigGrad.addColorStop(1, `rgba(0, 0, 0, ${0.3 + progress * 0.5})`)
+                        // 透過部分を保持するため、source-atopモードでビネットを描画
+                        ctx.save()
+                        ctx.globalCompositeOperation = 'source-atop'
                         ctx.fillStyle = vigGrad
                         ctx.fillRect(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
                         break
 
                     // 脈動
@@ -2333,8 +2363,12 @@ export default function APNGGenerator() {
                     case 'flash':
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         const flashInt = Math.sin(progress * Math.PI)
+                        // 透過部分を保持するため、source-atopモードで閃光を描画
+                        ctx.save()
+                        ctx.globalCompositeOperation = 'source-atop'
                         ctx.fillStyle = `rgba(255, 255, 255, ${flashInt * 0.8})`
                         ctx.fillRect(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
                         break
 
                     // V119: シルエット
@@ -3009,7 +3043,12 @@ export default function APNGGenerator() {
                                                     </div>
                                                     <div>
                                                         <p className="text-base font-semibold text-gray-800">効果・設定を選択</p>
-                                                        <p className="text-xs text-gray-500">登場・退場・演出から選択し、オプションを調整</p>
+                                                        <p className="text-xs text-gray-500 mb-1">登場・退場・演出から選択し、効果オプションや共通設定を調整</p>
+                                                        <div className="text-xs text-gray-600 space-y-0.5 pl-2">
+                                                            <p>・ループ設定：ON / OFF</p>
+                                                            <p>・容量制限：制限なし / 1MB / 5MB / 10MB</p>
+                                                            <p>・スピードやフレームレート</p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-start gap-2">
