@@ -787,7 +787,7 @@ export default function ManualPage() {
                                                 <li>「+」ボタンで新規キャラクター作成</li>
                                                 <li>キャラクター名などを設定</li>
                                                 <li>「キャラクター」タブを開く</li>
-                                                <li>APNGファイルをアップロードして設定</li>
+                                                <li>画像ファイルをアップロードして設定</li>
                                             </ol>
                                         </div>
                                     </div>
@@ -813,8 +813,8 @@ export default function ManualPage() {
                                 {/* 共通手順の補足 */}
                                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-3">
                                     <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                                        ⚠️ キャラクターシートサイトからコピー&ペーストでコマを作成した場合、アイコン画像が設定済みの状態になります。<br />
-                                        APNGに差し替える場合は、「キャラクター」タブで新しい画像をアップロードしてください。
+                                        ⚠️ キャラクターシートサイトからコピー&ペーストでコマを作成した場合、画像以外が設定済みの状態になります。<br />
+                                        立ち絵を設定する場合は、「キャラクター」コマをクリックして、キャラ名の左のアイコンをクリックし、画像をアップロードし設定してください。
                                     </p>
                                 </div>
 
@@ -848,7 +848,7 @@ export default function ManualPage() {
                                         />
                                     </div>
                                     <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">④ 完成！ルームにAPNG立ち絵表示</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">④ 完成！ルームに立ち絵表示</p>
                                         <img
                                             src="/manual/cocofolia_character_complete.png"
                                             alt="完成したキャラクター"
@@ -862,12 +862,33 @@ export default function ManualPage() {
                                 <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">💡 補足: 差分（表情差分）の設定</h4>
                                 <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded p-3 text-sm text-gray-600 dark:text-gray-300">
                                     <p className="mb-2">キャラクターに複数の立ち絵（表情差分など）を設定できます。</p>
-                                    <ol className="list-decimal list-inside space-y-1">
-                                        <li>「キャラクター」タブで複数の画像をアップロード</li>
-                                        <li>チャット欄で <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">:1</code> <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">:2</code> などを入力して切り替え</li>
+                                    <ol className="list-decimal list-inside space-y-1 mb-3">
+                                        <li>複数の画像をアップロード</li>
+                                        <li>キャラクター編集で立ち絵を選んでチャット欄で <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">@笑顔</code> などを入力して切り替え</li>
                                         <li>または、チャットパレットに差分コマンドを登録</li>
                                     </ol>
-                                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">💡 APNGの差分を複数登録すれば、表情ごとにアニメーション付き立ち絵を使い分けられます！</p>
+                                    {/* 差分画像 */}
+                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded p-1">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">立ち絵・差分の設定</p>
+                                            <img
+                                                src="/manual/cocofolia_character_sabun_setting.png"
+                                                alt="差分設定画面"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded p-1">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">チャットパレットで差分切替</p>
+                                            <img
+                                                src="/manual/cocofolia_character_sabun_use.png"
+                                                alt="差分使用画面"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-purple-600 dark:text-purple-400">💡 APNGの差分を複数登録すれば、表情ごとにアニメーション付き立ち絵を使い分けられます！</p>
                                 </div>
 
                                 <BackToCocofoliaNav />
