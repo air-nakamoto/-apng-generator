@@ -19,6 +19,19 @@ const BackToToc = () => (
     </div>
 )
 
+// ココフォリア使い方目次へ戻るリンクコンポーネント
+const BackToCocofoliaNav = () => (
+    <div className="flex justify-end mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+        <a
+            href="#cocofolia-nav"
+            className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-green-600 dark:text-gray-500 dark:hover:text-green-400 transition-colors"
+        >
+            <ArrowUp className="w-3 h-3" />
+            使い方目次に戻る
+        </a>
+    </div>
+)
+
 export default function ManualPage() {
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
     const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set([1])) // ステップ1はデフォルトで開く
@@ -381,6 +394,17 @@ export default function ManualPage() {
                         ココフォリアでの使い方
                     </h2>
 
+                    {/* サブセクションナビゲーション */}
+                    <div id="cocofolia-nav" className="bg-slate-100 dark:bg-slate-700 rounded-lg p-3 mb-4">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">📍 クイックナビ</p>
+                        <div className="flex flex-wrap gap-2">
+                            <a href="#cocofolia-foreground" className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full text-xs hover:bg-blue-200 dark:hover:bg-blue-800 transition">🖼️ 前景・背景</a>
+                            <a href="#cocofolia-panel" className="px-3 py-1.5 bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 rounded-full text-xs hover:bg-orange-200 dark:hover:bg-orange-800 transition">📺 スクリーン/マーカー</a>
+                            <a href="#cocofolia-cutin" className="px-3 py-1.5 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-full text-xs hover:bg-purple-200 dark:hover:bg-purple-800 transition">⚡ カットイン</a>
+                            <a href="#cocofolia-character" className="px-3 py-1.5 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-full text-xs hover:bg-green-200 dark:hover:bg-green-800 transition">🧍 立ち絵</a>
+                        </div>
+                    </div>
+
                     <div className="space-y-4">
                         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                             <div className="flex items-start">
@@ -471,6 +495,7 @@ export default function ManualPage() {
                                         height="576"
                                     />
                                 </div>
+                                <BackToCocofoliaNav />
                             </div>
                         </div>
 
@@ -524,44 +549,71 @@ export default function ManualPage() {
                                     <div>
                                         <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">スクリーンパネル</h4>
                                         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                            <li>画面左上の「≡」メニュー →「スクリーンパネル」を選択</li>
+                                            <li>画面<strong>右上</strong>の「スクリーンパネル」ボタンをクリック</li>
                                             <li>「+」ボタンで新規パネルを作成</li>
-                                            <li>「画像」欄にAPNGファイルをドラッグ&ドロップ</li>
+                                            <li>「スクリーンパネル」欄をクリックしてAPNGファイルを選択</li>
                                             <li>位置・サイズを調整して配置</li>
                                         </ol>
                                     </div>
                                     <div>
                                         <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">マーカーパネル</h4>
                                         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                            <li>画面左上の「≡」メニュー →「マーカーパネル」を選択</li>
+                                            <li>画面<strong>右上</strong>の「マーカーパネル」ボタンをクリック</li>
                                             <li>「+」ボタンで新規マーカーを作成</li>
-                                            <li>「画像」欄にAPNGファイルをドラッグ&ドロップ</li>
+                                            <li>「マーカー」欄をクリックしてAPNGファイルを選択</li>
                                             <li>マップ上の任意の場所に配置</li>
                                         </ol>
                                     </div>
                                 </div>
+                                {/* 4分割グリッド: スクリーンパネル（左）/ マーカーパネル（右） */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                        <img
-                                            src="/manual/cocofolia_screen_panel.png"
-                                            alt="ココフォリアでのスクリーンパネル設定画面"
-                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                            loading="lazy"
-                                            decoding="async"
-                                            width="800"
-                                            height="450"
-                                        />
+                                    {/* 左列: スクリーンパネル */}
+                                    <div className="space-y-3">
+                                        <h5 className="text-sm font-semibold text-center text-blue-600 dark:text-blue-400">スクリーンパネル</h5>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">① ボタンをクリック</p>
+                                            <img
+                                                src="/manual/cocofolia_screen_panel_button.jpg"
+                                                alt="スクリーンパネルボタンをクリック"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">② 「スクリーン」タブでAPNGを選択</p>
+                                            <img
+                                                src="/manual/cocofolia_screen_panel_select.jpg"
+                                                alt="スクリーンパネル選択画面"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                        <img
-                                            src="/manual/cocofolia_marker_panel.png"
-                                            alt="ココフォリアでのマーカーパネル設定画面"
-                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                            loading="lazy"
-                                            decoding="async"
-                                            width="800"
-                                            height="450"
-                                        />
+                                    {/* 右列: マーカーパネル */}
+                                    <div className="space-y-3">
+                                        <h5 className="text-sm font-semibold text-center text-yellow-600 dark:text-yellow-400">マーカーパネル</h5>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">① ボタンをクリック → 「+」で追加</p>
+                                            <img
+                                                src="/manual/cocofolia_marker_panel_button.jpg"
+                                                alt="マーカーパネルボタンをクリック"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">② 「マーカー」タブでAPNGを選択</p>
+                                            <img
+                                                src="/manual/cocofolia_marker_panel_select.jpg"
+                                                alt="マーカーパネル選択画面"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -573,6 +625,7 @@ export default function ManualPage() {
                                     </ul>
                                     <p className="text-xs text-red-500 dark:text-red-400 mt-2">※ 非ループAPNGはブラウザキャッシュの影響で初回以降再生されません</p>
                                 </div>
+                                <BackToCocofoliaNav />
                             </div>
                         </div>
 
@@ -588,28 +641,117 @@ export default function ManualPage() {
                                 </div>
                             </div>
                             <div className="p-4 bg-white dark:bg-slate-700">
-                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
+                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
                                     <p className="text-sm text-blue-700 dark:text-blue-300">
-                                        ※カットイン用のAPNGはループONでお願いします。<br />
-                                        （現状、ループOFFの場合、カットインでアニメーションが読み込みされないため）
+                                        ⚠️ カットイン用のAPNGは<strong>ループON</strong>で生成してください。<br />
+                                        （ループOFFの場合、アニメーションが再生されません）
                                     </p>
                                 </div>
+
+                                {/* 設定手順 */}
+                                <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">📋 設定手順</h4>
                                 <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                    <li>ココフォリアでキャラクターを選択</li>
-                                    <li>「カットイン」タブを開く</li>
-                                    <li>生成したAPNGファイルを設定</li>
+                                    <li>画面右上の「カットイン」ボタンをクリック → 「+」を押す</li>
+                                    <li>「新しいエフェクト」が作成されるのでクリック</li>
+                                    <li>「NO IMAGE」をクリックして、カットイン画像をアップロードして選択</li>
+                                    <li>（任意）効果音を設定したい場合は音声ファイルを設定し、音量を調整</li>
+                                    <li>カットイン名を入力して設定完了</li>
                                 </ol>
-                                <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                    <img
-                                        src="/manual/cocofolia_cutin.png"
-                                        alt="ココフォリアでのカットイン設定画面"
-                                        className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                        loading="lazy"
-                                        decoding="async"
-                                        width="800"
-                                        height="450"
-                                    />
+
+                                {/* 画像グリッド */}
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">① 「+」で新規作成</p>
+                                        <img
+                                            src="/manual/cocofolia_cutin_button.jpg"
+                                            alt="カットインボタンをクリック"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                            decoding="async"
+                                        />
+                                    </div>
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">② 「新しいエフェクト」をクリック</p>
+                                        <img
+                                            src="/manual/cocofolia_cutin_neweffect.jpg"
+                                            alt="新しいエフェクトをクリック"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                            decoding="async"
+                                        />
+                                    </div>
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">③ 「NOIMAGE」をクリックして画像選択</p>
+                                        <img
+                                            src="/manual/cocofolia_cutin_noimage.jpg"
+                                            alt="NOIMAGEをクリック"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                            decoding="async"
+                                        />
+                                    </div>
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">④ タイトル・音源を設定して完了</p>
+                                        <img
+                                            src="/manual/cocofolia_cutin_complete.jpg"
+                                            alt="設定完了画面"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                            decoding="async"
+                                        />
+                                    </div>
                                 </div>
+
+                                {/* 呼び出し方法 */}
+                                <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">🎬 呼び出し方法</h4>
+                                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3 mb-3">
+                                    <ul className="text-sm text-purple-700 dark:text-purple-300 space-y-2">
+                                        <li>• <strong>方法1:</strong> カットイン一覧の再生ボタン（▶）を押す</li>
+                                        <li>• <strong>方法2:</strong> ルームチャットに<strong>カットイン名</strong>を入力して送信</li>
+                                    </ul>
+                                </div>
+
+                                {/* 補足情報 */}
+                                <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">💡 補足・Tips</h4>
+                                <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                                    {/* @マークでログ非表示 */}
+                                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-2">
+                                        <p className="mb-2"><strong>@マークでログ非表示:</strong> チャットで<code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">@カットイン名</code>と送信すると、カットインは再生されますがチャットログには残りません。</p>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded p-1 max-w-xs mx-auto">
+                                            <img
+                                                src="/manual/cocofolia_chatpalette_send.png"
+                                                alt="@マーク付きで送信"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    </div>
+                                    {/* GMのChatパレットに登録 */}
+                                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2">
+                                        <p className="mb-2"><strong>GMのChatパレットに登録:</strong> よく使うカットイン名をChatパレットに登録しておくと、ワンクリックで呼び出せて便利です！</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="bg-gray-50 dark:bg-slate-700 rounded p-1">
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">① パレットに登録</p>
+                                                <img
+                                                    src="/manual/cocofolia_chatpalette_register.png"
+                                                    alt="Chatパレットに登録"
+                                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                            <div className="bg-gray-50 dark:bg-slate-700 rounded p-1">
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">② クリックで入力</p>
+                                                <img
+                                                    src="/manual/cocofolia_chatpalette_use.png"
+                                                    alt="Chatパレットから入力"
+                                                    className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <BackToCocofoliaNav />
                             </div>
                         </div>
 
@@ -625,13 +767,59 @@ export default function ManualPage() {
                                 </div>
                             </div>
                             <div className="p-4 bg-white dark:bg-slate-700">
-                                <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                    <li>ココフォリアでキャラクターを選択</li>
-                                    <li>「キャラクター」タブを開く</li>
-                                    <li>生成したAPNGファイルをドラッグ&ドロップ</li>
-                                    <li>立ち絵がアニメーションで表示されます</li>
-                                </ol>
-                                <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                {/* 開始方法の分岐 */}
+                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                                        💡 キャラクターコマの作成方法は、<strong>キャラクターシートサイト</strong>を使用しているかで異なります。
+                                    </p>
+                                </div>
+
+                                {/* 2パターンのタブ風表示 */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    {/* パターンA: シートサイトなし */}
+                                    <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                                        <div className="bg-gray-100 dark:bg-slate-600 p-2">
+                                            <h4 className="font-semibold text-sm text-center text-gray-700 dark:text-gray-200">🅰️ キャラクターシートサイトを使わない場合</h4>
+                                        </div>
+                                        <div className="p-3">
+                                            <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                                                <li>ルーム画面左下の<strong>キャラクターアイコン</strong>をクリック</li>
+                                                <li>「+」ボタンで新規キャラクター作成</li>
+                                                <li>キャラクター名などを設定</li>
+                                                <li>「キャラクター」タブを開く</li>
+                                                <li>APNGファイルをアップロードして設定</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+
+                                    {/* パターンB: シートサイトあり */}
+                                    <div className="border border-green-200 dark:border-green-600 rounded-lg overflow-hidden">
+                                        <div className="bg-green-100 dark:bg-green-900/30 p-2">
+                                            <h4 className="font-semibold text-sm text-center text-green-700 dark:text-green-200">🅱️ キャラクターシートサイトを使う場合</h4>
+                                        </div>
+                                        <div className="p-3">
+                                            <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                                                <li>各キャラクターシート作成サイトで「ココフォリア用コマ出力」などからコピー</li>
+                                                <li>ココフォリアのルーム画面に貼り付け</li>
+                                                <li>作成されたコマアイコンをクリック</li>
+                                                <li>「キャラクター」タブを開く</li>
+                                                <li>APNGファイルをアップロードして設定</li>
+                                            </ol>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">※ キャラクターシートサービスによって手順が異なる場合があります</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 共通手順の補足 */}
+                                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-3">
+                                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                        ⚠️ キャラクターシートサイトからコピー&ペーストでコマを作成した場合、アイコン画像が設定済みの状態になります。<br />
+                                        APNGに差し替える場合は、「キャラクター」タブで新しい画像をアップロードしてください。
+                                    </p>
+                                </div>
+
+                                {/* 画像 */}
+                                <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2 mb-4">
                                     <img
                                         src="/manual/cocofolia_character.png"
                                         alt="ココフォリアでのキャラクター立ち絵設定画面"
@@ -642,6 +830,20 @@ export default function ManualPage() {
                                         height="450"
                                     />
                                 </div>
+
+                                {/* 差分設定の補足 */}
+                                <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">💡 補足: 差分（表情差分）の設定</h4>
+                                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded p-3 text-sm text-gray-600 dark:text-gray-300">
+                                    <p className="mb-2">キャラクターに複数の立ち絵（表情差分など）を設定できます。</p>
+                                    <ol className="list-decimal list-inside space-y-1">
+                                        <li>「キャラクター」タブで複数の画像をアップロード</li>
+                                        <li>チャット欄で <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">:1</code> <code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">:2</code> などを入力して切り替え</li>
+                                        <li>または、チャットパレットに差分コマンドを登録</li>
+                                    </ol>
+                                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">💡 APNGの差分を複数登録すれば、表情ごとにアニメーション付き立ち絵を使い分けられます！</p>
+                                </div>
+
+                                <BackToCocofoliaNav />
                             </div>
                         </div>
                         <BackToToc />
