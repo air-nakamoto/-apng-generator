@@ -802,8 +802,8 @@ export default function ManualPage() {
                                                 <li>各キャラクターシート作成サイトで「ココフォリア用コマ出力」などからコピー</li>
                                                 <li>ココフォリアのルーム画面に貼り付け</li>
                                                 <li>作成されたコマアイコンをクリック</li>
-                                                <li>「キャラクター」タブを開く</li>
-                                                <li>APNGファイルをアップロードして設定</li>
+                                                <li>キャラクター名の左にあるアイコンをクリック</li>
+                                                <li>キャラクタータブが開くので画像ファイルをアップロードして設定</li>
                                             </ol>
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">※ キャラクターシートサービスによって手順が異なる場合があります</p>
                                         </div>
@@ -818,17 +818,44 @@ export default function ManualPage() {
                                     </p>
                                 </div>
 
-                                {/* 画像 */}
-                                <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2 mb-4">
-                                    <img
-                                        src="/manual/cocofolia_character.png"
-                                        alt="ココフォリアでのキャラクター立ち絵設定画面"
-                                        className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                        loading="lazy"
-                                        decoding="async"
-                                        width="800"
-                                        height="450"
-                                    />
+                                {/* 画像グリッド */}
+                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">① キャラクター一覧を開く</p>
+                                        <img
+                                            src="/manual/cocofolia_character_list_button.jpg"
+                                            alt="キャラクター一覧ボタン"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">② アイコンをクリックして編集</p>
+                                        <img
+                                            src="/manual/cocofolia_character_edit_icon.jpg"
+                                            alt="キャラクター編集画面"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">③ キャラクタータブで画像アップロード</p>
+                                        <img
+                                            src="/manual/cocofolia_character_upload.png"
+                                            alt="キャラクタータブで画像設定"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                    <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">④ 完成！ルームにAPNG立ち絵表示</p>
+                                        <img
+                                            src="/manual/cocofolia_character_complete.png"
+                                            alt="完成したキャラクター"
+                                            className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                            loading="lazy"
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* 差分設定の補足 */}
