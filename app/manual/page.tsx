@@ -914,135 +914,121 @@ export default function ManualPage() {
                                 <span className="flex-1">アニメーションが動かない / 重い / 表示されない</span>
                             </summary>
                             <div className="p-4 bg-white dark:bg-slate-700 text-sm text-gray-600 dark:text-gray-300 space-y-4">
-                                <p className="font-medium text-gray-800 dark:text-white">🔍 診断フロー（順番に確認してください）</p>
 
-                                {/* ステップ1: 用途確認 */}
-                                <div className="border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
-                                    <p className="font-bold text-blue-800 dark:text-blue-200 mb-2">ステップ1️⃣：どこで使っていますか？</p>
-                                    <div className="space-y-2 text-xs">
-                                        <div className="flex items-start gap-2">
-                                            <ArrowRight className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                                            <div>
-                                                <strong className="text-blue-700 dark:text-blue-300">スクリーンパネル / マーカーパネル の場合</strong>
-                                                <p className="text-blue-600 dark:text-blue-400">→ ステップ2へ</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start gap-2">
-                                            <ArrowRight className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                                            <div>
-                                                <strong className="text-blue-700 dark:text-blue-300">カットイン の場合</strong>
-                                                <p className="text-blue-600 dark:text-blue-400">→ ステップ4へ</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start gap-2">
-                                            <ArrowRight className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                                            <div>
-                                                <strong className="text-blue-700 dark:text-blue-300">立ち絵 / 前景・背景 の場合</strong>
-                                                <p className="text-blue-600 dark:text-blue-400">→ ステップ5へ</p>
-                                            </div>
-                                        </div>
+                                {/* 用途別要件表 */}
+                                <div>
+                                    <p className="font-medium text-gray-800 dark:text-white mb-3">📋 用途別の設定要件</p>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-xs border-collapse border border-gray-300 dark:border-gray-600">
+                                            <thead>
+                                                <tr className="bg-gray-100 dark:bg-gray-700">
+                                                    <th className="border border-gray-300 dark:border-gray-600 p-2 text-left font-bold">用途</th>
+                                                    <th className="border border-gray-300 dark:border-gray-600 p-2 text-center font-bold">容量制限</th>
+                                                    <th className="border border-gray-300 dark:border-gray-600 p-2 text-center font-bold">ループ</th>
+                                                    <th className="border border-gray-300 dark:border-gray-600 p-2 text-left font-bold">備考</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr className="bg-orange-50 dark:bg-orange-900/20">
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 font-semibold">📺 スクリーンパネル</td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded font-bold">1MB未満</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded font-bold">ON必須</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2">非ループは実質使用不可</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 font-semibold">📍 マーカーパネル</td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded font-bold">1MB未満</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">推奨</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2">非ループも可（※）</td>
+                                                </tr>
+                                                <tr className="bg-purple-50 dark:bg-purple-900/20">
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 font-semibold">⚡ カットイン</td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">5MB以下</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded font-bold">ON必須</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2">非ループは動作しない</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 font-semibold">🧍 立ち絵</td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">5MB以下</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded">任意</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2">どちらでもOK</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 font-semibold">🖼️ 前景・背景</td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">5MB以下</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2 text-center">
+                                                        <span className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded">任意</span>
+                                                    </td>
+                                                    <td className="border border-gray-300 dark:border-gray-600 p-2">どちらでもOK</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
-                                </div>
-
-                                {/* ステップ2: スクリーン/マーカーパネル - 容量確認 */}
-                                <div className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/20 p-3 rounded">
-                                    <p className="font-bold text-orange-800 dark:text-orange-200 mb-2">ステップ2️⃣：ファイルサイズは1MB未満ですか？</p>
-                                    <div className="space-y-2 text-xs">
-                                        <div className="flex items-start gap-2">
-                                            <span className="text-green-600 dark:text-green-400 font-bold">✅ はい</span>
-                                            <p className="text-orange-700 dark:text-orange-300">→ ステップ3へ</p>
-                                        </div>
-                                        <div className="flex items-start gap-2">
-                                            <span className="text-red-600 dark:text-red-400 font-bold">❌ いいえ（1MB以上）</span>
-                                            <div>
-                                                <p className="text-red-700 dark:text-red-400 font-bold">⚠️ これが原因です！</p>
-                                                <p className="text-orange-700 dark:text-orange-300 mt-1">
-                                                    <strong>解決策：</strong>APNG Generatorで容量設定を「1MB」に変更して再生成してください。<br />
-                                                    スクリーン/マーカーパネルは<strong>1MB未満必須</strong>です。
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* ステップ3: 圧縮確認 */}
-                                <div className="border-l-4 border-purple-500 bg-purple-50 dark:bg-purple-900/20 p-3 rounded">
-                                    <p className="font-bold text-purple-800 dark:text-purple-200 mb-2">ステップ3️⃣：アップロード時に「圧縮しますか？」で何を選びましたか？</p>
-                                    <div className="space-y-2 text-xs">
-                                        <div className="flex items-start gap-2">
-                                            <span className="text-green-600 dark:text-green-400 font-bold">✅ いいえ</span>
-                                            <p className="text-purple-700 dark:text-purple-300">→ ステップ4へ（カットインの人も確認）</p>
-                                        </div>
-                                        <div className="flex items-start gap-2">
-                                            <span className="text-red-600 dark:text-red-400 font-bold">❌ はい</span>
-                                            <div>
-                                                <p className="text-red-700 dark:text-red-400 font-bold">⚠️ これが原因です！</p>
-                                                <p className="text-purple-700 dark:text-purple-300 mt-1">
-                                                    <strong>解決策：</strong>「はい」を選ぶと静止画に圧縮されます。<br />
-                                                    再度アップロードし、「<strong>いいえ</strong>」を選択してください。
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* ステップ4: ループ確認（カットイン/スクリーンパネル） */}
-                                <div className="border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20 p-3 rounded">
-                                    <p className="font-bold text-red-800 dark:text-red-200 mb-2">ステップ4️⃣：ループONで生成しましたか？（カットイン / スクリーンパネル）</p>
-                                    <div className="space-y-2 text-xs">
-                                        <div className="flex items-start gap-2">
-                                            <span className="text-green-600 dark:text-green-400 font-bold">✅ はい（ループON）</span>
-                                            <p className="text-red-700 dark:text-red-300">→ ステップ6へ</p>
-                                        </div>
-                                        <div className="flex items-start gap-2">
-                                            <span className="text-red-600 dark:text-red-400 font-bold">❌ いいえ（ループOFF）</span>
-                                            <div>
-                                                <p className="text-red-700 dark:text-red-400 font-bold">⚠️ これが原因です！</p>
-                                                <p className="text-red-700 dark:text-red-300 mt-1">
-                                                    <strong>解決策：</strong>カットイン・スクリーンパネルは<strong>ループON必須</strong>です。<br />
-                                                    共通設定で「ループON」にして再生成してください。
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* ステップ5: 立ち絵/前景・背景 */}
-                                <div className="border-l-4 border-green-500 bg-green-50 dark:bg-green-900/20 p-3 rounded">
-                                    <p className="font-bold text-green-800 dark:text-green-200 mb-2">ステップ5️⃣：立ち絵 / 前景・背景の場合</p>
-                                    <p className="text-xs text-green-700 dark:text-green-300">
-                                        これらの用途はループON/OFFどちらでも使えます。<br />
-                                        アップロード時に「圧縮しますか？」で「いいえ」を選択していれば動作するはずです。<br />
-                                        → ステップ6へ
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                        ※ 非ループの2回目以降の再生には、シーンを複製して前のシーンをNOIMAGEにしてからシーンを切り替える必要があります
                                     </p>
                                 </div>
 
-                                {/* ステップ6: その他の原因 */}
-                                <div className="border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded">
-                                    <p className="font-bold text-yellow-800 dark:text-yellow-200 mb-2">ステップ6️⃣：それでも動かない場合（その他の原因）</p>
-                                    <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-2">
-                                        <li className="flex items-start gap-2">
-                                            <span>🔄</span>
-                                            <div>
-                                                <strong>ブラウザキャッシュが原因の可能性</strong>
-                                                <p>強制リロード（Windows: Ctrl+F5 / Mac: Cmd+Shift+R）を試してください</p>
-                                            </div>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span>🗑️</span>
-                                            <div>
-                                                <strong>ルームのデータ量過多</strong>
-                                                <p>不要な画像素材を削除してみてください</p>
-                                            </div>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span>🌐</span>
-                                            <div>
-                                                <strong>ブラウザの互換性</strong>
-                                                <p>Chrome、Firefox、Edge の最新版を使用してください</p>
-                                            </div>
-                                        </li>
-                                    </ul>
+                                {/* 診断フロー */}
+                                <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                                    <p className="font-medium text-gray-800 dark:text-white mb-3">🔍 それでも動かない場合の診断フロー</p>
+
+                                    <div className="space-y-3">
+                                        {/* チェック1: 容量 */}
+                                        <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-3 rounded">
+                                            <p className="font-bold text-orange-800 dark:text-orange-200 text-sm mb-1">1️⃣ 容量オーバーしていませんか？</p>
+                                            <p className="text-xs text-orange-700 dark:text-orange-300">
+                                                スクリーン/マーカーパネル：<strong>1MB未満必須</strong> | カットイン/立ち絵/前景・背景：<strong>5MB以下推奨</strong><br />
+                                                → 容量設定を変更して再生成してください
+                                            </p>
+                                        </div>
+
+                                        {/* チェック2: 圧縮 */}
+                                        <div className="bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-3 rounded">
+                                            <p className="font-bold text-purple-800 dark:text-purple-200 text-sm mb-1">2️⃣ アップロード時に「圧縮」を選びませんでしたか？</p>
+                                            <p className="text-xs text-purple-700 dark:text-purple-300">
+                                                ココフォリアで「圧縮しますか？」と聞かれたら<strong>必ず「いいえ」</strong>を選択<br />
+                                                「はい」を選ぶと静止画になります → 圧縮なしで再アップロードしてください
+                                            </p>
+                                        </div>
+
+                                        {/* チェック3: ループ */}
+                                        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-3 rounded">
+                                            <p className="font-bold text-red-800 dark:text-red-200 text-sm mb-1">3️⃣ ループOFFで生成していませんか？</p>
+                                            <p className="text-xs text-red-700 dark:text-red-300">
+                                                <strong>カットイン・スクリーンパネル</strong>は<strong>ループON必須</strong>です<br />
+                                                → 共通設定で「ループON」にして再生成してください
+                                            </p>
+                                        </div>
+
+                                        {/* チェック4: その他 */}
+                                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-3 rounded">
+                                            <p className="font-bold text-yellow-800 dark:text-yellow-200 text-sm mb-2">4️⃣ その他の原因</p>
+                                            <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1">
+                                                <li>• <strong>ブラウザキャッシュ:</strong> 強制リロード（Windows: Ctrl+F5 / Mac: Cmd+Shift+R）</li>
+                                                <li>• <strong>データ量過多:</strong> ルームの不要な画像素材を削除</li>
+                                                <li>• <strong>ブラウザ互換性:</strong> Chrome、Firefox、Edgeの最新版を使用</li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </details>
