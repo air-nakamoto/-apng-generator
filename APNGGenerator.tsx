@@ -1217,8 +1217,11 @@ export default function APNGGenerator() {
             case 'silhouette': {
                 drawScaledImage(0, 0, canvas.width, canvas.height)
 
-                // progress=0なら元の画像をそのまま表示
-                if (progress === 0) break
+                // シルエット解除モードの場合、progress=1で元画像
+                const isSilhouetteRelease = effectIntensity === 'from-silhouette'
+
+                if (isSilhouetteRelease && progress === 1) break
+                if (!isSilhouetteRelease && progress === 0) break
 
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                 const data = imageData.data
@@ -1230,7 +1233,8 @@ export default function APNGGenerator() {
                     red: [255, 0, 0],
                 }
 
-                const silhouetteIntensity = progress // 0→1 (固定)
+                // シルエット解除の場合は progress を反転（1→0でシルエット→元画像）
+                const silhouetteIntensity = isSilhouetteRelease ? (1 - progress) : progress
 
                 if (effectOption === 'outline-black' || effectOption === 'outline-white') {
                     // 縁取りモード: エッジ検出（黒縁 or 白縁）
@@ -2395,8 +2399,11 @@ export default function APNGGenerator() {
                     case 'silhouette': {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
 
-                        // progress=0なら元の画像をそのまま表示
-                        if (progress === 0) break
+                        // シルエット解除モードの場合、progress=1で元画像
+                        const isSilhouetteReleaseGen = effectIntensity === 'from-silhouette'
+
+                        if (isSilhouetteReleaseGen && progress === 1) break
+                        if (!isSilhouetteReleaseGen && progress === 0) break
 
                         const genImageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                         const genData = genImageData.data
@@ -2408,7 +2415,8 @@ export default function APNGGenerator() {
                             red: [255, 0, 0],
                         }
 
-                        const silhouetteInt = progress // 0→1 (固定)
+                        // シルエット解除の場合は progress を反転（1→0でシルエット→元画像）
+                        const silhouetteInt = isSilhouetteReleaseGen ? (1 - progress) : progress
 
                         if (effectOption === 'outline-black' || effectOption === 'outline-white') {
                             // 縁取りモード: エッジ検出（黒縁 or 白縁）
