@@ -567,7 +567,13 @@ export const transitionEffects: EffectCategory[] = [
                     { value: 'outline-black', label: '縁取り（黒）', numericValue: 3 },
                     { value: 'outline-white', label: '縁取り（白）', numericValue: 4 },
                 ],
-                defaultOption: 'black'
+                defaultOption: 'black',
+                hasIntensity: true,
+                intensityOptions: [
+                    { value: 'to-silhouette', label: 'シルエット化', numericValue: 0 },
+                    { value: 'from-silhouette', label: 'シルエット解除', numericValue: 1 },
+                ],
+                defaultIntensity: 'to-silhouette'
             },
         ],
     },
