@@ -42,6 +42,7 @@
     "cmdk": "1.0.0",
     "date-fns": "^3.0.0",
     "embla-carousel-react": "8.1.3",
+    "framer-motion": "latest",
     "input-otp": "1.2.4",
     "lucide-react": "^0.454.0",
     "next": "14.2.16",
@@ -55,10 +56,9 @@
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "upng-js": "latest",
     "vaul": "^0.9.6",
-    "zod": "^3.23.8",
-    "framer-motion": "latest",
-    "upng-js": "latest"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20",
