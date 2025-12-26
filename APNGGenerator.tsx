@@ -1036,14 +1036,30 @@ export default function APNGGenerator() {
                 break
             }
             case 'scanlines': {
+                // 浮遊効果: 約20フレームに1回（progress 0.05刻みで発生）
+                const floatPhase = Math.floor(progress * 20) % 20
+                const isFloating = floatPhase === 0 && progress > 0.01
+                const floatOffsetX = isFloating ? Math.sin(progress * Math.PI * 40) * 3 : 0
+                const floatOffsetY = isFloating ? Math.cos(progress * Math.PI * 40) * 2 : 0
+
+                ctx.save()
+                ctx.translate(floatOffsetX, floatOffsetY)
                 drawScaledImage(0, 0, canvas.width, canvas.height)
+                ctx.restore()
+
                 // effectOptionで太さを決定（thin=1, medium=2, thick=4）
                 const scanlineThickness = effectOption === 'thin' ? 1 : effectOption === 'thick' ? 4 : 2
                 const scanlineSpacing = scanlineThickness * 2
+
+                // effectIntensityで色を決定（gray/blue/green）
+                const scanlineColor = effectIntensity === 'blue' ? 'rgba(0, 100, 255, 0.3)' :
+                                      effectIntensity === 'green' ? 'rgba(0, 200, 100, 0.3)' :
+                                      'rgba(0, 0, 0, 0.3)'
+
                 // 透過部分を保持するため、source-atopモードでスキャンラインを描画
                 ctx.save()
                 ctx.globalCompositeOperation = 'source-atop'
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+                ctx.fillStyle = scanlineColor
                 for (let y = 0; y < canvas.height; y += scanlineSpacing) {
                     ctx.fillRect(0, y, canvas.width, scanlineThickness)
                 }
@@ -1080,9 +1096,10 @@ export default function APNGGenerator() {
                 ctx.fillRect(0, 0, canvas.width, canvas.height)
                 ctx.restore()
                 break
-            case 'pulsation':
+            case 'pulsation': {
                 // 脈動: エッジ部分に色のフリンジ（上下左右にズレ）
-                const aberAmt = Math.sin(progress * Math.PI) * 6
+                const pulsationSize = effectOption === 'small' ? 3 : effectOption === 'large' ? 12 : 6
+                const aberAmt = Math.sin(progress * Math.PI) * pulsationSize
                 // 元画像を先に描画
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 // エッジに色を乗せる
@@ -1101,6 +1118,7 @@ export default function APNGGenerator() {
                 ctx.globalAlpha = 1
                 ctx.globalCompositeOperation = 'source-over'
                 break
+            }
             case 'tvStatic':
                 // TV砂嵐
                 drawScaledImage(0, 0, canvas.width, canvas.height)
@@ -1222,8 +1240,9 @@ export default function APNGGenerator() {
 
                 const silhouetteIntensity = progress // 0→1 (固定)
 
-                if (effectOption === 'outline') {
-                    // 縁取りモード: エッジ検出
+                if (effectOption === 'outline-black' || effectOption === 'outline-white') {
+                    // 縁取りモード: エッジ検出（黒縁 or 白縁）
+                    const outlineColor = effectOption === 'outline-white' ? 255 : 0
                     const edgeData = new Uint8ClampedArray(data.length)
                     for (let y = 1; y < canvas.height - 1; y++) {
                         for (let x = 1; x < canvas.width - 1; x++) {
@@ -1243,11 +1262,11 @@ export default function APNGGenerator() {
                             const isEdge = (alphaCenter > 128 && (alphaUp < 128 || alphaDown < 128 || alphaLeft < 128 || alphaRight < 128))
 
                             if (isEdge) {
-                                // エッジ部分: 元の色から黒へ変化
+                                // エッジ部分: 元の色から黒/白へ変化
                                 const blend = progress
-                                edgeData[i] = Math.floor(data[i] * (1 - blend)) // 黒(0)へ
-                                edgeData[i + 1] = Math.floor(data[i + 1] * (1 - blend))
-                                edgeData[i + 2] = Math.floor(data[i + 2] * (1 - blend))
+                                edgeData[i] = Math.floor(data[i] * (1 - blend) + outlineColor * blend)
+                                edgeData[i + 1] = Math.floor(data[i + 1] * (1 - blend) + outlineColor * blend)
+                                edgeData[i + 2] = Math.floor(data[i + 2] * (1 - blend) + outlineColor * blend)
                                 edgeData[i + 3] = data[i + 3] // アルファは維持
                             } else {
                                 // 非エッジ部分: 元の色を維持しつつ徐々に透明に
@@ -2294,13 +2313,29 @@ export default function APNGGenerator() {
 
                     // 走査線
                     case 'scanlines': {
+                        // 浮遊効果: 約20フレームに1回（progress 0.05刻みで発生）
+                        const floatPhase = Math.floor(progress * 20) % 20
+                        const isFloating = floatPhase === 0 && progress > 0.01
+                        const floatOffsetX = isFloating ? Math.sin(progress * Math.PI * 40) * 3 : 0
+                        const floatOffsetY = isFloating ? Math.cos(progress * Math.PI * 40) * 2 : 0
+
+                        ctx.save()
+                        ctx.translate(floatOffsetX, floatOffsetY)
                         drawScaledImage(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
+
                         const scanlineThickness = effectOption === 'thin' ? 1 : effectOption === 'thick' ? 4 : 2
                         const scanlineSpacing = scanlineThickness * 2
+
+                        // effectIntensityで色を決定（gray/blue/green）
+                        const scanlineColor = effectIntensity === 'blue' ? 'rgba(0, 100, 255, 0.3)' :
+                                              effectIntensity === 'green' ? 'rgba(0, 200, 100, 0.3)' :
+                                              'rgba(0, 0, 0, 0.3)'
+
                         // 透過部分を保持するため、source-atopモードでスキャンラインを描画
                         ctx.save()
                         ctx.globalCompositeOperation = 'source-atop'
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+                        ctx.fillStyle = scanlineColor
                         for (let y = 0; y < canvas.height; y += scanlineSpacing) {
                             ctx.fillRect(0, y, canvas.width, scanlineThickness)
                         }
@@ -2334,7 +2369,8 @@ export default function APNGGenerator() {
                     // 脈動
                     case 'pulsation': {
                         // 脈動: エッジ部分に色のフリンジ
-                        const aberAmt = Math.sin(progress * Math.PI) * 6
+                        const pulsationSize = effectOption === 'small' ? 3 : effectOption === 'large' ? 12 : 6
+                        const aberAmt = Math.sin(progress * Math.PI) * pulsationSize
                         // 元画像を先に描画
                         drawScaledImage(0, 0, canvas.width, canvas.height)
 
@@ -2390,8 +2426,9 @@ export default function APNGGenerator() {
 
                         const silhouetteInt = progress // 0→1 (固定)
 
-                        if (effectOption === 'outline') {
-                            // 縁取りモード: エッジ検出
+                        if (effectOption === 'outline-black' || effectOption === 'outline-white') {
+                            // 縁取りモード: エッジ検出（黒縁 or 白縁）
+                            const outlineColorGen = effectOption === 'outline-white' ? 255 : 0
                             const edgeDataGen = new Uint8ClampedArray(genData.length)
                             for (let y = 1; y < canvas.height - 1; y++) {
                                 for (let x = 1; x < canvas.width - 1; x++) {
@@ -2411,11 +2448,11 @@ export default function APNGGenerator() {
                                     const isEdge = (alphaCenter > 128 && (alphaUp < 128 || alphaDown < 128 || alphaLeft < 128 || alphaRight < 128))
 
                                     if (isEdge) {
-                                        // エッジ部分: 元の色から黒へ変化
+                                        // エッジ部分: 元の色から黒/白へ変化
                                         const blend = progress
-                                        edgeDataGen[i] = Math.floor(genData[i] * (1 - blend)) // 黒(0)へ
-                                        edgeDataGen[i + 1] = Math.floor(genData[i + 1] * (1 - blend))
-                                        edgeDataGen[i + 2] = Math.floor(genData[i + 2] * (1 - blend))
+                                        edgeDataGen[i] = Math.floor(genData[i] * (1 - blend) + outlineColorGen * blend)
+                                        edgeDataGen[i + 1] = Math.floor(genData[i + 1] * (1 - blend) + outlineColorGen * blend)
+                                        edgeDataGen[i + 2] = Math.floor(genData[i + 2] * (1 - blend) + outlineColorGen * blend)
                                         edgeDataGen[i + 3] = genData[i + 3] // アルファは維持
                                     } else {
                                         // 非エッジ部分: 元の色を維持しつつ徐々に透明に
@@ -2905,41 +2942,54 @@ export default function APNGGenerator() {
                 }
 
             // 走査線
-            case 'scanlines':
+            case 'scanlines': {
                 // effectOption で太さを決定（thin=2px, medium=4px, thick=8px）
                 const scanThickness = effectOption === 'thin' ? 2 : effectOption === 'thick' ? 8 : 4
+                // effectIntensityで色を決定（gray/blue/green）
+                const scanColorPreview = effectIntensity === 'blue' ? 'rgba(0, 100, 255, 0.3)' :
+                                         effectIntensity === 'green' ? 'rgba(0, 200, 100, 0.3)' :
+                                         'rgba(0, 0, 0, 0.3)'
                 // 動く光のY位置（速度を遅く）
                 const scanY = (previewProgress * 100) % 100
+                // 浮遊効果: 約20フレームに1回
+                const floatPhasePreview = Math.floor(previewProgress * 20) % 20
+                const isFloatingPreview = floatPhasePreview === 0 && previewProgress > 0.01
+                const floatX = isFloatingPreview ? Math.sin(previewProgress * Math.PI * 40) * 3 : 0
+                const floatY = isFloatingPreview ? Math.cos(previewProgress * Math.PI * 40) * 2 : 0
                 return {
                     ...baseStyle,
+                    transform: `translate(calc(-50% + ${floatX}px), calc(-50% + ${floatY}px))`,
                     backgroundImage: `
                         linear-gradient(
                             0deg,
                             transparent 0%,
                             transparent 50%,
-                            rgba(0, 0, 0, 0.3) 50%,
-                            rgba(0, 0, 0, 0.3) 100%
+                            ${scanColorPreview} 50%,
+                            ${scanColorPreview} 100%
                         )
                     `,
                     backgroundSize: `100% ${scanThickness}px`,
                     backgroundBlendMode: 'multiply' as const,
                     boxShadow: `inset 0 ${scanY}px 40px -20px rgba(255, 255, 255, 0.2)`,
                 }
+            }
 
             // ビネット
             case 'vignette':
                 return { ...baseStyle, filter: `brightness(${1 - previewProgress * 0.3})` }
 
             // 脈動
-            case 'pulsation':
-                const aberAmt = Math.sin(previewProgress * Math.PI) * 3
+            case 'pulsation': {
+                const pulsationSizePreview = effectOption === 'small' ? 1.5 : effectOption === 'large' ? 6 : 3
+                const aberAmtPreview = Math.sin(previewProgress * Math.PI) * pulsationSizePreview
                 return {
                     ...baseStyle,
                     filter: `
-                        drop-shadow(${-aberAmt}px ${-aberAmt}px 0 rgba(255, 0, 0, 0.3))
-                        drop-shadow(${aberAmt}px ${aberAmt}px 0 rgba(0, 0, 255, 0.3))
+                        drop-shadow(${-aberAmtPreview}px ${-aberAmtPreview}px 0 rgba(255, 0, 0, 0.3))
+                        drop-shadow(${aberAmtPreview}px ${aberAmtPreview}px 0 rgba(0, 0, 255, 0.3))
                     `,
                 }
+            }
 
             // 閃光
             case 'flash':

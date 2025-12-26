@@ -501,7 +501,20 @@ export const transitionEffects: EffectCategory[] = [
                 ],
                 defaultOption: 'medium'
             },
-            { name: 'pulsation', label: '脈動', icon: Activity, hasDirection: false },
+            {
+                name: 'pulsation',
+                label: '脈動',
+                icon: Activity,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'size',
+                options: [
+                    { value: 'small', label: '小', numericValue: 3 },
+                    { value: 'medium', label: '中', numericValue: 6 },
+                    { value: 'large', label: '大', numericValue: 12 },
+                ],
+                defaultOption: 'medium'
+            },
             {
                 name: 'scanlines',
                 label: '走査線',
@@ -514,7 +527,14 @@ export const transitionEffects: EffectCategory[] = [
                     { value: 'medium', label: '中', numericValue: 2 },
                     { value: 'thick', label: '太', numericValue: 4 },
                 ],
-                defaultOption: 'medium'
+                defaultOption: 'medium',
+                hasIntensity: true,
+                intensityOptions: [
+                    { value: 'gray', label: 'グレー', numericValue: 0 },
+                    { value: 'blue', label: '青', numericValue: 1 },
+                    { value: 'green', label: '緑', numericValue: 2 },
+                ],
+                defaultIntensity: 'gray'
             },
             { name: 'vignette', label: 'ビネット', icon: Circle, hasDirection: false },
             { name: 'flash', label: '閃光', icon: Sun, hasDirection: false },
@@ -544,7 +564,8 @@ export const transitionEffects: EffectCategory[] = [
                     { value: 'black', label: '黒', numericValue: 0 },
                     { value: 'white', label: '白', numericValue: 1 },
                     { value: 'red', label: '赤', numericValue: 2 },
-                    { value: 'outline', label: '縁取り', numericValue: 3 },
+                    { value: 'outline-black', label: '縁取り（黒）', numericValue: 3 },
+                    { value: 'outline-white', label: '縁取り（白）', numericValue: 4 },
                 ],
                 defaultOption: 'black'
             },
