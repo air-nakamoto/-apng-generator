@@ -109,6 +109,7 @@ export default function EffectsPage() {
             concentrationLines: '中心に向かう集中線演出',
             cardFlipLoop: 'カードが連続して回転するループ演出',
             silhouette: '画像がシルエット化する演出',
+            silhouetteFadeIn: 'シルエットから元画像へフェードインする演出',
         }
         return descriptions[effectName] || '効果の説明'
     }
