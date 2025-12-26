@@ -913,37 +913,135 @@ export default function ManualPage() {
                                 <span className="text-lg">🚨</span>
                                 <span className="flex-1">アニメーションが動かない / 重い / 表示されない</span>
                             </summary>
-                            <div className="p-4 bg-white dark:bg-slate-700 text-sm text-gray-600 dark:text-gray-300 space-y-3">
-                                <p className="font-medium text-gray-800 dark:text-white">✅ チェックリスト（上から順に確認）</p>
-                                <ul className="space-y-2">
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-red-500 font-bold">1.</span>
-                                        <div>
-                                            <strong>容量は1MB未満か？</strong>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">スクリーン/マーカーパネルは1MB未満が必須。超えている場合は容量設定を「1MB」に。</p>
+                            <div className="p-4 bg-white dark:bg-slate-700 text-sm text-gray-600 dark:text-gray-300 space-y-4">
+                                <p className="font-medium text-gray-800 dark:text-white">🔍 診断フロー（順番に確認してください）</p>
+
+                                {/* ステップ1: 用途確認 */}
+                                <div className="border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
+                                    <p className="font-bold text-blue-800 dark:text-blue-200 mb-2">ステップ1️⃣：どこで使っていますか？</p>
+                                    <div className="space-y-2 text-xs">
+                                        <div className="flex items-start gap-2">
+                                            <ArrowRight className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <strong className="text-blue-700 dark:text-blue-300">スクリーンパネル / マーカーパネル の場合</strong>
+                                                <p className="text-blue-600 dark:text-blue-400">→ ステップ2へ</p>
+                                            </div>
                                         </div>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-red-500 font-bold">2.</span>
-                                        <div>
-                                            <strong>アップロード時に「圧縮しますか？」で「いいえ」を選んだか？</strong>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">「はい」を選ぶと静止画になります。</p>
+                                        <div className="flex items-start gap-2">
+                                            <ArrowRight className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <strong className="text-blue-700 dark:text-blue-300">カットイン の場合</strong>
+                                                <p className="text-blue-600 dark:text-blue-400">→ ステップ4へ</p>
+                                            </div>
                                         </div>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="text-red-500 font-bold">3.</span>
-                                        <div>
-                                            <strong>カットイン / スクリーンパネルはループONか？</strong>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">これらの用途ではループOFF（非ループ）は正常に動作しません。</p>
+                                        <div className="flex items-start gap-2">
+                                            <ArrowRight className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <strong className="text-blue-700 dark:text-blue-300">立ち絵 / 前景・背景 の場合</strong>
+                                                <p className="text-blue-600 dark:text-blue-400">→ ステップ5へ</p>
+                                            </div>
                                         </div>
-                                    </li>
-                                </ul>
-                                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3">
-                                    <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">🔄 突然動かなくなった場合</p>
-                                    <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1">
-                                        <li>• 強制リロード（Windows: Ctrl+F5 / Mac: Cmd+Shift+R）</li>
-                                        <li>• ブラウザのキャッシュ / Cookieを削除</li>
-                                        <li>• ルームのデータ量過多の可能性（不要な素材を削除）</li>
+                                    </div>
+                                </div>
+
+                                {/* ステップ2: スクリーン/マーカーパネル - 容量確認 */}
+                                <div className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/20 p-3 rounded">
+                                    <p className="font-bold text-orange-800 dark:text-orange-200 mb-2">ステップ2️⃣：ファイルサイズは1MB未満ですか？</p>
+                                    <div className="space-y-2 text-xs">
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-green-600 dark:text-green-400 font-bold">✅ はい</span>
+                                            <p className="text-orange-700 dark:text-orange-300">→ ステップ3へ</p>
+                                        </div>
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-red-600 dark:text-red-400 font-bold">❌ いいえ（1MB以上）</span>
+                                            <div>
+                                                <p className="text-red-700 dark:text-red-400 font-bold">⚠️ これが原因です！</p>
+                                                <p className="text-orange-700 dark:text-orange-300 mt-1">
+                                                    <strong>解決策：</strong>APNG Generatorで容量設定を「1MB」に変更して再生成してください。<br />
+                                                    スクリーン/マーカーパネルは<strong>1MB未満必須</strong>です。
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ステップ3: 圧縮確認 */}
+                                <div className="border-l-4 border-purple-500 bg-purple-50 dark:bg-purple-900/20 p-3 rounded">
+                                    <p className="font-bold text-purple-800 dark:text-purple-200 mb-2">ステップ3️⃣：アップロード時に「圧縮しますか？」で何を選びましたか？</p>
+                                    <div className="space-y-2 text-xs">
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-green-600 dark:text-green-400 font-bold">✅ いいえ</span>
+                                            <p className="text-purple-700 dark:text-purple-300">→ ステップ4へ（カットインの人も確認）</p>
+                                        </div>
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-red-600 dark:text-red-400 font-bold">❌ はい</span>
+                                            <div>
+                                                <p className="text-red-700 dark:text-red-400 font-bold">⚠️ これが原因です！</p>
+                                                <p className="text-purple-700 dark:text-purple-300 mt-1">
+                                                    <strong>解決策：</strong>「はい」を選ぶと静止画に圧縮されます。<br />
+                                                    再度アップロードし、「<strong>いいえ</strong>」を選択してください。
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ステップ4: ループ確認（カットイン/スクリーンパネル） */}
+                                <div className="border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20 p-3 rounded">
+                                    <p className="font-bold text-red-800 dark:text-red-200 mb-2">ステップ4️⃣：ループONで生成しましたか？（カットイン / スクリーンパネル）</p>
+                                    <div className="space-y-2 text-xs">
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-green-600 dark:text-green-400 font-bold">✅ はい（ループON）</span>
+                                            <p className="text-red-700 dark:text-red-300">→ ステップ6へ</p>
+                                        </div>
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-red-600 dark:text-red-400 font-bold">❌ いいえ（ループOFF）</span>
+                                            <div>
+                                                <p className="text-red-700 dark:text-red-400 font-bold">⚠️ これが原因です！</p>
+                                                <p className="text-red-700 dark:text-red-300 mt-1">
+                                                    <strong>解決策：</strong>カットイン・スクリーンパネルは<strong>ループON必須</strong>です。<br />
+                                                    共通設定で「ループON」にして再生成してください。
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ステップ5: 立ち絵/前景・背景 */}
+                                <div className="border-l-4 border-green-500 bg-green-50 dark:bg-green-900/20 p-3 rounded">
+                                    <p className="font-bold text-green-800 dark:text-green-200 mb-2">ステップ5️⃣：立ち絵 / 前景・背景の場合</p>
+                                    <p className="text-xs text-green-700 dark:text-green-300">
+                                        これらの用途はループON/OFFどちらでも使えます。<br />
+                                        アップロード時に「圧縮しますか？」で「いいえ」を選択していれば動作するはずです。<br />
+                                        → ステップ6へ
+                                    </p>
+                                </div>
+
+                                {/* ステップ6: その他の原因 */}
+                                <div className="border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded">
+                                    <p className="font-bold text-yellow-800 dark:text-yellow-200 mb-2">ステップ6️⃣：それでも動かない場合（その他の原因）</p>
+                                    <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-2">
+                                        <li className="flex items-start gap-2">
+                                            <span>🔄</span>
+                                            <div>
+                                                <strong>ブラウザキャッシュが原因の可能性</strong>
+                                                <p>強制リロード（Windows: Ctrl+F5 / Mac: Cmd+Shift+R）を試してください</p>
+                                            </div>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span>🗑️</span>
+                                            <div>
+                                                <strong>ルームのデータ量過多</strong>
+                                                <p>不要な画像素材を削除してみてください</p>
+                                            </div>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <span>🌐</span>
+                                            <div>
+                                                <strong>ブラウザの互換性</strong>
+                                                <p>Chrome、Firefox、Edge の最新版を使用してください</p>
+                                            </div>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
