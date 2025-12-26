@@ -1063,28 +1063,6 @@ export default function APNGGenerator() {
                 scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0)')
                 ctx.fillStyle = scanGrad
                 ctx.fillRect(0, scanOffset - 30, canvas.width, 60)
-
-                // グリッチ効果: 時々ノイズラインが横に走る
-                const glitchPhase = Math.floor(progress * 20)
-                const isGlitching = (glitchPhase % 7 === 0 || glitchPhase % 11 === 0) && progress > 0.05
-                if (isGlitching) {
-                    // ノイズライン（横に走る白い線）
-                    const noiseY1 = (scanOffset + canvas.height * 0.3) % canvas.height
-                    const noiseY2 = (scanOffset + canvas.height * 0.7) % canvas.height
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
-                    ctx.fillRect(0, noiseY1, canvas.width, 2)
-                    ctx.fillRect(0, noiseY2, canvas.width, 1)
-
-                    // 画像の一部を横にずらす効果
-                    ctx.globalCompositeOperation = 'source-over'
-                    const sliceY = Math.floor(noiseY1)
-                    const sliceHeight = 8
-                    const sliceShift = Math.sin(progress * Math.PI * 20) * 5
-                    if (sliceY + sliceHeight < canvas.height) {
-                        const sliceData = ctx.getImageData(0, sliceY, canvas.width, sliceHeight)
-                        ctx.putImageData(sliceData, sliceShift, sliceY)
-                    }
-                }
                 ctx.restore()
                 break
             }
@@ -2353,28 +2331,6 @@ export default function APNGGenerator() {
                         scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0)')
                         ctx.fillStyle = scanGrad
                         ctx.fillRect(0, scanOffset - 30, canvas.width, 60)
-
-                        // グリッチ効果: 時々ノイズラインが横に走る
-                        const glitchPhase = Math.floor(progress * 20)
-                        const isGlitching = (glitchPhase % 7 === 0 || glitchPhase % 11 === 0) && progress > 0.05
-                        if (isGlitching) {
-                            // ノイズライン（横に走る白い線）
-                            const noiseY1 = (scanOffset + canvas.height * 0.3) % canvas.height
-                            const noiseY2 = (scanOffset + canvas.height * 0.7) % canvas.height
-                            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
-                            ctx.fillRect(0, noiseY1, canvas.width, 2)
-                            ctx.fillRect(0, noiseY2, canvas.width, 1)
-
-                            // 画像の一部を横にずらす効果
-                            ctx.globalCompositeOperation = 'source-over'
-                            const sliceY = Math.floor(noiseY1)
-                            const sliceHeight = 8
-                            const sliceShift = Math.sin(progress * Math.PI * 20) * 5
-                            if (sliceY + sliceHeight < canvas.height) {
-                                const sliceData = ctx.getImageData(0, sliceY, canvas.width, sliceHeight)
-                                ctx.putImageData(sliceData, sliceShift, sliceY)
-                            }
-                        }
                         ctx.restore()
                         break
                     }
