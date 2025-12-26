@@ -24,10 +24,13 @@ export async function POST(request: Request) {
 
         const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
+        console.log('Webhook URL exists:', !!webhookUrl);
+        console.log('Webhook URL length:', webhookUrl?.length || 0);
+
         if (!webhookUrl) {
             console.error('DISCORD_WEBHOOK_URL is not defined');
             return NextResponse.json(
-                { error: 'Server configuration error' },
+                { error: 'Server configuration error: Discord Webhook URLが設定されていません' },
                 { status: 500 }
             );
         }
@@ -86,8 +89,12 @@ export async function POST(request: Request) {
             body: JSON.stringify(discordBody),
         });
 
+        console.log('Discord API Response Status:', discordResponse.status);
+
         if (!discordResponse.ok) {
-            throw new Error(`Discord API responded with ${discordResponse.status}`);
+            const errorText = await discordResponse.text();
+            console.error('Discord API Error Response:', errorText);
+            throw new Error(`Discord API responded with ${discordResponse.status}: ${errorText}`);
         }
 
         return NextResponse.json({ success: true });
