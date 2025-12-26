@@ -1217,8 +1217,11 @@ export default function APNGGenerator() {
             case 'silhouette': {
                 drawScaledImage(0, 0, canvas.width, canvas.height)
 
-                // progress=0なら元の画像をそのまま表示
-                if (progress === 0) break
+                // シルエット解除モードの場合、progress=1で元画像
+                const isSilhouetteRelease = effectIntensity === 'from-silhouette'
+
+                if (isSilhouetteRelease && progress === 1) break
+                if (!isSilhouetteRelease && progress === 0) break
 
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                 const data = imageData.data
@@ -1230,7 +1233,8 @@ export default function APNGGenerator() {
                     red: [255, 0, 0],
                 }
 
-                const silhouetteIntensity = progress // 0→1 (固定)
+                // シルエット解除の場合は progress を反転（1→0でシルエット→元画像）
+                const silhouetteIntensity = isSilhouetteRelease ? (1 - progress) : progress
 
                 if (effectOption === 'outline-black' || effectOption === 'outline-white') {
                     // 縁取りモード: エッジ検出（黒縁 or 白縁）
@@ -1275,82 +1279,6 @@ export default function APNGGenerator() {
                     const [r, g, b] = colorMap[effectOption || 'black'] || colorMap.black
 
                     // 不透明ピクセルを単色に変換
-                    for (let i = 0; i < data.length; i += 4) {
-                        if (data[i + 3] > 0) { // 不透明なら
-                            const blend = silhouetteIntensity
-                            data[i] = Math.floor(data[i] * (1 - blend) + r * blend)
-                            data[i + 1] = Math.floor(data[i + 1] * (1 - blend) + g * blend)
-                            data[i + 2] = Math.floor(data[i + 2] * (1 - blend) + b * blend)
-                            // アルファは維持
-                        }
-                    }
-                    ctx.putImageData(imageData, 0, 0)
-                }
-                break
-            }
-            // V120: シルエットフェードイン（シルエット→元画像）
-            case 'silhouetteFadeIn': {
-                drawScaledImage(0, 0, canvas.width, canvas.height)
-
-                // progress=1なら元の画像をそのまま表示
-                if (progress === 1) break
-
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-                const data = imageData.data
-
-                // シルエットの色を決定
-                const colorMap: { [key: string]: [number, number, number] } = {
-                    white: [255, 255, 255],
-                    black: [0, 0, 0],
-                    red: [255, 0, 0],
-                }
-
-                // progress 0→1 でシルエット→元画像に変化（逆転）
-                const silhouetteIntensity = 1 - progress
-
-                if (effectOption === 'outline-black' || effectOption === 'outline-white') {
-                    // 縁取りモード: エッジ検出（黒縁 or 白縁）
-                    const outlineColor = effectOption === 'outline-white' ? 255 : 0
-                    const edgeData = new Uint8ClampedArray(data.length)
-                    for (let y = 1; y < canvas.height - 1; y++) {
-                        for (let x = 1; x < canvas.width - 1; x++) {
-                            const i = (y * canvas.width + x) * 4
-                            const iUp = ((y - 1) * canvas.width + x) * 4
-                            const iDown = ((y + 1) * canvas.width + x) * 4
-                            const iLeft = (y * canvas.width + (x - 1)) * 4
-                            const iRight = (y * canvas.width + (x + 1)) * 4
-
-                            const alphaCenter = data[i + 3]
-                            const alphaUp = data[iUp + 3]
-                            const alphaDown = data[iDown + 3]
-                            const alphaLeft = data[iLeft + 3]
-                            const alphaRight = data[iRight + 3]
-
-                            // 隣接ピクセルとのアルファ差をチェック
-                            const isEdge = (alphaCenter > 128 && (alphaUp < 128 || alphaDown < 128 || alphaLeft < 128 || alphaRight < 128))
-
-                            if (isEdge) {
-                                // エッジ部分: 黒/白から元の色へ変化
-                                const blend = silhouetteIntensity
-                                edgeData[i] = Math.floor(data[i] * (1 - blend) + outlineColor * blend)
-                                edgeData[i + 1] = Math.floor(data[i + 1] * (1 - blend) + outlineColor * blend)
-                                edgeData[i + 2] = Math.floor(data[i + 2] * (1 - blend) + outlineColor * blend)
-                                edgeData[i + 3] = data[i + 3] // アルファは維持
-                            } else {
-                                // 非エッジ部分: 透明から元の色へフェードイン
-                                edgeData[i] = data[i]
-                                edgeData[i + 1] = data[i + 1]
-                                edgeData[i + 2] = data[i + 2]
-                                edgeData[i + 3] = Math.floor(data[i + 3] * (1 - silhouetteIntensity))
-                            }
-                        }
-                    }
-                    const edgeImageData = new ImageData(edgeData, canvas.width, canvas.height)
-                    ctx.putImageData(edgeImageData, 0, 0)
-                } else {
-                    const [r, g, b] = colorMap[effectOption || 'black'] || colorMap.black
-
-                    // 不透明ピクセルを単色から元の色に変換
                     for (let i = 0; i < data.length; i += 4) {
                         if (data[i + 3] > 0) { // 不透明なら
                             const blend = silhouetteIntensity
@@ -2471,8 +2399,11 @@ export default function APNGGenerator() {
                     case 'silhouette': {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
 
-                        // progress=0なら元の画像をそのまま表示
-                        if (progress === 0) break
+                        // シルエット解除モードの場合、progress=1で元画像
+                        const isSilhouetteReleaseGen = effectIntensity === 'from-silhouette'
+
+                        if (isSilhouetteReleaseGen && progress === 1) break
+                        if (!isSilhouetteReleaseGen && progress === 0) break
 
                         const genImageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                         const genData = genImageData.data
@@ -2484,7 +2415,8 @@ export default function APNGGenerator() {
                             red: [255, 0, 0],
                         }
 
-                        const silhouetteInt = progress // 0→1 (固定)
+                        // シルエット解除の場合は progress を反転（1→0でシルエット→元画像）
+                        const silhouetteInt = isSilhouetteReleaseGen ? (1 - progress) : progress
 
                         if (effectOption === 'outline-black' || effectOption === 'outline-white') {
                             // 縁取りモード: エッジ検出（黒縁 or 白縁）
@@ -2539,83 +2471,6 @@ export default function APNGGenerator() {
                                 }
                             }
                             ctx.putImageData(genImageData, 0, 0)
-                        }
-                        break
-                    }
-
-                    // V120: シルエットフェードイン（シルエット→元画像）
-                    case 'silhouetteFadeIn': {
-                        drawScaledImage(0, 0, canvas.width, canvas.height)
-
-                        // progress=1なら元の画像をそのまま表示
-                        if (progress === 1) break
-
-                        const genImageDataFade = ctx.getImageData(0, 0, canvas.width, canvas.height)
-                        const genDataFade = genImageDataFade.data
-
-                        // シルエットの色を決定
-                        const colorMapGenFade: { [key: string]: [number, number, number] } = {
-                            white: [255, 255, 255],
-                            black: [0, 0, 0],
-                            red: [255, 0, 0],
-                        }
-
-                        // progress 0→1 でシルエット→元画像に変化（逆転）
-                        const silhouetteIntFade = 1 - progress
-
-                        if (effectOption === 'outline-black' || effectOption === 'outline-white') {
-                            // 縁取りモード: エッジ検出（黒縁 or 白縁）
-                            const outlineColorGenFade = effectOption === 'outline-white' ? 255 : 0
-                            const edgeDataGenFade = new Uint8ClampedArray(genDataFade.length)
-                            for (let y = 1; y < canvas.height - 1; y++) {
-                                for (let x = 1; x < canvas.width - 1; x++) {
-                                    const i = (y * canvas.width + x) * 4
-                                    const iUp = ((y - 1) * canvas.width + x) * 4
-                                    const iDown = ((y + 1) * canvas.width + x) * 4
-                                    const iLeft = (y * canvas.width + (x - 1)) * 4
-                                    const iRight = (y * canvas.width + (x + 1)) * 4
-
-                                    const alphaCenter = genDataFade[i + 3]
-                                    const alphaUp = genDataFade[iUp + 3]
-                                    const alphaDown = genDataFade[iDown + 3]
-                                    const alphaLeft = genDataFade[iLeft + 3]
-                                    const alphaRight = genDataFade[iRight + 3]
-
-                                    // 隣接ピクセルとのアルファ差をチェック
-                                    const isEdge = (alphaCenter > 128 && (alphaUp < 128 || alphaDown < 128 || alphaLeft < 128 || alphaRight < 128))
-
-                                    if (isEdge) {
-                                        // エッジ部分: 黒/白から元の色へ変化
-                                        const blend = silhouetteIntFade
-                                        edgeDataGenFade[i] = Math.floor(genDataFade[i] * (1 - blend) + outlineColorGenFade * blend)
-                                        edgeDataGenFade[i + 1] = Math.floor(genDataFade[i + 1] * (1 - blend) + outlineColorGenFade * blend)
-                                        edgeDataGenFade[i + 2] = Math.floor(genDataFade[i + 2] * (1 - blend) + outlineColorGenFade * blend)
-                                        edgeDataGenFade[i + 3] = genDataFade[i + 3] // アルファは維持
-                                    } else {
-                                        // 非エッジ部分: 透明から元の色へフェードイン
-                                        edgeDataGenFade[i] = genDataFade[i]
-                                        edgeDataGenFade[i + 1] = genDataFade[i + 1]
-                                        edgeDataGenFade[i + 2] = genDataFade[i + 2]
-                                        edgeDataGenFade[i + 3] = Math.floor(genDataFade[i + 3] * (1 - silhouetteIntFade))
-                                    }
-                                }
-                            }
-                            const edgeImageDataGenFade = new ImageData(edgeDataGenFade, canvas.width, canvas.height)
-                            ctx.putImageData(edgeImageDataGenFade, 0, 0)
-                        } else {
-                            const [r, g, b] = colorMapGenFade[effectOption || 'black'] || colorMapGenFade.black
-
-                            // 不透明ピクセルを単色から元の色に変換
-                            for (let i = 0; i < genDataFade.length; i += 4) {
-                                if (genDataFade[i + 3] > 0) { // 不透明なら
-                                    const blend = silhouetteIntFade
-                                    genDataFade[i] = Math.floor(genDataFade[i] * (1 - blend) + r * blend)
-                                    genDataFade[i + 1] = Math.floor(genDataFade[i + 1] * (1 - blend) + g * blend)
-                                    genDataFade[i + 2] = Math.floor(genDataFade[i + 2] * (1 - blend) + b * blend)
-                                    // アルファは維持
-                                }
-                            }
-                            ctx.putImageData(genImageDataFade, 0, 0)
                         }
                         break
                     }
