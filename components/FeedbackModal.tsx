@@ -44,7 +44,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, v
             })
 
             if (!response.ok) {
-                throw new Error('送信に失敗しました')
+                const errorData = await response.json()
+                throw new Error(errorData.error || '送信に失敗しました')
             }
 
             setIsSuccess(true)
