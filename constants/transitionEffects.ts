@@ -241,6 +241,22 @@ export const transitionEffects: EffectCategory[] = [
                 ],
                 defaultOption: '1x'
             },
+            {
+                name: 'silhouetteFadeIn',
+                label: 'シルエットフェードイン',
+                icon: UserRound,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'color',
+                options: [
+                    { value: 'black', label: '黒', numericValue: 0 },
+                    { value: 'white', label: '白', numericValue: 1 },
+                    { value: 'red', label: '赤', numericValue: 2 },
+                    { value: 'outline-black', label: '縁取り（黒）', numericValue: 3 },
+                    { value: 'outline-white', label: '縁取り（白）', numericValue: 4 },
+                ],
+                defaultOption: 'black'
+            },
         ],
     },
     {
