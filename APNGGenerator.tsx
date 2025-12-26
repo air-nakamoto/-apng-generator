@@ -2455,10 +2455,8 @@ export default function APNGGenerator() {
                 delays.push(1000 / fps)
 
                 setGenerationProgress((i + 1) / frameCount * 0.8)
-                // 5フレームごとにUIに制御を戻す（パフォーマンス向上）
-                if (i % 5 === 0) {
-                    await new Promise(resolve => setTimeout(resolve, 0))
-                }
+                // 毎フレームUIに制御を戻す（アニメーション継続のため）
+                await new Promise(resolve => setTimeout(resolve, 0))
             }
 
             if (!isLooping) {
@@ -2467,6 +2465,8 @@ export default function APNGGenerator() {
             }
 
             setGenerationProgress(0.9)
+            // エンコード前にUIに制御を戻す（アニメーション継続のため）
+            await new Promise(resolve => setTimeout(resolve, 16))
 
             const apng = UPNG.encode(frames, canvas.width, canvas.height, 0, delays, { loop: isLooping ? 0 : 1 })
             const blob = new Blob([apng], { type: 'image/png' })
@@ -3327,7 +3327,7 @@ export default function APNGGenerator() {
                                             <Settings className="w-8 h-8 text-blue-600 animate-spin" />
                                         </div>
                                         <p className="mt-4 text-sm text-gray-600 text-center">
-                                            生成中... {Math.round(generationProgress * 100)}%<br />
+                                            生成中...<br />
                                             <span className="text-xs text-gray-400">画像サイズやエフェクトによって時間がかかる場合があります</span>
                                         </p>
                                     </>
