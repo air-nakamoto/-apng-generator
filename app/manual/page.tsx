@@ -547,7 +547,7 @@ export default function ManualPage() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                                     <div>
-                                        <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">スクリーンパネル</h4>
+                                        <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">スクリーンパネル（簡易手順）</h4>
                                         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
                                             <li>画面<strong>右上</strong>の「スクリーンパネル」ボタンをクリック</li>
                                             <li>「+」ボタンで新規パネルを作成</li>
@@ -556,7 +556,7 @@ export default function ManualPage() {
                                         </ol>
                                     </div>
                                     <div>
-                                        <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">マーカーパネル</h4>
+                                        <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">マーカーパネル（簡易手順）</h4>
                                         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
                                             <li>画面<strong>右上</strong>の「マーカーパネル」ボタンをクリック</li>
                                             <li>「+」ボタンで新規マーカーを作成</li>
@@ -565,6 +565,75 @@ export default function ManualPage() {
                                         </ol>
                                     </div>
                                 </div>
+
+                                {/* マーカーパネル詳細手順 */}
+                                <details className="mb-3 border border-blue-200 dark:border-blue-700 rounded-lg">
+                                    <summary className="cursor-pointer bg-blue-50 dark:bg-blue-900/30 p-3 font-semibold text-sm text-blue-800 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition">
+                                        📍 マーカーパネルの詳細設定手順（非ループ演出などに）
+                                    </summary>
+                                    <div className="p-4 bg-white dark:bg-slate-700 space-y-4 text-sm text-gray-600 dark:text-gray-300">
+
+                                        {/* ステップ1 */}
+                                        <div>
+                                            <h5 className="font-bold text-gray-800 dark:text-white mb-2">1. マーカーパネルを盤面に出す</h5>
+                                            <p className="text-xs mb-2">以下のいずれかの方法で新規作成します：</p>
+                                            <div className="space-y-2 text-xs">
+                                                <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                                                    <strong>方法A（右クリック）：</strong><br />
+                                                    盤面の何もないところを右クリック → 「マーカーパネルを追加」を選択
+                                                </div>
+                                                <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                                                    <strong>方法B（アイコン）：</strong><br />
+                                                    画面上部のメニューバーにある「マーカーパネル一覧」アイコン → 「+」ボタンをクリック
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ステップ2 */}
+                                        <div>
+                                            <h5 className="font-bold text-gray-800 dark:text-white mb-2">2. 画像を設定する（またはNo Imageにする）</h5>
+                                            <p className="text-xs mb-2">設定ウィンドウが開きます（既存パネルはダブルクリックまたは右クリック→「編集」）</p>
+                                            <div className="space-y-2 text-xs">
+                                                <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded">
+                                                    <strong>再生用シーン：</strong> 再生したいAPNG素材などを選択
+                                                </div>
+                                                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border-l-4 border-yellow-500">
+                                                    <strong>リセット用シーン：</strong> 画像選択画面の左上にある<strong>「No Image」</strong>を選択<br />
+                                                    💡 非ループAPNGの2回目以降の再生に必要
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ステップ3 */}
+                                        <div>
+                                            <h5 className="font-bold text-gray-800 dark:text-white mb-2">3. 位置とサイズを調整する</h5>
+                                            <div className="space-y-2 text-xs">
+                                                <div>
+                                                    <strong>配置固定：</strong> チェックを入れると誤ドラッグを防止
+                                                </div>
+                                                <div>
+                                                    <strong>重なり優先度：</strong>
+                                                    <ul className="list-disc list-inside ml-2 mt-1">
+                                                        <li>背景より手前、キャラより奥：<code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">0〜100</code>（通常は0や1）</li>
+                                                        <li>最前面（キャラの上）：<code className="bg-gray-200 dark:bg-gray-600 px-1 rounded">101以上</code>（暗転演出など）</li>
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <strong>サイズ：</strong> 画面全体を覆う場合、部屋サイズ（例：30x20）と同じか少し大きめに設定
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ステップ4 */}
+                                        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-3 rounded">
+                                            <h5 className="font-bold text-red-800 dark:text-red-200 mb-1">4. 設定を保存する（最重要！）</h5>
+                                            <p className="text-xs text-red-700 dark:text-red-300">
+                                                ウィンドウ右下の「盤面に設定」を押して確定し、<strong>必ず左側の「シーン一覧」でシーンの保存</strong>（上書き保存または新規保存）を行ってください。<br />
+                                                ⚠️ マーカーパネルの状態はシーンデータとして保存されるため、保存しないと設定が消えます。
+                                            </p>
+                                        </div>
+                                    </div>
+                                </details>
                                 {/* 4分割グリッド: スクリーンパネル（左）/ マーカーパネル（右） */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                                     {/* 左列: スクリーンパネル */}
