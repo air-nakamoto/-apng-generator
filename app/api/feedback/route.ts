@@ -94,8 +94,22 @@ export async function POST(request: Request) {
 
     } catch (error) {
         console.error('Feedback submission error:', error);
+
+        // ネットワークエラーの詳細を判定
+        let errorMessage = 'Failed to submit feedback';
+
+        if (error instanceof Error) {
+            if (error.message.includes('getaddrinfo') || error.message.includes('ENOTFOUND') || error.message.includes('EAI_AGAIN')) {
+                errorMessage = 'ネットワークエラー: Discord APIに接続できませんでした。インターネット接続を確認してください。';
+            } else if (error.message.includes('fetch failed')) {
+                errorMessage = 'Discord APIへのリクエストが失敗しました。しばらく待ってから再度お試しください。';
+            } else {
+                errorMessage = `エラー: ${error.message}`;
+            }
+        }
+
         return NextResponse.json(
-            { error: 'Failed to submit feedback' },
+            { error: errorMessage },
             { status: 500 }
         );
     }
