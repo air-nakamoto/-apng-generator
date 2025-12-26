@@ -1036,16 +1036,7 @@ export default function APNGGenerator() {
                 break
             }
             case 'scanlines': {
-                // 浮遊効果: 約20フレームに1回（progress 0.05刻みで発生）
-                const floatPhase = Math.floor(progress * 20) % 20
-                const isFloating = floatPhase === 0 && progress > 0.01
-                const floatOffsetX = isFloating ? Math.sin(progress * Math.PI * 40) * 3 : 0
-                const floatOffsetY = isFloating ? Math.cos(progress * Math.PI * 40) * 2 : 0
-
-                ctx.save()
-                ctx.translate(floatOffsetX, floatOffsetY)
                 drawScaledImage(0, 0, canvas.width, canvas.height)
-                ctx.restore()
 
                 // effectOptionで太さを決定（thin=1, medium=2, thick=4）
                 const scanlineThickness = effectOption === 'thin' ? 1 : effectOption === 'thick' ? 4 : 2
@@ -1063,7 +1054,8 @@ export default function APNGGenerator() {
                 for (let y = 0; y < canvas.height; y += scanlineSpacing) {
                     ctx.fillRect(0, y, canvas.width, scanlineThickness)
                 }
-                // 動く光のライン効果（速度を過ぎさせない）
+
+                // 動く光のライン効果
                 const scanOffset = (progress * canvas.height) % canvas.height
                 const scanGrad = ctx.createLinearGradient(0, scanOffset - 30, 0, scanOffset + 30)
                 scanGrad.addColorStop(0, 'rgba(255, 255, 255, 0)')
@@ -1071,6 +1063,28 @@ export default function APNGGenerator() {
                 scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0)')
                 ctx.fillStyle = scanGrad
                 ctx.fillRect(0, scanOffset - 30, canvas.width, 60)
+
+                // グリッチ効果: 時々ノイズラインが横に走る
+                const glitchPhase = Math.floor(progress * 20)
+                const isGlitching = (glitchPhase % 7 === 0 || glitchPhase % 11 === 0) && progress > 0.05
+                if (isGlitching) {
+                    // ノイズライン（横に走る白い線）
+                    const noiseY1 = (scanOffset + canvas.height * 0.3) % canvas.height
+                    const noiseY2 = (scanOffset + canvas.height * 0.7) % canvas.height
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+                    ctx.fillRect(0, noiseY1, canvas.width, 2)
+                    ctx.fillRect(0, noiseY2, canvas.width, 1)
+
+                    // 画像の一部を横にずらす効果
+                    ctx.globalCompositeOperation = 'source-over'
+                    const sliceY = Math.floor(noiseY1)
+                    const sliceHeight = 8
+                    const sliceShift = Math.sin(progress * Math.PI * 20) * 5
+                    if (sliceY + sliceHeight < canvas.height) {
+                        const sliceData = ctx.getImageData(0, sliceY, canvas.width, sliceHeight)
+                        ctx.putImageData(sliceData, sliceShift, sliceY)
+                    }
+                }
                 ctx.restore()
                 break
             }
@@ -2313,16 +2327,7 @@ export default function APNGGenerator() {
 
                     // 走査線
                     case 'scanlines': {
-                        // 浮遊効果: 約20フレームに1回（progress 0.05刻みで発生）
-                        const floatPhase = Math.floor(progress * 20) % 20
-                        const isFloating = floatPhase === 0 && progress > 0.01
-                        const floatOffsetX = isFloating ? Math.sin(progress * Math.PI * 40) * 3 : 0
-                        const floatOffsetY = isFloating ? Math.cos(progress * Math.PI * 40) * 2 : 0
-
-                        ctx.save()
-                        ctx.translate(floatOffsetX, floatOffsetY)
                         drawScaledImage(0, 0, canvas.width, canvas.height)
-                        ctx.restore()
 
                         const scanlineThickness = effectOption === 'thin' ? 1 : effectOption === 'thick' ? 4 : 2
                         const scanlineSpacing = scanlineThickness * 2
@@ -2339,7 +2344,8 @@ export default function APNGGenerator() {
                         for (let y = 0; y < canvas.height; y += scanlineSpacing) {
                             ctx.fillRect(0, y, canvas.width, scanlineThickness)
                         }
-                        // 動く光のライン効果（速度を遅く）
+
+                        // 動く光のライン効果
                         const scanOffset = (progress * canvas.height) % canvas.height
                         const scanGrad = ctx.createLinearGradient(0, scanOffset - 30, 0, scanOffset + 30)
                         scanGrad.addColorStop(0, 'rgba(255, 255, 255, 0)')
@@ -2347,6 +2353,28 @@ export default function APNGGenerator() {
                         scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0)')
                         ctx.fillStyle = scanGrad
                         ctx.fillRect(0, scanOffset - 30, canvas.width, 60)
+
+                        // グリッチ効果: 時々ノイズラインが横に走る
+                        const glitchPhase = Math.floor(progress * 20)
+                        const isGlitching = (glitchPhase % 7 === 0 || glitchPhase % 11 === 0) && progress > 0.05
+                        if (isGlitching) {
+                            // ノイズライン（横に走る白い線）
+                            const noiseY1 = (scanOffset + canvas.height * 0.3) % canvas.height
+                            const noiseY2 = (scanOffset + canvas.height * 0.7) % canvas.height
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+                            ctx.fillRect(0, noiseY1, canvas.width, 2)
+                            ctx.fillRect(0, noiseY2, canvas.width, 1)
+
+                            // 画像の一部を横にずらす効果
+                            ctx.globalCompositeOperation = 'source-over'
+                            const sliceY = Math.floor(noiseY1)
+                            const sliceHeight = 8
+                            const sliceShift = Math.sin(progress * Math.PI * 20) * 5
+                            if (sliceY + sliceHeight < canvas.height) {
+                                const sliceData = ctx.getImageData(0, sliceY, canvas.width, sliceHeight)
+                                ctx.putImageData(sliceData, sliceShift, sliceY)
+                            }
+                        }
                         ctx.restore()
                         break
                     }
@@ -2949,16 +2977,10 @@ export default function APNGGenerator() {
                 const scanColorPreview = effectIntensity === 'blue' ? 'rgba(0, 100, 255, 0.3)' :
                                          effectIntensity === 'green' ? 'rgba(0, 200, 100, 0.3)' :
                                          'rgba(0, 0, 0, 0.3)'
-                // 動く光のY位置（速度を遅く）
+                // 動く光のY位置
                 const scanY = (previewProgress * 100) % 100
-                // 浮遊効果: 約20フレームに1回
-                const floatPhasePreview = Math.floor(previewProgress * 20) % 20
-                const isFloatingPreview = floatPhasePreview === 0 && previewProgress > 0.01
-                const floatX = isFloatingPreview ? Math.sin(previewProgress * Math.PI * 40) * 3 : 0
-                const floatY = isFloatingPreview ? Math.cos(previewProgress * Math.PI * 40) * 2 : 0
                 return {
                     ...baseStyle,
-                    transform: `translate(calc(-50% + ${floatX}px), calc(-50% + ${floatY}px))`,
                     backgroundImage: `
                         linear-gradient(
                             0deg,
