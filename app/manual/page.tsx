@@ -442,6 +442,32 @@ export default function ManualPage() {
                                 </div>
                             </div>
                             <div className="p-4 bg-white dark:bg-slate-700">
+                                {/* STEP 1: APNG生成 */}
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4 mb-4">
+                                    <h4 className="font-bold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
+                                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                                        APNGを生成する
+                                    </h4>
+                                    <div className="bg-white dark:bg-slate-700 rounded p-3 border border-blue-200 dark:border-blue-800">
+                                        <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">🖼️ 前景・背景用</p>
+                                        <ul className="space-y-1 text-gray-600 dark:text-gray-400 text-xs">
+                                            <li>• <strong>フレーム数:</strong> 20～30</li>
+                                            <li>• <strong>FPS:</strong> 15～20</li>
+                                            <li>• <strong>ループ:</strong> ON（背景演出）/ OFF（登場・退場演出）</li>
+                                            <li>• <strong>容量制限:</strong> 5MB以下</li>
+                                        </ul>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">💡 登場・退場エフェクトはループOFF、常時表示の演出エフェクトはループON</p>
+                                    </div>
+                                </div>
+
+                                {/* STEP 2: ココフォリアで設定 */}
+                                <div className="mb-3">
+                                    <h4 className="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                                        ココフォリアで設定する
+                                    </h4>
+                                </div>
+
                                 <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                     <li>ココフォリアのルーム画面のなにもない所で<strong>右クリック</strong></li>
                                     <li><strong>「前景・背景を変更」</strong>をクリック</li>
@@ -511,6 +537,43 @@ export default function ManualPage() {
                                 </div>
                             </div>
                             <div className="p-4 bg-white dark:bg-slate-700">
+                                {/* STEP 1: APNG生成 */}
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4 mb-4">
+                                    <h4 className="font-bold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
+                                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                                        APNGを生成する
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                        <div className="bg-white dark:bg-slate-700 rounded p-3 border border-blue-200 dark:border-blue-800">
+                                            <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">📺 スクリーンパネル用</p>
+                                            <ul className="space-y-1 text-gray-600 dark:text-gray-400 text-xs">
+                                                <li>• <strong>フレーム数:</strong> 20～30</li>
+                                                <li>• <strong>FPS:</strong> 20</li>
+                                                <li>• <strong>ループ:</strong> ON（必須）</li>
+                                                <li>• <strong>容量制限:</strong> 1MB以下</li>
+                                            </ul>
+                                        </div>
+                                        <div className="bg-white dark:bg-slate-700 rounded p-3 border border-blue-200 dark:border-blue-800">
+                                            <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">📍 マーカーパネル用</p>
+                                            <ul className="space-y-1 text-gray-600 dark:text-gray-400 text-xs">
+                                                <li>• <strong>フレーム数:</strong> 15～25</li>
+                                                <li>• <strong>FPS:</strong> 20</li>
+                                                <li>• <strong>ループ:</strong> 用途による（※）</li>
+                                                <li>• <strong>容量制限:</strong> 1MB以下</li>
+                                            </ul>
+                                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">※ループOFF可（1回再生演出）</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* STEP 2: ココフォリアで設定 */}
+                                <div className="mb-3">
+                                    <h4 className="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                                        <span className="bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                                        ココフォリアで設定する
+                                    </h4>
+                                </div>
+
                                 {/* 制限事項比較表 */}
                                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 mb-3">
                                     <p className="font-bold text-yellow-800 dark:text-yellow-200 mb-2">⚠️ 制限事項まとめ</p>
@@ -710,15 +773,38 @@ export default function ManualPage() {
                                 </div>
                             </div>
                             <div className="p-4 bg-white dark:bg-slate-700">
-                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
-                                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                                        ⚠️ カットイン用のAPNGは<strong>ループON</strong>で生成してください。<br />
-                                        （ループOFFの場合、アニメーションが再生されません）
-                                    </p>
+                                {/* STEP 1: APNG生成 */}
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4 mb-4">
+                                    <h4 className="font-bold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
+                                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                                        APNGを生成する
+                                    </h4>
+                                    <div className="bg-white dark:bg-slate-700 rounded p-3 border border-blue-200 dark:border-blue-800">
+                                        <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">⚡ カットイン用</p>
+                                        <ul className="space-y-1 text-gray-600 dark:text-gray-400 text-xs">
+                                            <li>• <strong>フレーム数:</strong> 20～30</li>
+                                            <li>• <strong>FPS:</strong> 20</li>
+                                            <li>• <strong>ループ:</strong> ON（必須）</li>
+                                            <li>• <strong>容量制限:</strong> 5MB以下</li>
+                                        </ul>
+                                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 mt-2">
+                                            <p className="text-xs text-red-700 dark:text-red-300">
+                                                ⚠️ カットインは<strong>ループON必須</strong>です。ループOFFの場合、アニメーションが再生されません。
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* STEP 2: ココフォリアで設定 */}
+                                <div className="mb-3">
+                                    <h4 className="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                                        <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                                        ココフォリアで設定する
+                                    </h4>
                                 </div>
 
                                 {/* 設定手順 */}
-                                <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">📋 設定手順</h4>
+                                <h5 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">📋 設定手順</h5>
                                 <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                                     <li>画面右上の「カットイン」ボタンをクリック → 「+」を押す</li>
                                     <li>「新しいエフェクト」が作成されるのでクリック</li>
@@ -836,6 +922,34 @@ export default function ManualPage() {
                                 </div>
                             </div>
                             <div className="p-4 bg-white dark:bg-slate-700">
+                                {/* STEP 1: APNG生成 */}
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4 mb-4">
+                                    <h4 className="font-bold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
+                                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                                        APNGを生成する
+                                    </h4>
+                                    <div className="bg-white dark:bg-slate-700 rounded p-3 border border-blue-200 dark:border-blue-800">
+                                        <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">🧍 キャラクター立ち絵用</p>
+                                        <ul className="space-y-1 text-gray-600 dark:text-gray-400 text-xs">
+                                            <li>• <strong>フレーム数:</strong> 20～30</li>
+                                            <li>• <strong>FPS:</strong> 20</li>
+                                            <li>• <strong>ループ:</strong> 用途による（※）</li>
+                                            <li>• <strong>容量制限:</strong> 5MB以下</li>
+                                        </ul>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                                            💡 登場・退場エフェクトはループOFF、常時表示の演出エフェクトはループON
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* STEP 2: ココフォリアで設定 */}
+                                <div className="mb-3">
+                                    <h4 className="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                                        <span className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                                        ココフォリアで設定する
+                                    </h4>
+                                </div>
+
                                 {/* 開始方法の分岐 */}
                                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
                                     <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
