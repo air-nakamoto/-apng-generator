@@ -30,8 +30,8 @@ export async function POST(request: Request) {
         if (!webhookUrl) {
             console.error('DISCORD_WEBHOOK_URL is not defined');
             return NextResponse.json(
-                { error: 'Server configuration error: Discord Webhook URLが設定されていません' },
-                { status: 500 }
+                { error: 'フィードバック機能は現在利用できません。しばらくしてから再度お試しください。' },
+                { status: 503 }
             );
         }
 
