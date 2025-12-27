@@ -1233,8 +1233,19 @@ export default function APNGGenerator() {
                     red: [255, 0, 0],
                 }
 
-                // シルエット解除の場合は progress を反転（1→0でシルエット→元画像）
-                const silhouetteIntensity = isSilhouetteRelease ? (1 - progress) : progress
+                // シルエット解除の場合は「ため」を追加してから progress を反転
+                let silhouetteIntensity: number
+                if (isSilhouetteRelease) {
+                    // 最初の30%はシルエット状態を維持、残り70%でフェード
+                    const holdDuration = 0.3
+                    if (progress < holdDuration) {
+                        silhouetteIntensity = 1 // シルエット状態を維持
+                    } else {
+                        silhouetteIntensity = 1 - ((progress - holdDuration) / (1 - holdDuration))
+                    }
+                } else {
+                    silhouetteIntensity = progress
+                }
 
                 if (effectOption === 'outline-black' || effectOption === 'outline-white') {
                     // 縁取りモード: エッジ検出（黒縁 or 白縁）
@@ -2415,8 +2426,19 @@ export default function APNGGenerator() {
                             red: [255, 0, 0],
                         }
 
-                        // シルエット解除の場合は progress を反転（1→0でシルエット→元画像）
-                        const silhouetteInt = isSilhouetteReleaseGen ? (1 - progress) : progress
+                        // シルエット解除の場合は「ため」を追加してから progress を反転
+                        let silhouetteInt: number
+                        if (isSilhouetteReleaseGen) {
+                            // 最初の30%はシルエット状態を維持、残り70%でフェード
+                            const holdDuration = 0.3
+                            if (progress < holdDuration) {
+                                silhouetteInt = 1 // シルエット状態を維持
+                            } else {
+                                silhouetteInt = 1 - ((progress - holdDuration) / (1 - holdDuration))
+                            }
+                        } else {
+                            silhouetteInt = progress
+                        }
 
                         if (effectOption === 'outline-black' || effectOption === 'outline-white') {
                             // 縁取りモード: エッジ検出（黒縁 or 白縁）
