@@ -5,6 +5,7 @@ node_modules
 .next
 
 # Environment files
+.env
 .env*.local
 
 # Vercel
