@@ -443,12 +443,23 @@ export default function ManualPage() {
                             </div>
                             <div className="p-4 bg-white dark:bg-slate-700">
                                 <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                    <li>ココフォリアのルーム画面のなにもない所で<strong>右クリック</strong></li>
+                                    <li><a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">APNG作成手順</a>でAPNGを生成してダウンロード<br /><span className="text-orange-600 dark:text-orange-400">（🔄 ループ: <strong>用途による</strong> / 📦 容量: <strong>5MB</strong>）</span></li>
+                                    <li>ココフォリアで、ルーム画面のなにもない所で<strong>右クリック</strong></li>
                                     <li><strong>「前景・背景を変更」</strong>をクリック</li>
                                     <li><strong>「背景」</strong>（または前景）を選択し、設定したい画像をアップロード</li>
                                     <li>設定する画像を選択する</li>
                                     <li>ルーム全体にアニメーション演出が適用されます</li>
                                 </ol>
+                                {/* 共通設定の画像 */}
+                                <div className="max-w-[50%] mb-3 rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                    <img
+                                        src="/manual/common_settings_loop_choice_5mb.jpg"
+                                        alt="共通設定：ループ用途による、容量5MB"
+                                        className="w-full"
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
+                                </div>
                                 {/* 2枚の画像を横並び */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
                                     <div className="rounded overflow-hidden border border-gray-200 dark:border-gray-600">
@@ -549,7 +560,8 @@ export default function ManualPage() {
                                     <div>
                                         <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">スクリーンパネル（簡易手順）</h4>
                                         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                            <li>画面<strong>右上</strong>の「スクリーンパネル」ボタンをクリック</li>
+                                            <li><a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">APNG作成手順</a>でAPNGを生成してダウンロード<br /><span className="text-orange-600 dark:text-orange-400">（🔄 ループ: <strong>ON</strong> / 📦 容量: <strong>1MB</strong>）</span></li>
+                                            <li>ココフォリアで、画面<strong>右上</strong>の「スクリーンパネル」ボタンをクリック</li>
                                             <li>「+」ボタンで新規パネルを作成</li>
                                             <li>「スクリーンパネル」欄をクリックしてAPNGファイルを選択</li>
                                             <li>位置・サイズを調整して配置</li>
@@ -558,7 +570,8 @@ export default function ManualPage() {
                                     <div>
                                         <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">マーカーパネル（簡易手順）</h4>
                                         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                            <li>画面<strong>右上</strong>の「マーカーパネル」ボタンをクリック</li>
+                                            <li><a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">APNG作成手順</a>でAPNGを生成してダウンロード<br /><span className="text-orange-600 dark:text-orange-400">（🔄 ループ: <strong>用途による</strong> / 📦 容量: <strong>1MB</strong>）</span></li>
+                                            <li>ココフォリアで、画面<strong>右上</strong>の「マーカーパネル」ボタンをクリック</li>
                                             <li>「+」ボタンで新規マーカーを作成</li>
                                             <li>「マーカー」欄をクリックしてAPNGファイルを選択</li>
                                             <li>マップ上の任意の場所に配置</li>
@@ -640,7 +653,17 @@ export default function ManualPage() {
                                     <div className="space-y-3">
                                         <h5 className="text-sm font-semibold text-center text-blue-600 dark:text-blue-400">スクリーンパネル</h5>
                                         <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">① ボタンをクリック</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">① 共通設定（ループON / 1MB）</p>
+                                            <img
+                                                src="/manual/common_settings_loop_on_1mb.jpg"
+                                                alt="共通設定：ループON、容量1MB"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">② ボタンをクリック</p>
                                             <img
                                                 src="/manual/cocofolia_screen_panel_button.jpg"
                                                 alt="スクリーンパネルボタンをクリック"
@@ -650,7 +673,7 @@ export default function ManualPage() {
                                             />
                                         </div>
                                         <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">② 「スクリーン」タブでAPNGを選択</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">③ 「スクリーン」タブでAPNGを選択</p>
                                             <img
                                                 src="/manual/cocofolia_screen_panel_select.jpg"
                                                 alt="スクリーンパネル選択画面"
@@ -664,7 +687,17 @@ export default function ManualPage() {
                                     <div className="space-y-3">
                                         <h5 className="text-sm font-semibold text-center text-yellow-600 dark:text-yellow-400">マーカーパネル</h5>
                                         <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">① ボタンをクリック → 「+」で追加</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">① 共通設定（ループ用途による / 1MB）</p>
+                                            <img
+                                                src="/manual/common_settings_loop_choice_1mb.jpg"
+                                                alt="共通設定：ループ用途による、容量1MB"
+                                                className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">② ボタンをクリック → 「+」で追加</p>
                                             <img
                                                 src="/manual/cocofolia_marker_panel_button.jpg"
                                                 alt="マーカーパネルボタンをクリック"
@@ -674,7 +707,7 @@ export default function ManualPage() {
                                             />
                                         </div>
                                         <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-2">
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">② 「マーカー」タブでAPNGを選択</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">③ 「マーカー」タブでAPNGを選択</p>
                                             <img
                                                 src="/manual/cocofolia_marker_panel_select.jpg"
                                                 alt="マーカーパネル選択画面"
@@ -720,12 +753,24 @@ export default function ManualPage() {
                                 {/* 設定手順 */}
                                 <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">📋 設定手順</h4>
                                 <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                    <li>画面右上の「カットイン」ボタンをクリック → 「+」を押す</li>
+                                    <li><a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">APNG作成手順</a>でAPNGを生成してダウンロード<br /><span className="text-orange-600 dark:text-orange-400">（🔄 ループ: <strong>ON</strong> / 📦 容量: <strong>5MB</strong>）</span></li>
+                                    <li>ココフォリアで、画面右上の「カットイン」ボタンをクリック → 「+」を押す</li>
                                     <li>「新しいエフェクト」が作成されるのでクリック</li>
                                     <li>「NO IMAGE」をクリックして、カットイン画像をアップロードして選択</li>
                                     <li>（任意）効果音を設定したい場合は音声ファイルを設定し、音量を調整</li>
                                     <li>カットイン名を入力して設定完了</li>
                                 </ol>
+                                {/* 共通設定の画像 */}
+                                <div className="max-w-[50%] mb-3 rounded overflow-hidden border border-gray-200 dark:border-gray-600">
+                                    <img
+                                        src="/manual/common_settings_loop_on_1mb.jpg"
+                                        alt="共通設定：ループON（※容量は5MBを選択してください）"
+                                        className="w-full"
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
+                                    <p className="text-xs text-center text-gray-500 dark:text-gray-400 p-1 bg-gray-50 dark:bg-gray-800">※ カットインの場合は容量「5MB」を選択</p>
+                                </div>
 
                                 {/* 画像グリッド */}
                                 <div className="grid grid-cols-2 gap-3 mb-3">
@@ -852,7 +897,8 @@ export default function ManualPage() {
                                         </div>
                                         <div className="p-3">
                                             <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                                                <li>ルーム画面左下の<strong>キャラクターアイコン</strong>をクリック</li>
+                                                <li><a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">APNG作成手順</a>でAPNGを生成してダウンロード<br /><span className="text-orange-600 dark:text-orange-400">（🔄 ループ: <strong>用途による</strong> / 📦 容量: <strong>5MB</strong>）</span></li>
+                                                <li>ココフォリアで、ルーム画面左下の<strong>キャラクターアイコン</strong>をクリック</li>
                                                 <li>「+」ボタンで新規キャラクター作成</li>
                                                 <li>キャラクター名などを設定</li>
                                                 <li>「キャラクター」タブを開く</li>
@@ -868,6 +914,7 @@ export default function ManualPage() {
                                         </div>
                                         <div className="p-3">
                                             <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                                                <li><a href="#steps" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">APNG作成手順</a>でAPNGを生成してダウンロード<br /><span className="text-orange-600 dark:text-orange-400">（🔄 ループ: <strong>用途による</strong> / 📦 容量: <strong>5MB</strong>）</span></li>
                                                 <li>各キャラクターシート作成サイトで「ココフォリア用コマ出力」などからコピー</li>
                                                 <li>ココフォリアのルーム画面に貼り付け</li>
                                                 <li>作成されたコマアイコンをクリック</li>
@@ -1132,6 +1179,10 @@ export default function ManualPage() {
                                         <li>• <strong>立ち絵/前景/背景</strong>：「5MB」を選択可（高画質）</li>
                                         <li>• <strong>スクリーン/マーカーパネル</strong>：「1MB」必須（画質は妥協）</li>
                                     </ul>
+                                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 mt-2">
+                                        <p className="font-medium text-green-700 dark:text-green-300 mb-1">💡 画質を上げるコツ：フレームレートを下げる</p>
+                                        <p className="text-xs text-green-600 dark:text-green-400">フレームレートを下げると総フレーム数が減り、1枚あたりに使える容量が増えます。結果として<strong>画質が向上</strong>します。動きの滑らかさとのトレードオフになりますが、特に1MB制限のパネル用途では効果的です。</p>
+                                    </div>
                                 </div>
                                 <div>
                                     <p className="font-medium text-gray-800 dark:text-white mb-1">⬜ 透過部分が白くなる場合</p>
