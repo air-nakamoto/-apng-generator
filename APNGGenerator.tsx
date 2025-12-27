@@ -1233,8 +1233,19 @@ export default function APNGGenerator() {
                     red: [255, 0, 0],
                 }
 
-                // シルエット解除の場合は progress を反転（1→0でシルエット→元画像）
-                const silhouetteIntensity = isSilhouetteRelease ? (1 - progress) : progress
+                // シルエット解除の場合は「ため」を追加してから progress を反転
+                let silhouetteIntensity: number
+                if (isSilhouetteRelease) {
+                    // 最初の30%はシルエット状態を維持、残り70%でフェード
+                    const holdDuration = 0.3
+                    if (progress < holdDuration) {
+                        silhouetteIntensity = 1 // シルエット状態を維持
+                    } else {
+                        silhouetteIntensity = 1 - ((progress - holdDuration) / (1 - holdDuration))
+                    }
+                } else {
+                    silhouetteIntensity = progress
+                }
 
                 if (effectOption === 'outline-black' || effectOption === 'outline-white') {
                     // 縁取りモード: エッジ検出（黒縁 or 白縁）
@@ -1259,7 +1270,7 @@ export default function APNGGenerator() {
 
                             if (isEdge) {
                                 // エッジ部分: 元の色から黒/白へ変化
-                                const blend = progress
+                                const blend = silhouetteIntensity
                                 edgeData[i] = Math.floor(data[i] * (1 - blend) + outlineColor * blend)
                                 edgeData[i + 1] = Math.floor(data[i + 1] * (1 - blend) + outlineColor * blend)
                                 edgeData[i + 2] = Math.floor(data[i + 2] * (1 - blend) + outlineColor * blend)
@@ -1269,7 +1280,7 @@ export default function APNGGenerator() {
                                 edgeData[i] = data[i]
                                 edgeData[i + 1] = data[i + 1]
                                 edgeData[i + 2] = data[i + 2]
-                                edgeData[i + 3] = Math.floor(data[i + 3] * (1 - progress))
+                                edgeData[i + 3] = Math.floor(data[i + 3] * (1 - silhouetteIntensity))
                             }
                         }
                     }
@@ -2415,8 +2426,19 @@ export default function APNGGenerator() {
                             red: [255, 0, 0],
                         }
 
-                        // シルエット解除の場合は progress を反転（1→0でシルエット→元画像）
-                        const silhouetteInt = isSilhouetteReleaseGen ? (1 - progress) : progress
+                        // シルエット解除の場合は「ため」を追加してから progress を反転
+                        let silhouetteInt: number
+                        if (isSilhouetteReleaseGen) {
+                            // 最初の30%はシルエット状態を維持、残り70%でフェード
+                            const holdDuration = 0.3
+                            if (progress < holdDuration) {
+                                silhouetteInt = 1 // シルエット状態を維持
+                            } else {
+                                silhouetteInt = 1 - ((progress - holdDuration) / (1 - holdDuration))
+                            }
+                        } else {
+                            silhouetteInt = progress
+                        }
 
                         if (effectOption === 'outline-black' || effectOption === 'outline-white') {
                             // 縁取りモード: エッジ検出（黒縁 or 白縁）
@@ -2441,7 +2463,7 @@ export default function APNGGenerator() {
 
                                     if (isEdge) {
                                         // エッジ部分: 元の色から黒/白へ変化
-                                        const blend = progress
+                                        const blend = silhouetteInt
                                         edgeDataGen[i] = Math.floor(genData[i] * (1 - blend) + outlineColorGen * blend)
                                         edgeDataGen[i + 1] = Math.floor(genData[i + 1] * (1 - blend) + outlineColorGen * blend)
                                         edgeDataGen[i + 2] = Math.floor(genData[i + 2] * (1 - blend) + outlineColorGen * blend)
@@ -2451,7 +2473,7 @@ export default function APNGGenerator() {
                                         edgeDataGen[i] = genData[i]
                                         edgeDataGen[i + 1] = genData[i + 1]
                                         edgeDataGen[i + 2] = genData[i + 2]
-                                        edgeDataGen[i + 3] = Math.floor(genData[i + 3] * (1 - progress))
+                                        edgeDataGen[i + 3] = Math.floor(genData[i + 3] * (1 - silhouetteInt))
                                     }
                                 }
                             }
