@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     siteName: 'APNG Generator',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'APNG Generator',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'APNG Generator - アニメーションPNG作成ツール',
     description: '画像からトランジション効果付きのアニメーションPNGを作成できるツール',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
   icons: {
     icon: [
