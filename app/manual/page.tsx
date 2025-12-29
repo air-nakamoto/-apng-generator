@@ -537,7 +537,7 @@ export default function ManualPage() {
                                             <h5 className="font-bold text-gray-800 dark:text-white mb-2">ステップ1: 前景または背景を設定して調整する</h5>
                                             <ul className="space-y-1 text-xs">
                                                 <li>• 5MB以下、ループOFFのAPNGを用意（生成）する</li>
-                                                <li>• 部屋設定 or シーン設定から前景/背景を設定</li>
+                                                <li>• ココフォリアのルーム(部屋)盤面を右クリックし「前景・背景を変更」をクリック</li>
                                                 <li>• サイズ・位置を調整</li>
                                             </ul>
                                         </div>
@@ -545,6 +545,11 @@ export default function ManualPage() {
                                         {/* ステップ2 */}
                                         <div>
                                             <h5 className="font-bold text-gray-800 dark:text-white mb-2">ステップ2: シーンを2つ保存する</h5>
+                                            <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">同じシーンを2つ作ります</p>
+                                            <ul className="space-y-1 text-xs mb-3">
+                                                <li>• 画面上部の「GMシーン管理」を開いて、<strong>+ボタンを2回押す</strong></li>
+                                                <li>• 「新しいシーン」という名前から、<strong>わかりやすい名前に変更</strong></li>
+                                            </ul>
                                             <div className="space-y-2 text-xs">
                                                 <div className="bg-gray-50 dark:bg-slate-600 p-2 rounded">
                                                     <strong>シーンA（再生前用）：</strong>前景/背景に<strong>別の画像</strong>を設定 → シーン保存
@@ -696,6 +701,7 @@ export default function ManualPage() {
                                     <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
                                         <li>• <strong>背景を設定</strong>すると、自動的に前景にも同じ画像が設定されます</li>
                                         <li>• さらに<strong>前景を設定</strong>すると、背景と同じ画像の上に前景が重ねて表示されます</li>
+                                        <li>→ この仕組みにより、前景に透過画像（切り抜き画像や透過アニメなど）を設定すると、<br /><strong>透明部分から背景（下敷きとして自動コピーされた画像）が透けて見えます</strong></li>
                                     </ul>
                                 </div>
                                 {/* 前景・背景の図解 */}
@@ -894,13 +900,12 @@ export default function ManualPage() {
                                                 <li>• マーカーを右クリック → 編集画面で以下を設定：</li>
                                             </ul>
                                             <div className="mt-2 ml-4 space-y-2">
-                                                <div className="bg-gray-50 dark:bg-slate-600 p-2 rounded text-xs">
-                                                    <strong>重なり優先度：</strong><code className="bg-gray-200 dark:bg-slate-500 px-1 rounded">105</code> など
-                                                    <span className="text-gray-500 dark:text-gray-400 ml-2">（100以上でキャラより手前に表示）</span>
+                                                <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-700 p-3 rounded text-sm">
+                                                    <strong className="text-orange-700 dark:text-orange-300">⚙️ 重なり優先度：</strong><span className="text-gray-700 dark:text-gray-300">状況により設定が異なるので、他パネルやキャラ表示との兼ね合いで調節</span><br />
+                                                    <span className="text-orange-600 dark:text-orange-400 ml-4">• 101以上：キャラクター立ち絵より前<br /><span className="ml-4">• -1以下：前景よりも後ろ</span></span>
                                                 </div>
-                                                <div className="bg-gray-50 dark:bg-slate-600 p-2 rounded text-xs">
-                                                    <strong>配置固定：</strong>ON
-                                                    <span className="text-gray-500 dark:text-gray-400 ml-2">（誤操作防止）</span>
+                                                <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 p-3 rounded text-sm">
+                                                    <strong className="text-blue-700 dark:text-blue-300">🔒 配置固定：</strong><span className="text-gray-700 dark:text-gray-300">ON（誤操作防止）</span>
                                                 </div>
                                             </div>
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">※「保存」で設定を確定</p>
@@ -909,6 +914,11 @@ export default function ManualPage() {
                                         {/* ステップ3 */}
                                         <div>
                                             <h5 className="font-bold text-gray-800 dark:text-white mb-2">ステップ3: シーンを2つ保存する</h5>
+                                            <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">同じシーンを2つ作ります</p>
+                                            <ul className="space-y-1 text-xs mb-3">
+                                                <li>• 画面上部の「GMシーン管理」を開いて、<strong>+ボタンを2回押す</strong></li>
+                                                <li>• 「新しいシーン」という名前から、<strong>わかりやすい名前に変更</strong></li>
+                                            </ul>
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-xs border border-gray-200 dark:border-gray-600 rounded">
                                                     <thead className="bg-gray-100 dark:bg-slate-600">
@@ -969,7 +979,7 @@ export default function ManualPage() {
                                                         decoding="async"
                                                     />
                                                     <div className="mt-2 text-xs space-y-1">
-                                                        <p className="text-orange-600 dark:text-orange-400">💡 重なり優先度：100以上でキャラより手前に表示</p>
+                                                        <p className="text-orange-600 dark:text-orange-400">💡 重なり優先度：101以上でキャラより前 / -1以下で前景より後ろ</p>
                                                         <p className="text-orange-600 dark:text-orange-400">💡 配置固定：ONで誤操作を防止</p>
                                                     </div>
                                                 </div>
