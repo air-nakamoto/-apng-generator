@@ -913,8 +913,8 @@ export default function ManualPage() {
 
                                         {/* ステップ3 */}
                                         <div>
-                                            <h5 className="font-bold text-gray-800 dark:text-white mb-2">ステップ3: シーンを2つ保存する</h5>
-                                            <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">同じシーンを2つ作ります</p>
+                                            <h5 className="font-bold text-gray-800 dark:text-white mb-2">ステップ3: シーンを2つを作り、設定を保存する</h5>
+                                            <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">ステップ1で作った盤面を複製し、2つのシーンにします。</p>
                                             <ul className="space-y-1 text-xs mb-3">
                                                 <li>• 画面上部の「GMシーン管理」を開いて、<strong>+ボタンを2回押す</strong></li>
                                                 <li>• 「新しいシーン」という名前から、<strong>わかりやすい名前に変更</strong></li>
@@ -928,20 +928,20 @@ export default function ManualPage() {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <tr className="border-b border-gray-200 dark:border-gray-600">
+                                                        <tr className="border-b border-gray-200 dark:border-gray-600 bg-yellow-50 dark:bg-yellow-900/20">
                                                             <td className="py-2 px-3 font-medium">シーンA（再生前）</td>
-                                                            <td className="py-2 px-3">マーカーパネルを「NOIMAGE」に設定 → シーン保存</td>
+                                                            <td className="py-2 px-3"><strong>マーカーパネルを「NOIMAGE」に設定</strong> → <span className="text-red-600 dark:text-red-400 font-bold">💾盤面に設定</span></td>
                                                         </tr>
                                                         <tr>
                                                             <td className="py-2 px-3 font-medium">シーンB（再生用）</td>
-                                                            <td className="py-2 px-3">マーカーパネルにAPNGを設定 → シーン保存</td>
+                                                            <td className="py-2 px-3">変更不要<span className="text-gray-500 dark:text-gray-400 ml-2">（すでにAPNGがセットされているので保存不要）</span></td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
                                             <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-2 mt-2 rounded">
                                                 <p className="text-xs text-red-700 dark:text-red-300">
-                                                    ⚠️ 必ず「盤面に設定」を押して保存してください。保存しないと設定が消えます。
+                                                    ⚠️ GMシーン一覧で「💾盤面に設定」ボタンを押してシーンを保存してください。押さないと設定が消えます。
                                                 </p>
                                             </div>
                                         </div>
@@ -952,6 +952,15 @@ export default function ManualPage() {
                                             <p className="text-xs text-gray-600 dark:text-gray-300">
                                                 シーン一覧から <strong>シーンA → シーンB</strong> の順に切り替えると、<br />
                                                 非ループAPNGが1回だけ再生されます。
+                                            </p>
+                                        </div>
+
+                                        {/* ステップ5 */}
+                                        <div>
+                                            <h5 className="font-bold text-gray-800 dark:text-white mb-1">ステップ5: 再生後はすぐに別シーンに切り替え</h5>
+                                            <p className="text-xs text-gray-600 dark:text-gray-300">
+                                                非ループAPNGのシーンのまま放置すると、意図しないタイミングで再生されてしまいます。<br />
+                                                <strong>→ 再生が終わったら、静止画のシーンにすぐ切り替えてください。</strong>
                                             </p>
                                         </div>
 
@@ -970,7 +979,17 @@ export default function ManualPage() {
                                                     />
                                                 </div>
                                                 <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">②【ステップ2】画像を選択・配置</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">②【ステップ1】APNGをアップロードし設定</p>
+                                                    <img
+                                                        src="/manual/marker_panel_image_set.jpg"
+                                                        alt="APNG設定"
+                                                        className="w-full rounded border border-gray-200 dark:border-gray-600"
+                                                        loading="lazy"
+                                                        decoding="async"
+                                                    />
+                                                </div>
+                                                <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">③【ステップ1】重なり優先度・配置固定を設定</p>
                                                     <img
                                                         src="/manual/marker_image_select.jpg"
                                                         alt="画像選択画面"
@@ -984,34 +1003,27 @@ export default function ManualPage() {
                                                     </div>
                                                 </div>
                                                 <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">③【ステップ3】シーンA（NOIMAGE）を保存</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">④【ステップ3】GMシーン管理で+ボタンを2回押しシーンを複製</p>
                                                     <img
-                                                        src="/manual/marker_panel_noimage.jpg"
-                                                        alt="NOIMAGE設定"
+                                                        src="/manual/marker_scene_duplicate.jpg"
+                                                        alt="シーン複製"
                                                         className="w-full rounded border border-gray-200 dark:border-gray-600"
                                                         loading="lazy"
                                                         decoding="async"
                                                     />
                                                 </div>
                                                 <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">④【ステップ3】シーンB（APNG）を保存</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">⑤【ステップ3】シーンA（NOIMAGE）を💾盤面に設定</p>
                                                     <img
-                                                        src="/manual/marker_panel_image_set.jpg"
-                                                        alt="APNG設定"
+                                                        src="/manual/marker_scene_save.jpg"
+                                                        alt="盤面に設定"
                                                         className="w-full rounded border border-gray-200 dark:border-gray-600"
                                                         loading="lazy"
                                                         decoding="async"
                                                     />
-                                                </div>
-                                                <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">⑤【ステップ3】シーン一覧で盤面を保存</p>
-                                                    <img
-                                                        src="/manual/marker_scene_list.jpg"
-                                                        alt="シーン一覧"
-                                                        className="w-full rounded border border-gray-200 dark:border-gray-600"
-                                                        loading="lazy"
-                                                        decoding="async"
-                                                    />
+                                                    <div className="mt-2 text-xs space-y-1">
+                                                        <p className="text-blue-600 dark:text-blue-400">💡 シーンB（APNG設定済み）は変更不要です</p>
+                                                    </div>
                                                 </div>
                                                 <div className="bg-gray-50 dark:bg-slate-600 rounded-lg p-2">
                                                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">⑥【ステップ4】シーンA→Bで再生！</p>
@@ -1156,6 +1168,16 @@ export default function ManualPage() {
                                                     <span className="play-label mt-3 text-white text-sm font-medium">再生する</span>
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        {/* 補足：非ループAPNGのシーンは放置しない */}
+                                        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-3 mt-3">
+                                            <p className="font-medium text-sm text-orange-800 dark:text-orange-200 mb-2">⚠️ 補足：非ループAPNGのシーンは放置しない</p>
+                                            <p className="text-xs text-orange-700 dark:text-orange-300">
+                                                非ループAPNGは1回再生された後、しばらくそのシーンで放置すると、<br />
+                                                キャッシュクリアのタイミングなど<strong>意図しないタイミングでもう一度再生されてしまいます。</strong><br /><br />
+                                                <strong>→ 1回再生したら、すぐに別シーン（静止画のシーン等）に切り替えてください。</strong>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -1574,9 +1596,9 @@ export default function ManualPage() {
                                             <div className="text-sm text-gray-600 dark:text-gray-300 px-3 py-2">
                                                 <p className="font-medium mb-2">🎬 マーカーパネルで非ループアニメを1回だけ再生する方法</p>
                                                 <ol className="list-decimal list-inside space-y-1 mb-2">
-                                                    <li>「NOIMAGE」のシーンを作成（マーカーパネルを配置し、画像は「No Image」を選択）</li>
-                                                    <li>そのシーンを複製し、複製したシーンのマーカーパネルに非ループAPNGを設定</li>
-                                                    <li>「NOIMAGE」シーン → 「APNG設定済み」シーンの順に切り替えると再生される</li>
+                                                    <li>非ループAPNG（ループOFFで作ったアニメ）をマーカーパネルに設定してシーンを作成</li>
+                                                    <li>そのシーンを複製し、複製したシーンのマーカーパネルを「No Image」に設定</li>
+                                                    <li>「No Image」シーン → 「APNG設定済み」シーンの順に切り替えると再生される</li>
                                                 </ol>
                                                 <p className="text-blue-600 dark:text-blue-400">💡 毎回再生させたい場合は、必ずこの順番で切り替えてください。</p>
                                                 <p className="mt-2">→ <a href="#cocofolia-marker-oneplay" className="text-blue-600 dark:text-blue-400 underline hover:text-blue-700">詳細手順はこちら</a></p>
@@ -1818,9 +1840,9 @@ export default function ManualPage() {
                                 <div className="mb-4">
                                     <p className="font-medium text-blue-700 dark:text-blue-300 mb-2 bg-blue-100 dark:bg-blue-900/30 px-3 py-2 rounded">🎬 マーカーパネルで非ループアニメを1回だけ再生する方法</p>
                                     <ol className="text-sm text-gray-700 dark:text-gray-300 space-y-1 px-3">
-                                        <li><strong>1.</strong> 「NOIMAGE」のシーンを作成（マーカーパネルを配置し、画像は「No Image」を選択）</li>
-                                        <li><strong>2.</strong> そのシーンを複製し、複製したシーンのマーカーパネルに非ループAPNGを設定</li>
-                                        <li><strong>3.</strong> 「NOIMAGE」シーン → 「APNG設定済み」シーンの順に切り替えると再生される</li>
+                                        <li><strong>1.</strong> 非ループAPNG（ループOFFで作ったアニメ）をマーカーパネルに設定してシーンを作成</li>
+                                        <li><strong>2.</strong> そのシーンを複製し、複製したシーンのマーカーパネルを「No Image」に設定</li>
+                                        <li><strong>3.</strong> 「No Image」シーン → 「APNG設定済み」シーンの順に切り替えると再生される</li>
                                     </ol>
                                     <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-2 px-3">→ <a href="#cocofolia-marker-oneplay" className="underline hover:text-blue-800 dark:hover:text-blue-300">詳しくはこちら</a></p>
                                 </div>
