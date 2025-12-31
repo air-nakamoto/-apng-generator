@@ -310,6 +310,21 @@ APNGGenerator.tsx:
   - 係数を大幅引き下げ（30.0→1.2）
   - 推定精度が飛躍的に向上
 
+- **V121.14** (2025-01-01): サイズ超過時の複数回リトライ ✅ 実装
+  - whileループで最大5回までリトライ
+  - ステップを1つずつ下げて再生成
+  - UI表示: 「サイズ最適化中...」（optimizingフェーズ）
+  - コンソールログでリトライ過程を表示
+  - **注意**: リトライ時はフェード描画（正確なエフェクト再現なし）
+
+- **V121.15** (2025-01-01): エフェクト別係数の復活 ✅ 検証完了
+  - **3分類に細分化**:
+    - 超高効率（wipe, tile, blind, iris）: 1.2/1.0
+    - 中効率（fade, slide, focus等）: 3.0/2.0
+    - 低効率（zoom, door, tvStatic, enlarge, minimize）: 8.0/6.0
+  - **検証結果**: zoomUp で 64色30%選択 → 1.50MB（リトライ不要で成功）
+  - リトライ頻度を大幅削減
+
 ---
 
 ## V121.10 検証結果（登場エフェクト）
@@ -382,38 +397,20 @@ tileIn/wipeIn/blindIn等はフルカラーでも5MB以下に収まる可能性
 
 ---
 
-## 現在の係数設定（V121.10）
-
-```typescript
-if (HEAVY_MEDIUM_EFFECTS.includes(transition)) {
-    // zoomUp, doorClose, cardFlipIn, sliceIn
-    compressionFactor = step.colorNum === 0 ? 5.0 : 4.0
-} else if (effectCategory === 'complex') {
-    // glitchIn, pixelateIn, tvStaticIn
-    compressionFactor = step.colorNum === 0 ? 4.0 : 3.0
-} else if (effectCategory === 'medium') {
-    // irisIn, focusIn, pageFlipIn等
-    compressionFactor = step.colorNum === 0 ? 4.0 : 3.0
-} else {
-    // 軽量: fadeIn, slideIn, wipeIn, blindIn
-    compressionFactor = step.colorNum === 0 ? 3.5 : 2.5
-}
-```
-
-## 推奨係数設定（V121.11予定）
+## 現在の係数設定（V121.15）
 
 ```typescript
 // 超高デルタ効率（クリップ系）
-const VERY_HIGH_EFFICIENCY = ['wipeIn', 'tileIn', 'blindIn', 'irisIn']
-compressionFactor = step.colorNum === 0 ? 1.5 : 1.2
+const VERY_HIGH_EFFICIENCY = ['wipeIn', 'wipeOut', 'tileIn', 'tileOut', 'blindIn', 'blindOut', 'irisIn', 'irisOut']
+compressionFactor = step.colorNum === 0 ? 1.2 : 1.0
 
 // 中デルタ効率（移動・変形系）
-const MEDIUM_EFFICIENCY = ['fadeIn', 'slideIn', 'focusIn', 'sliceIn', 'pageFlipIn', 'cardFlipIn', 'glitchIn', 'pixelateIn']
-compressionFactor = step.colorNum === 0 ? 3.5 : 2.5
+// fadeIn, slideIn, focusIn, sliceIn, pageFlipIn, cardFlipIn, glitchIn, pixelateIn等
+compressionFactor = step.colorNum === 0 ? 3.0 : 2.0
 
 // 低デルタ効率（スケール・ノイズ系）
-const LOW_EFFICIENCY = ['zoomUp', 'doorClose', 'tvStaticIn']
-compressionFactor = step.colorNum === 0 ? 30.0 : 20.0
+const LOW_EFFICIENCY = ['zoomUp', 'zoomUpOut', 'doorClose', 'doorOpen', 'tvStaticIn', 'tvStaticOut', 'enlarge', 'minimize']
+compressionFactor = step.colorNum === 0 ? 8.0 : 6.0
 ```
 
 ## 現在の初期サイズ設定（V121.8）
