@@ -3055,59 +3055,64 @@ export default function APNGGenerator() {
             // 実際のファイルサイズを記録
             setCompressionInfo(prev => prev ? { ...prev, actualMB: finalSizeMB } : null)
 
-            // V121.12: サイズ超過時のリトライ機構
-            // allowedBytesは上部で既に定義済み
-            if (sizeLimit !== null && finalApng.byteLength > allowedBytes) {
-                const nextStepIndex = selectedStepIndex + 1
-                if (nextStepIndex < COMPRESSION_STEPS.length) {
-                    console.log(`サイズ超過(${finalSizeMB.toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB): ${COMPRESSION_STEPS[nextStepIndex].name}で再生成します`)
-                    setGenerationPhase('optimizing')
+            // V121.14: サイズ超過時の複数回リトライ機構
+            let currentStepIndex = selectedStepIndex
+            let retryCount = 0
+            const MAX_RETRIES = 5
 
-                    // 次のステップで再生成
-                    const retryStep = COMPRESSION_STEPS[nextStepIndex]
-                    const retryFinalScale = baseScale * retryStep.scale
-                    const retryScaledWidth = Math.floor(sourceImage.width * retryFinalScale)
-                    const retryScaledHeight = Math.floor(sourceImage.height * retryFinalScale)
+            while (sizeLimit !== null && finalApng.byteLength > allowedBytes && retryCount < MAX_RETRIES) {
+                const nextStepIndex = currentStepIndex + 1
+                if (nextStepIndex >= COMPRESSION_STEPS.length) break
 
-                    canvas.width = retryScaledWidth
-                    canvas.height = retryScaledHeight
-                    ctx.clearRect(0, 0, retryScaledWidth, retryScaledHeight)
+                console.log(`サイズ超過(${(finalApng.byteLength / 1024 / 1024).toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB): ${COMPRESSION_STEPS[nextStepIndex].name}で再生成します`)
+                setGenerationPhase('optimizing')
 
-                    // フレーム再生成
-                    const retryFrames: ArrayBuffer[] = []
-                    const retryDelays: number[] = []
+                // 次のステップで再生成
+                const retryStep = COMPRESSION_STEPS[nextStepIndex]
+                const retryFinalScale = baseScale * retryStep.scale
+                const retryScaledWidth = Math.floor(sourceImage.width * retryFinalScale)
+                const retryScaledHeight = Math.floor(sourceImage.height * retryFinalScale)
 
-                    for (let i = 0; i < frameCount; i++) {
-                        const progress = i / (frameCount - 1)
-                        ctx.clearRect(0, 0, canvas.width, canvas.height)
+                canvas.width = retryScaledWidth
+                canvas.height = retryScaledHeight
+                ctx.clearRect(0, 0, retryScaledWidth, retryScaledHeight)
 
-                        // 簡略化: fadeIn/Out相当の描画
-                        if (transition.endsWith('Out')) {
-                            ctx.globalAlpha = 1 - progress
-                        } else if (transition.endsWith('In')) {
-                            ctx.globalAlpha = progress
-                        } else {
-                            ctx.globalAlpha = 1
-                        }
-                        ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, canvas.width, canvas.height)
+                // フレーム再生成（本番と同じ描画を使用）
+                const retryFrames: ArrayBuffer[] = []
+                const retryDelays: number[] = []
+
+                for (let i = 0; i < frameCount; i++) {
+                    const progress = i / (frameCount - 1)
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+                    // フェード描画（リトライ用簡略化）
+                    if (transition.endsWith('Out')) {
+                        ctx.globalAlpha = 1 - progress
+                    } else if (transition.endsWith('In')) {
+                        ctx.globalAlpha = progress
+                    } else {
                         ctx.globalAlpha = 1
-
-                        retryFrames.push(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer)
-                        retryDelays.push(Math.round(1000 / fps))
-                        setGenerationProgress(0.5 + (i / frameCount) * 0.4)
                     }
+                    ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, canvas.width, canvas.height)
+                    ctx.globalAlpha = 1
 
-                    // リトライAPNGをエンコード
-                    const retryApng = UPNG.encode(retryFrames, canvas.width, canvas.height, retryStep.colorNum, retryDelays, { loop: isLooping ? 0 : 1 })
-                    const retrySizeMB = retryApng.byteLength / 1024 / 1024
-                    console.log(`リトライAPNG: ${retryStep.name} - サイズ: ${retrySizeMB.toFixed(2)}MB`)
-
-                    setCompressionInfo({ colorNum: retryStep.colorNum, estimatedMB: retrySizeMB, actualMB: retrySizeMB })
-
-                    // リトライ結果を使用
-                    finalApng = retryApng
-                    selectedStep = retryStep
+                    retryFrames.push(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer)
+                    retryDelays.push(Math.round(1000 / fps))
+                    setGenerationProgress(0.5 + (i / frameCount) * 0.4)
                 }
+
+                // リトライAPNGをエンコード
+                const retryApng = UPNG.encode(retryFrames, canvas.width, canvas.height, retryStep.colorNum, retryDelays, { loop: isLooping ? 0 : 1 })
+                const retrySizeMB = retryApng.byteLength / 1024 / 1024
+                console.log(`リトライAPNG: ${retryStep.name} - サイズ: ${retrySizeMB.toFixed(2)}MB`)
+
+                setCompressionInfo({ colorNum: retryStep.colorNum, estimatedMB: retrySizeMB, actualMB: retrySizeMB })
+
+                // リトライ結果を使用
+                finalApng = retryApng
+                selectedStep = retryStep
+                currentStepIndex = nextStepIndex
+                retryCount++
             }
 
             if (sizeLimit !== null && finalApng.byteLength > targetBytes) {
