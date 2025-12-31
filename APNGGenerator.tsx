@@ -1567,7 +1567,8 @@ export default function APNGGenerator() {
                     const progress = i / (frameCount - 1)
                     testCtx.clearRect(0, 0, testCanvas.width, testCanvas.height)
 
-                    // 簡略化されたエフェクト処理
+                    // V121.13: テスト描画を本番エフェクトと同様に変更
+                    // これにより係数推定精度が大幅向上
                     switch (transition) {
                         case 'fadeIn':
                             testCtx.globalAlpha = progress
@@ -1585,14 +1586,116 @@ export default function APNGGenerator() {
                         case 'none':
                             drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             break
+                        // --- 登場エフェクト（実際の描画） ---
+                        case 'slideIn': {
+                            let offsetX = 0, offsetY = 0
+                            switch (effectDirection) {
+                                case 'left': offsetX = Math.floor((1 - progress) * testCanvas.width); break
+                                case 'right': offsetX = Math.floor((progress - 1) * testCanvas.width); break
+                                case 'up': offsetY = Math.floor((1 - progress) * testCanvas.height); break
+                                case 'down': default: offsetY = Math.floor((progress - 1) * testCanvas.height); break
+                            }
+                            drawTestImage(offsetX, offsetY, testCanvas.width, testCanvas.height)
+                            break
+                        }
+                        case 'wipeIn': {
+                            testCtx.save()
+                            testCtx.beginPath()
+                            switch (effectDirection) {
+                                case 'left': testCtx.rect(Math.floor(testCanvas.width * (1 - progress)), 0, Math.ceil(testCanvas.width * progress), testCanvas.height); break
+                                case 'right': testCtx.rect(0, 0, Math.ceil(testCanvas.width * progress), testCanvas.height); break
+                                case 'up': testCtx.rect(0, Math.floor(testCanvas.height * (1 - progress)), testCanvas.width, Math.ceil(testCanvas.height * progress)); break
+                                case 'down': default: testCtx.rect(0, 0, testCanvas.width, Math.ceil(testCanvas.height * progress)); break
+                            }
+                            testCtx.clip()
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'zoomUp': {
+                            const isUp = effectOption === 'up'
+                            const scaleIn = isUp ? (0.5 + progress * 0.5) : (1.5 - progress * 0.5)
+                            const w = Math.floor(testCanvas.width * scaleIn)
+                            const h = Math.floor(testCanvas.height * scaleIn)
+                            const x = Math.floor(testCanvas.width / 2 - w / 2)
+                            const y = Math.floor(testCanvas.height / 2 - h / 2)
+                            testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, y, w, h)
+                            break
+                        }
+                        case 'doorClose': {
+                            const halfW = Math.floor(testCanvas.width / 2)
+                            testCtx.drawImage(sourceImage, 0, 0, Math.floor(sourceImage.width / 2), sourceImage.height,
+                                Math.floor(-halfW + progress * halfW), 0, halfW, testCanvas.height)
+                            testCtx.drawImage(sourceImage, Math.floor(sourceImage.width / 2), 0, Math.floor(sourceImage.width / 2), sourceImage.height,
+                                Math.floor(testCanvas.width - progress * halfW), 0, halfW, testCanvas.height)
+                            break
+                        }
+                        case 'tvStaticIn': {
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            const staticData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height)
+                            const staticIntensity = 1 - progress
+                            for (let p = 0; p < staticData.data.length; p += 4) {
+                                if (Math.random() < staticIntensity) {
+                                    const noise = Math.random() * 255
+                                    staticData.data[p] = staticData.data[p + 1] = staticData.data[p + 2] = noise
+                                }
+                            }
+                            testCtx.putImageData(staticData, 0, 0)
+                            break
+                        }
+                        case 'blindIn': {
+                            const blindCount = effectOption ? parseInt(effectOption as string) : 7
+                            const isVertical = effectDirection === 'horizontal'
+                            for (let bi = 0; bi < blindCount; bi++) {
+                                const start = Math.floor(bi * (isVertical ? testCanvas.height : testCanvas.width) / blindCount)
+                                const next = Math.floor((bi + 1) * (isVertical ? testCanvas.height : testCanvas.width) / blindCount)
+                                const size = next - start
+                                const openAmount = Math.ceil(progress * size)
+                                testCtx.save()
+                                testCtx.beginPath()
+                                if (isVertical) { testCtx.rect(0, start, testCanvas.width, openAmount) }
+                                else { testCtx.rect(start, 0, openAmount, testCanvas.height) }
+                                testCtx.clip()
+                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                                testCtx.restore()
+                            }
+                            break
+                        }
+                        case 'irisIn': {
+                            const radius = Math.max(testCanvas.width, testCanvas.height) * progress
+                            testCtx.save()
+                            testCtx.beginPath()
+                            testCtx.arc(testCanvas.width / 2, testCanvas.height / 2, radius, 0, Math.PI * 2)
+                            testCtx.clip()
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'tileIn': {
+                            const tileCount = effectOption ? parseInt(effectOption as string) : 4
+                            for (let ty = 0; ty < tileCount; ty++) {
+                                for (let tx = 0; tx < tileCount; tx++) {
+                                    const tileIndex = ty * tileCount + tx
+                                    const tileProgress = Math.max(0, Math.min(1, progress * tileCount * tileCount - tileIndex))
+                                    if (tileProgress > 0) {
+                                        const tw = testCanvas.width / tileCount
+                                        const th = testCanvas.height / tileCount
+                                        testCtx.save()
+                                        testCtx.beginPath()
+                                        testCtx.rect(tx * tw, ty * th, tw, th)
+                                        testCtx.clip()
+                                        testCtx.globalAlpha = tileProgress
+                                        drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                                        testCtx.globalAlpha = 1
+                                        testCtx.restore()
+                                    }
+                                }
+                            }
+                            break
+                        }
                         default:
-                            // 複雑なエフェクト: フレーム毎にわずかなオフセットを加えてデルタ圧縮を無効化
-                            if (isComplexEffect) {
-                                // 1-2pxのランダムオフセットで各フレームを異ならせる
-                                const offsetX = (i % 3) - 1  // -1, 0, 1
-                                const offsetY = ((i + 1) % 3) - 1
-                                drawTestImage(offsetX, offsetY, testCanvas.width, testCanvas.height)
-                            } else if (transition.endsWith('Out')) {
+                            // その他のエフェクト: フェード近似
+                            if (transition.endsWith('Out')) {
                                 if (effectIntensity !== 'none' || effectOption !== 'none') {
                                     if (progress >= 0.95) break
                                 }
@@ -1604,7 +1707,6 @@ export default function APNGGenerator() {
                                 drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                                 testCtx.globalAlpha = 1
                             } else {
-                                testCtx.globalAlpha = 1
                                 drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             }
                             break
@@ -1641,26 +1743,18 @@ export default function APNGGenerator() {
                     const testSize = testApng.byteLength
 
                     // スケール比でフルサイズを推定 + 圧縮係数
-                    // V121.11: デルタ圧縮効率に基づく3分類（2025-12-31検証）
+                    // V121.13: テスト描画が本番と同じになったため、係数を大幅に引き下げ
+                    // 係数は「テストサイズ→本番サイズ」のスケールアップ補正のみ
                     let compressionFactor: number
 
-                    // 超高デルタ効率（クリップ系）: フレーム間変化が少ない
-                    const VERY_HIGH_EFFICIENCY = ['wipeIn', 'wipeOut', 'tileIn', 'tileOut', 'blindIn', 'blindOut', 'irisIn', 'irisOut']
-
-                    // 低デルタ効率（スケール・ノイズ系）: フレーム間変化が大きい
-                    const LOW_EFFICIENCY = ['zoomUp', 'zoomUpOut', 'doorClose', 'doorOpen', 'tvStaticIn', 'tvStaticOut', 'enlarge', 'minimize']
-
-                    if (LOW_EFFICIENCY.includes(transition)) {
-                        // zoomUp/doorClose: 推定2.5MB→実際11-22MB（4-8倍乖離）
-                        // tvStaticIn: ランダムノイズでデルタ圧縮不可
-                        compressionFactor = step.colorNum === 0 ? 30.0 : 20.0
-                    } else if (VERY_HIGH_EFFICIENCY.includes(transition)) {
-                        // wipe/tile/blind/iris: 256色0.3-1.3MB（利用率5-25%）→フルカラーでも収まる
-                        compressionFactor = step.colorNum === 0 ? 1.5 : 1.2
+                    // V121.13: 本番描画テストにより、係数は1.0に近づく
+                    // ただし、サイズ増加のオーバーヘッドを考慮して若干の補正
+                    if (step.colorNum === 0) {
+                        // フルカラー: スケール比の1.2倍程度
+                        compressionFactor = 1.2
                     } else {
-                        // 中デルタ効率: fade, slide, focus, slice, pageFlip, cardFlip, glitch, pixelate等
-                        // 256色で利用率40-90%の適正範囲
-                        compressionFactor = step.colorNum === 0 ? 3.5 : 2.5
+                        // 減色: 減色によるサイズ削減を考慮
+                        compressionFactor = 1.0
                     }
                     const estimatedFullSize = testSize * scaleRatio * compressionFactor
 
