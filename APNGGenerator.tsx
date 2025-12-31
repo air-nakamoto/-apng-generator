@@ -90,7 +90,7 @@ export default function APNGGenerator() {
     const playbackSpeedRef = useRef<number>(1.0)
     const [error, setError] = useState<string | null>(null)
     const [generationProgress, setGenerationProgress] = useState(0)
-    const [generationPhase, setGenerationPhase] = useState<'idle' | 'measuring' | 'generating' | 'encoding'>('idle')
+    const [generationPhase, setGenerationPhase] = useState<'idle' | 'measuring' | 'generating' | 'encoding' | 'optimizing'>('idle')
     const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
     const [estimatedSize, setEstimatedSize] = useState<number | null>(null)
     // adjustToOneMB は sizeLimit に置換されたため削除
@@ -1529,6 +1529,7 @@ export default function APNGGenerator() {
 
             // 縮小版実測で最適な圧縮設定を決定（V121.4）
             let selectedStep = COMPRESSION_STEPS[0]
+            let selectedStepIndex = 0  // V121.12: リトライ用にインデックス追跡
             let estimatedSizeBytes = 0
             const targetBytes = sizeLimit !== null ? sizeLimit * 1024 * 1024 : Infinity
             // ココフォリアは制限より少し大きくても許容するため、バッファを設ける
@@ -1623,7 +1624,8 @@ export default function APNGGenerator() {
                 const longerSide = Math.max(sourceImage.width, sourceImage.height)
                 const testLongestSide = Math.min(200, longerSide)
 
-                for (const step of COMPRESSION_STEPS) {
+                for (let stepIndex = 0; stepIndex < COMPRESSION_STEPS.length; stepIndex++) {
+                    const step = COMPRESSION_STEPS[stepIndex]
                     // 本番サイズとテストサイズを計算
                     const targetScale = baseScale * step.scale
                     const targetLongestSide = longerSide * targetScale
@@ -1639,24 +1641,25 @@ export default function APNGGenerator() {
                     const testSize = testApng.byteLength
 
                     // スケール比でフルサイズを推定 + 圧縮係数
-                    // V121.6: 登場エフェクト検証データに基づく係数修正（2024-12-31）
+                    // V121.11: デルタ圧縮効率に基づく3分類（2025-12-31検証）
                     let compressionFactor: number
 
-                    // エフェクト個別の係数（検証データより算出）
-                    const HEAVY_MEDIUM_EFFECTS = ['zoomUp', 'doorClose', 'cardFlipIn', 'sliceIn']
+                    // 超高デルタ効率（クリップ系）: フレーム間変化が少ない
+                    const VERY_HIGH_EFFICIENCY = ['wipeIn', 'wipeOut', 'tileIn', 'tileOut', 'blindIn', 'blindOut', 'irisIn', 'irisOut']
 
-                    if (HEAVY_MEDIUM_EFFECTS.includes(transition)) {
-                        // zoomUp等: フルカラー・減色とも推定困難なため高い係数
-                        compressionFactor = step.colorNum === 0 ? 5.0 : 4.0
-                    } else if (effectCategory === 'complex') {
-                        // glitchIn, pixelateIn, tvStaticIn
-                        compressionFactor = step.colorNum === 0 ? 4.0 : 3.0
-                    } else if (effectCategory === 'medium') {
-                        // tileIn, irisIn, focusIn, pageFlipIn等
-                        compressionFactor = step.colorNum === 0 ? 4.0 : 3.0
+                    // 低デルタ効率（スケール・ノイズ系）: フレーム間変化が大きい
+                    const LOW_EFFICIENCY = ['zoomUp', 'zoomUpOut', 'doorClose', 'doorOpen', 'tvStaticIn', 'tvStaticOut', 'enlarge', 'minimize']
+
+                    if (LOW_EFFICIENCY.includes(transition)) {
+                        // zoomUp/doorClose: 推定2.5MB→実際11-22MB（4-8倍乖離）
+                        // tvStaticIn: ランダムノイズでデルタ圧縮不可
+                        compressionFactor = step.colorNum === 0 ? 30.0 : 20.0
+                    } else if (VERY_HIGH_EFFICIENCY.includes(transition)) {
+                        // wipe/tile/blind/iris: 256色0.3-1.3MB（利用率5-25%）→フルカラーでも収まる
+                        compressionFactor = step.colorNum === 0 ? 1.5 : 1.2
                     } else {
-                        // 軽量: fadeIn, slideIn, wipeIn, blindIn
-                        // V121.10: 実測(fadeIn) フルカラー13.11MB/4.14=3.17, 256色2.31MB/1.02=2.26
+                        // 中デルタ効率: fade, slide, focus, slice, pageFlip, cardFlip, glitch, pixelate等
+                        // 256色で利用率40-90%の適正範囲
                         compressionFactor = step.colorNum === 0 ? 3.5 : 2.5
                     }
                     const estimatedFullSize = testSize * scaleRatio * compressionFactor
@@ -1665,11 +1668,13 @@ export default function APNGGenerator() {
 
                     if (estimatedFullSize <= allowedBytes) {
                         selectedStep = step
+                        selectedStepIndex = stepIndex
                         estimatedSizeBytes = estimatedFullSize
                         console.log(`    → ${step.name} を採用`)
                         break
                     }
                     selectedStep = step
+                    selectedStepIndex = stepIndex
                     estimatedSizeBytes = estimatedFullSize
                 }
 
@@ -2956,8 +2961,63 @@ export default function APNGGenerator() {
             // 実際のファイルサイズを記録
             setCompressionInfo(prev => prev ? { ...prev, actualMB: finalSizeMB } : null)
 
+            // V121.12: サイズ超過時のリトライ機構
+            // allowedBytesは上部で既に定義済み
+            if (sizeLimit !== null && finalApng.byteLength > allowedBytes) {
+                const nextStepIndex = selectedStepIndex + 1
+                if (nextStepIndex < COMPRESSION_STEPS.length) {
+                    console.log(`サイズ超過(${finalSizeMB.toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB): ${COMPRESSION_STEPS[nextStepIndex].name}で再生成します`)
+                    setGenerationPhase('optimizing')
+
+                    // 次のステップで再生成
+                    const retryStep = COMPRESSION_STEPS[nextStepIndex]
+                    const retryFinalScale = baseScale * retryStep.scale
+                    const retryScaledWidth = Math.floor(sourceImage.width * retryFinalScale)
+                    const retryScaledHeight = Math.floor(sourceImage.height * retryFinalScale)
+
+                    canvas.width = retryScaledWidth
+                    canvas.height = retryScaledHeight
+                    ctx.clearRect(0, 0, retryScaledWidth, retryScaledHeight)
+
+                    // フレーム再生成
+                    const retryFrames: ArrayBuffer[] = []
+                    const retryDelays: number[] = []
+
+                    for (let i = 0; i < frameCount; i++) {
+                        const progress = i / (frameCount - 1)
+                        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+                        // 簡略化: fadeIn/Out相当の描画
+                        if (transition.endsWith('Out')) {
+                            ctx.globalAlpha = 1 - progress
+                        } else if (transition.endsWith('In')) {
+                            ctx.globalAlpha = progress
+                        } else {
+                            ctx.globalAlpha = 1
+                        }
+                        ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, canvas.width, canvas.height)
+                        ctx.globalAlpha = 1
+
+                        retryFrames.push(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer)
+                        retryDelays.push(Math.round(1000 / fps))
+                        setGenerationProgress(0.5 + (i / frameCount) * 0.4)
+                    }
+
+                    // リトライAPNGをエンコード
+                    const retryApng = UPNG.encode(retryFrames, canvas.width, canvas.height, retryStep.colorNum, retryDelays, { loop: isLooping ? 0 : 1 })
+                    const retrySizeMB = retryApng.byteLength / 1024 / 1024
+                    console.log(`リトライAPNG: ${retryStep.name} - サイズ: ${retrySizeMB.toFixed(2)}MB`)
+
+                    setCompressionInfo({ colorNum: retryStep.colorNum, estimatedMB: retrySizeMB, actualMB: retrySizeMB })
+
+                    // リトライ結果を使用
+                    finalApng = retryApng
+                    selectedStep = retryStep
+                }
+            }
+
             if (sizeLimit !== null && finalApng.byteLength > targetBytes) {
-                console.warn(`警告: 目標サイズ(${sizeLimit}MB)を超過: ${finalSizeMB.toFixed(2)}MB`)
+                console.warn(`警告: 目標サイズ(${sizeLimit}MB)を超過: ${(finalApng.byteLength / 1024 / 1024).toFixed(2)}MB`)
             }
 
             const blob = new Blob([finalApng], { type: 'image/png' })
@@ -3864,6 +3924,9 @@ export default function APNGGenerator() {
                                             )}
                                             {generationPhase === 'encoding' && (
                                                 <>APNGエンコード中...</>
+                                            )}
+                                            {generationPhase === 'optimizing' && (
+                                                <>サイズ最適化中... ({Math.floor(generationProgress * 100)}%)</>
                                             )}
                                             {generationPhase === 'idle' && (
                                                 <>準備中...</>
