@@ -286,47 +286,116 @@ APNGGenerator.tsx:
   - `apng.worker.js`で`pako`を`upng`より先に読み込む
   - **原因**: UPNGがpako依存だがWorker環境でpakoがロードされていなかった
 
+- **V121.10** (2025-12-31): 登場エフェクト再検証 ✅ 完了
+  - 全15種類の登場エフェクトを実測
+  - **成功率**: 12/15（80%）
+  - **失敗**: zoomUp(11-22MB), doorClose(12MB), tvStaticIn(5-9MB)
+  - **低利用率問題**: tileIn(5%), wipeIn(8%)等はフルカラーでも収まる可能性
+
+---
+
+## V121.10 検証結果（登場エフェクト）
+
+### テスト条件
+- 画像: 女の子.png (3014x3727, 4.5MB)
+- 制限: 5MB
+- Base Scale: 1200px → 970x1200
+
+### 実測サイズ一覧
+
+| カテゴリ | エフェクト | 選択 | サイズ | 利用率 | 判定 |
+|---------|-----------|------|--------|--------|------|
+| 高効率 | tileIn | 256色100% | 0.27-0.35MB | 5-7% | ✅ (低すぎ) |
+| 高効率 | wipeIn | 256色100% | 0.38-0.60MB | 8-12% | ✅ (低すぎ) |
+| 高効率 | blindIn | 256色100% | 0.43-0.80MB | 9-16% | ✅ (低すぎ) |
+| 複雑 | pixelateIn | 256色85% | 0.56-0.92MB | 11-18% | ✅ (低すぎ) |
+| 高効率 | irisIn | 256色100% | 1.28-2.29MB | 27-46% | ✅ |
+| 中効率 | focusIn | 256色100% | 1.71-2.76MB | 36-55% | ✅ |
+| 中効率 | glitchIn | 256色85% | 1.77-1.89MB | 37-38% | ✅ |
+| 中効率 | pageFlipIn | 256色100% | 1.79-1.91MB | 38% | ✅ |
+| 中効率 | fadeIn | 256色100% | 2.31-2.42MB | 48% | ✅ |
+| 中効率 | slideIn | 256色100% | 2.28-2.93MB | 48-59% | ✅ |
+| 中効率 | cardFlipIn | 256色100% | 3.51-3.77MB | 74-75% | ✅ |
+| 中効率 | sliceIn | 256色100% | 4.14-4.55MB | 87-91% | ✅ |
+| **低効率** | **tvStaticIn** | 256色85% | **5.04-9.22MB** | **超過** | ❌ |
+| **低効率** | **zoomUp** | フル100% | **11.2-21.7MB** | **超過** | ❌ |
+| **低効率** | **doorClose** | フル100% | **12.1MB** | **超過** | ❌ |
+
+### 問題分析
+
+#### 超過問題（係数が低すぎ）
+zoomUp/doorClose/tvStaticInはテスト描画が本番と異なるため推定不可
+
+#### 低利用率問題（係数が高すぎ）
+tileIn/wipeIn/blindIn等はフルカラーでも5MB以下に収まる可能性
+
 ---
 
 ## 残タスク（今後の計画）
 
-### 1. 退場・演出エフェクト係数調整（優先度: 中）
+### 1. 係数の細分化（優先度: 高）
+
+デルタ圧縮効率に基づく3分類:
+- **超高効率**（wipe, tile, blind, iris）: 1.5/1.2
+- **中効率**（fade, slide, focus等）: 3.5/2.5  
+- **低効率**（zoom, door, tvStatic）: 30.0/20.0
+
+### 2. 退場・演出エフェクト係数調整（優先度: 中）
 
 登場エフェクトの係数は検証済み。残り:
 - 退場エフェクト（fadeOut, slideOut, etc.）
 - 演出エフェクト（rotate, vibration, glitch, etc.）
 
-### 3. 推定精度向上（優先度: 中）
+### 3. テスト描画の改善（優先度: 中）
 
 **現状の問題**:
 - テスト描画がフェード近似（本番と異なる）
-- 固定係数で画像複雑度を考慮しない
+- スケール系エフェクトの推定が不正確
 
 **改善案**:
-- テスト描画を本番と同じに変更
-- テストサイズを本番の25%に変更（スケール比一定化）
+- テスト描画を本番と同じエフェクトで実行
+- 最も正確だが実装コスト高い
 
-### 4. リトライ機構（優先度: 低）
+### 4. UIフリーズ改善（優先度: 低）
 
-推定精度が改善されれば不要の可能性。
-超過時のみ1つ下のステップで再試行。
+テスト中にプログレスバーが停止する問題
+- 原因: 同期処理でメインスレッドブロック
+- 修正: 各ステップ間に `await setTimeout(0)` 挿入
 
 ---
 
-## 現在の係数設定（V121.6）
+## 現在の係数設定（V121.10）
 
 ```typescript
 if (HEAVY_MEDIUM_EFFECTS.includes(transition)) {
     // zoomUp, doorClose, cardFlipIn, sliceIn
-    compressionFactor = 25.0
+    compressionFactor = step.colorNum === 0 ? 5.0 : 4.0
 } else if (effectCategory === 'complex') {
-    compressionFactor = step.colorNum === 0 ? 3.0 : 1.5
+    // glitchIn, pixelateIn, tvStaticIn
+    compressionFactor = step.colorNum === 0 ? 4.0 : 3.0
 } else if (effectCategory === 'medium') {
-    compressionFactor = step.colorNum === 0 ? 4.0 : 3.5
+    // irisIn, focusIn, pageFlipIn等
+    compressionFactor = step.colorNum === 0 ? 4.0 : 3.0
 } else {
-    // 軽量
-    compressionFactor = step.colorNum === 0 ? 4.5 : 3.5
+    // 軽量: fadeIn, slideIn, wipeIn, blindIn
+    compressionFactor = step.colorNum === 0 ? 3.5 : 2.5
 }
+```
+
+## 推奨係数設定（V121.11予定）
+
+```typescript
+// 超高デルタ効率（クリップ系）
+const VERY_HIGH_EFFICIENCY = ['wipeIn', 'tileIn', 'blindIn', 'irisIn']
+compressionFactor = step.colorNum === 0 ? 1.5 : 1.2
+
+// 中デルタ効率（移動・変形系）
+const MEDIUM_EFFICIENCY = ['fadeIn', 'slideIn', 'focusIn', 'sliceIn', 'pageFlipIn', 'cardFlipIn', 'glitchIn', 'pixelateIn']
+compressionFactor = step.colorNum === 0 ? 3.5 : 2.5
+
+// 低デルタ効率（スケール・ノイズ系）
+const LOW_EFFICIENCY = ['zoomUp', 'doorClose', 'tvStaticIn']
+compressionFactor = step.colorNum === 0 ? 30.0 : 20.0
 ```
 
 ## 現在の初期サイズ設定（V121.8）
@@ -335,3 +404,4 @@ if (HEAVY_MEDIUM_EFFECTS.includes(transition)) {
 |------|-----------|
 | 5MB | 1200px |
 | 1MB | 1000px |
+

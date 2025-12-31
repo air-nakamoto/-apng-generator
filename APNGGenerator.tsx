@@ -1646,21 +1646,18 @@ export default function APNGGenerator() {
                     const HEAVY_MEDIUM_EFFECTS = ['zoomUp', 'doorClose', 'cardFlipIn', 'sliceIn']
 
                     if (HEAVY_MEDIUM_EFFECTS.includes(transition)) {
-                        // zoomUp等: フルカラー・減色とも推定困難なため同じ高い係数
-                        // V121.5で256色6.0→実際7-13MB超過 → 25.0に統一
-                        compressionFactor = 25.0
+                        // zoomUp等: フルカラー・減色とも推定困難なため高い係数
+                        compressionFactor = step.colorNum === 0 ? 5.0 : 4.0
                     } else if (effectCategory === 'complex') {
-                        // glitchIn, pixelateIn: 過大評価傾向（安全側）
-                        // tvStaticIn: 過小評価だが暫定維持
-                        compressionFactor = step.colorNum === 0 ? 3.0 : 1.5
+                        // glitchIn, pixelateIn, tvStaticIn
+                        compressionFactor = step.colorNum === 0 ? 4.0 : 3.0
                     } else if (effectCategory === 'medium') {
                         // tileIn, irisIn, focusIn, pageFlipIn等
-                        // V121.5でirisIn(diamond)が5.46MB微超過 → 減色係数3.0→3.5
-                        compressionFactor = step.colorNum === 0 ? 4.0 : 3.5
+                        compressionFactor = step.colorNum === 0 ? 4.0 : 3.0
                     } else {
                         // 軽量: fadeIn, slideIn, wipeIn, blindIn
-                        // V121.5で全て成功（3.8-4.7MB）
-                        compressionFactor = step.colorNum === 0 ? 4.5 : 3.5
+                        // V121.10: 実測(fadeIn) フルカラー13.11MB/4.14=3.17, 256色2.31MB/1.02=2.26
+                        compressionFactor = step.colorNum === 0 ? 3.5 : 2.5
                     }
                     const estimatedFullSize = testSize * scaleRatio * compressionFactor
 
