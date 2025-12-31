@@ -1720,64 +1720,26 @@ export default function APNGGenerator() {
             }
 
             if (sizeLimit !== null) {
-                console.log(`縮小版実測テスト開始（V121.4）... エフェクト: ${transition} [${categoryLabel}]`)
+                // V121.19: エフェクト特性に応じた初期ステップ選択
+                // デルタ圧縮が効くエフェクト → フルカラー70%から開始
+                // デルタ圧縮が効かないエフェクト → 256色100%から開始
+                const LOW_DELTA_EFFICIENCY = ['zoomUp', 'zoomUpOut', 'fadeIn', 'fadeOut', 'tvStaticIn', 'tvStaticOut']
+                const startWith256 = LOW_DELTA_EFFICIENCY.includes(transition)
 
-                // テストサイズ: 200px、ただし元画像が200px以下ならそのままのサイズ
-                const longerSide = Math.max(sourceImage.width, sourceImage.height)
-                const testLongestSide = Math.min(200, longerSide)
-
-                for (let stepIndex = 0; stepIndex < COMPRESSION_STEPS.length; stepIndex++) {
-                    const step = COMPRESSION_STEPS[stepIndex]
-                    // 本番サイズとテストサイズを計算
-                    const targetScale = baseScale * step.scale
-                    const targetLongestSide = longerSide * targetScale
-                    const testScale = testLongestSide / longerSide
-
-                    // スケール比（実測データより、面積比ではなくスケール比に近い倍率が適切）
-                    const scaleRatio = targetLongestSide / testLongestSide
-
-                    console.log(`  ${step.name}: テスト ${Math.floor(sourceImage.width * testScale)}x${Math.floor(sourceImage.height * testScale)} → 本番 ${Math.floor(sourceImage.width * targetScale)}x${Math.floor(sourceImage.height * targetScale)}`)
-
-                    // 縮小版で実際にAPNG生成
-                    const testApng = generateFramesAtScale(testScale, step.colorNum)
-                    const testSize = testApng.byteLength
-
-                    // スケール比でフルサイズを推定 + 圧縮係数
-                    // V121.15: エフェクト別の係数を復活
-                    let compressionFactor: number
-
-                    // 超高デルタ効率（クリップ系）: フレーム間変化が少ない
-                    const VERY_HIGH_EFFICIENCY = ['wipeIn', 'wipeOut', 'tileIn', 'tileOut', 'blindIn', 'blindOut', 'irisIn', 'irisOut']
-
-                    // 低デルタ効率（スケール・ノイズ系）: フレーム間変化が大きい
-                    const LOW_EFFICIENCY = ['zoomUp', 'zoomUpOut', 'doorClose', 'doorOpen', 'tvStaticIn', 'tvStaticOut', 'enlarge', 'minimize']
-
-                    if (LOW_EFFICIENCY.includes(transition)) {
-                        // スケール変化・ノイズ系: デルタ圧縮が効きにくい
-                        // テスト0.25スケールでは変化が小さく見えるが、本番では大きい
-                        compressionFactor = step.colorNum === 0 ? 8.0 : 6.0
-                    } else if (VERY_HIGH_EFFICIENCY.includes(transition)) {
-                        // クリップ系: デルタ圧縮が非常に効く
-                        compressionFactor = step.colorNum === 0 ? 1.2 : 1.0
-                    } else {
-                        // 中間効率: fade, slide, focus, slice等
-                        compressionFactor = step.colorNum === 0 ? 3.0 : 2.0
-                    }
-                    const estimatedFullSize = testSize * scaleRatio * compressionFactor
-
-                    console.log(`    テスト: ${(testSize / 1024).toFixed(1)}KB × ${scaleRatio.toFixed(1)}倍 × ${compressionFactor} → 推定: ${(estimatedFullSize / 1024 / 1024).toFixed(2)}MB`)
-
-                    if (estimatedFullSize <= allowedBytes) {
-                        selectedStep = step
-                        selectedStepIndex = stepIndex
-                        estimatedSizeBytes = estimatedFullSize
-                        console.log(`    → ${step.name} を採用`)
-                        break
-                    }
-                    selectedStep = step
-                    selectedStepIndex = stepIndex
-                    estimatedSizeBytes = estimatedFullSize
+                if (startWith256) {
+                    // デルタ圧縮効かない → 256色100%から開始
+                    selectedStep = COMPRESSION_STEPS[3] // 256色100%
+                    selectedStepIndex = 3
+                    console.log(`256色チャレンジ開始（V121.18）... エフェクト: ${transition} [${categoryLabel}]`)
+                } else {
+                    // デルタ圧縮効く → フルカラー70%から開始
+                    selectedStep = COMPRESSION_STEPS[2] // フルカラー70%
+                    selectedStepIndex = 2
+                    console.log(`フルカラーチャレンジ開始（V121.18）... エフェクト: ${transition} [${categoryLabel}]`)
                 }
+
+                const targetScale = baseScale * selectedStep.scale
+                console.log(`  初期設定: ${selectedStep.name} (${Math.floor(sourceImage.width * targetScale)}x${Math.floor(sourceImage.height * targetScale)})`)
 
                 setGenerationPhase('generating')
             } else {
@@ -3057,69 +3019,124 @@ export default function APNGGenerator() {
             }
 
             const finalSizeMB = finalApng.byteLength / 1024 / 1024
-            console.log(`最終APNG: ${selectedStep.name} - サイズ: ${finalSizeMB.toFixed(2)}MB`)
+            const LOW_DELTA_EFFICIENCY = ['zoomUp', 'zoomUpOut', 'fadeIn', 'fadeOut', 'tvStaticIn', 'tvStaticOut']
+            const startedWith256 = LOW_DELTA_EFFICIENCY.includes(transition)
+            console.log(`${startedWith256 ? '256色100%' : 'フルカラー70%'}結果: ${finalSizeMB.toFixed(2)}MB`)
 
             // 実際のファイルサイズを記録
             setCompressionInfo(prev => prev ? { ...prev, actualMB: finalSizeMB } : null)
 
-            // V121.14: サイズ超過時の複数回リトライ機構
-            let currentStepIndex = selectedStepIndex
-            let retryCount = 0
-            const MAX_RETRIES = 5
+            // V121.18: エフェクト特性に応じた最適化
+            if (sizeLimit !== null) {
+                const SIZE_THRESHOLD_FULLCOLOR = 3.5 * 1024 * 1024  // 3.5MB以下ならフルカラーを試す
 
-            while (sizeLimit !== null && finalApng.byteLength > allowedBytes && retryCount < MAX_RETRIES) {
-                const nextStepIndex = currentStepIndex + 1
-                if (nextStepIndex >= COMPRESSION_STEPS.length) break
+                if (startedWith256) {
+                    // 256色100%から開始した場合
+                    if (finalApng.byteLength <= SIZE_THRESHOLD_FULLCOLOR) {
+                        // 余裕あり → フルカラー100%を試す
+                        console.log(`余裕あり(${finalSizeMB.toFixed(2)}MB ≤ 3.5MB): フルカラー100%を試します`)
+                        setGenerationPhase('optimizing')
 
-                console.log(`サイズ超過(${(finalApng.byteLength / 1024 / 1024).toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB): ${COMPRESSION_STEPS[nextStepIndex].name}で再生成します`)
-                setGenerationPhase('optimizing')
+                        const stepFull = COMPRESSION_STEPS[0] // フルカラー100%
+                        const scaleFull = baseScale * stepFull.scale
+                        // V121.19: generateFramesAtScaleを使用して正しいエフェクトを描画
+                        const apngFull = generateFramesAtScale(scaleFull, 0)
+                        const sizeFullMB = apngFull.byteLength / 1024 / 1024
+                        console.log(`フルカラー100%結果: ${sizeFullMB.toFixed(2)}MB`)
 
-                // 次のステップで再生成
-                const retryStep = COMPRESSION_STEPS[nextStepIndex]
-                const retryFinalScale = baseScale * retryStep.scale
-                const retryScaledWidth = Math.floor(sourceImage.width * retryFinalScale)
-                const retryScaledHeight = Math.floor(sourceImage.height * retryFinalScale)
+                        if (apngFull.byteLength <= allowedBytes) {
+                            finalApng = apngFull
+                            selectedStep = stepFull
+                            console.log(`→ フルカラー100%を採用`)
+                            setCompressionInfo({ colorNum: 0, estimatedMB: sizeFullMB, actualMB: sizeFullMB })
+                        } else {
+                            console.log(`フルカラー超過 → 256色100%を維持`)
+                        }
+                    } else if (finalApng.byteLength > allowedBytes) {
+                        // 超過 → 256色85%にフォールバック
+                        console.log(`サイズ超過(${finalSizeMB.toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB): 256色85%にフォールバック`)
+                        setGenerationPhase('optimizing')
 
-                canvas.width = retryScaledWidth
-                canvas.height = retryScaledHeight
-                ctx.clearRect(0, 0, retryScaledWidth, retryScaledHeight)
+                        const step85 = COMPRESSION_STEPS[4] // 256色85%
+                        const scale85 = baseScale * step85.scale
+                        // V121.19: generateFramesAtScaleを使用して正しいエフェクトを描画
+                        const apng85 = generateFramesAtScale(scale85, step85.colorNum)
+                        const size85MB = apng85.byteLength / 1024 / 1024
+                        console.log(`256色85%結果: ${size85MB.toFixed(2)}MB`)
 
-                // フレーム再生成（本番と同じ描画を使用）
-                const retryFrames: ArrayBuffer[] = []
-                const retryDelays: number[] = []
-
-                for (let i = 0; i < frameCount; i++) {
-                    const progress = i / (frameCount - 1)
-                    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-                    // フェード描画（リトライ用簡略化）
-                    if (transition.endsWith('Out')) {
-                        ctx.globalAlpha = 1 - progress
-                    } else if (transition.endsWith('In')) {
-                        ctx.globalAlpha = progress
+                        finalApng = apng85
+                        selectedStep = step85
+                        setCompressionInfo({ colorNum: step85.colorNum, estimatedMB: size85MB, actualMB: size85MB })
                     } else {
-                        ctx.globalAlpha = 1
+                        // 256色100%でちょうど良い
+                        console.log(`→ 256色100%を採用（適正範囲）`)
                     }
-                    ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, canvas.width, canvas.height)
-                    ctx.globalAlpha = 1
+                } else {
+                    // フルカラー70%から開始した場合（従来ロジック）
+                    const SIZE_THRESHOLD_85 = 3.5 * 1024 * 1024
+                    const SIZE_THRESHOLD_100 = 4.0 * 1024 * 1024
 
-                    retryFrames.push(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer)
-                    retryDelays.push(Math.round(1000 / fps))
-                    setGenerationProgress(0.5 + (i / frameCount) * 0.4)
+                    if (finalApng.byteLength <= SIZE_THRESHOLD_85) {
+                        // 余裕あり → フルカラー85%を試す
+                        console.log(`余裕あり(${finalSizeMB.toFixed(2)}MB ≤ 3.5MB): フルカラー85%を試します`)
+                        setGenerationPhase('optimizing')
+
+                        const step85 = COMPRESSION_STEPS[1] // フルカラー85%
+                        const scale85 = baseScale * step85.scale
+                        // V121.19: generateFramesAtScaleを使用して正しいエフェクトを描画
+                        const apng85 = generateFramesAtScale(scale85, 0)
+                        const size85MB = apng85.byteLength / 1024 / 1024
+                        console.log(`フルカラー85%結果: ${size85MB.toFixed(2)}MB`)
+
+                        if (apng85.byteLength <= allowedBytes) {
+                            if (apng85.byteLength <= SIZE_THRESHOLD_100) {
+                                console.log(`さらに余裕(${size85MB.toFixed(2)}MB ≤ 4MB): フルカラー100%を試します`)
+                                const step100 = COMPRESSION_STEPS[0]
+                                const scale100 = baseScale * step100.scale
+                                // V121.19: generateFramesAtScaleを使用して正しいエフェクトを描画
+                                const apng100 = generateFramesAtScale(scale100, 0)
+                                const size100MB = apng100.byteLength / 1024 / 1024
+                                console.log(`フルカラー100%結果: ${size100MB.toFixed(2)}MB`)
+
+                                if (apng100.byteLength <= allowedBytes) {
+                                    finalApng = apng100
+                                    selectedStep = step100
+                                    console.log(`→ フルカラー100%を採用`)
+                                    setCompressionInfo({ colorNum: 0, estimatedMB: size100MB, actualMB: size100MB })
+                                } else {
+                                    finalApng = apng85
+                                    selectedStep = step85
+                                    console.log(`→ フルカラー85%を採用（100%は超過）`)
+                                    setCompressionInfo({ colorNum: 0, estimatedMB: size85MB, actualMB: size85MB })
+                                }
+                            } else {
+                                finalApng = apng85
+                                selectedStep = step85
+                                console.log(`→ フルカラー85%を採用`)
+                                setCompressionInfo({ colorNum: 0, estimatedMB: size85MB, actualMB: size85MB })
+                            }
+                        } else {
+                            console.log(`フルカラー85%超過 → フルカラー70%を維持`)
+                        }
+                    } else if (finalApng.byteLength > allowedBytes) {
+                        // 超過 → 256色100%にフォールバック
+                        console.log(`サイズ超過(${finalSizeMB.toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB): 256色100%にフォールバック`)
+                        setGenerationPhase('optimizing')
+
+                        const step256 = COMPRESSION_STEPS[3] // 256色100%
+                        const scale256 = baseScale * step256.scale
+                        // V121.19: generateFramesAtScaleを使用して正しいエフェクトを描画
+                        const apng256 = generateFramesAtScale(scale256, step256.colorNum)
+                        const size256MB = apng256.byteLength / 1024 / 1024
+                        console.log(`256色100%結果: ${size256MB.toFixed(2)}MB`)
+
+                        finalApng = apng256
+                        selectedStep = step256
+                        setCompressionInfo({ colorNum: step256.colorNum, estimatedMB: size256MB, actualMB: size256MB })
+                    } else {
+                        console.log(`→ フルカラー70%を採用（適正範囲）`)
+                    }
                 }
-
-                // リトライAPNGをエンコード
-                const retryApng = UPNG.encode(retryFrames, canvas.width, canvas.height, retryStep.colorNum, retryDelays, { loop: isLooping ? 0 : 1 })
-                const retrySizeMB = retryApng.byteLength / 1024 / 1024
-                console.log(`リトライAPNG: ${retryStep.name} - サイズ: ${retrySizeMB.toFixed(2)}MB`)
-
-                setCompressionInfo({ colorNum: retryStep.colorNum, estimatedMB: retrySizeMB, actualMB: retrySizeMB })
-
-                // リトライ結果を使用
-                finalApng = retryApng
-                selectedStep = retryStep
-                currentStepIndex = nextStepIndex
-                retryCount++
             }
 
             if (sizeLimit !== null && finalApng.byteLength > targetBytes) {
