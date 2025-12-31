@@ -1743,18 +1743,25 @@ export default function APNGGenerator() {
                     const testSize = testApng.byteLength
 
                     // スケール比でフルサイズを推定 + 圧縮係数
-                    // V121.13: テスト描画が本番と同じになったため、係数を大幅に引き下げ
-                    // 係数は「テストサイズ→本番サイズ」のスケールアップ補正のみ
+                    // V121.15: エフェクト別の係数を復活
                     let compressionFactor: number
 
-                    // V121.13: 本番描画テストにより、係数は1.0に近づく
-                    // ただし、サイズ増加のオーバーヘッドを考慮して若干の補正
-                    if (step.colorNum === 0) {
-                        // フルカラー: スケール比の1.2倍程度
-                        compressionFactor = 1.2
+                    // 超高デルタ効率（クリップ系）: フレーム間変化が少ない
+                    const VERY_HIGH_EFFICIENCY = ['wipeIn', 'wipeOut', 'tileIn', 'tileOut', 'blindIn', 'blindOut', 'irisIn', 'irisOut']
+
+                    // 低デルタ効率（スケール・ノイズ系）: フレーム間変化が大きい
+                    const LOW_EFFICIENCY = ['zoomUp', 'zoomUpOut', 'doorClose', 'doorOpen', 'tvStaticIn', 'tvStaticOut', 'enlarge', 'minimize']
+
+                    if (LOW_EFFICIENCY.includes(transition)) {
+                        // スケール変化・ノイズ系: デルタ圧縮が効きにくい
+                        // テスト0.25スケールでは変化が小さく見えるが、本番では大きい
+                        compressionFactor = step.colorNum === 0 ? 8.0 : 6.0
+                    } else if (VERY_HIGH_EFFICIENCY.includes(transition)) {
+                        // クリップ系: デルタ圧縮が非常に効く
+                        compressionFactor = step.colorNum === 0 ? 1.2 : 1.0
                     } else {
-                        // 減色: 減色によるサイズ削減を考慮
-                        compressionFactor = 1.0
+                        // 中間効率: fade, slide, focus, slice等
+                        compressionFactor = step.colorNum === 0 ? 3.0 : 2.0
                     }
                     const estimatedFullSize = testSize * scaleRatio * compressionFactor
 
