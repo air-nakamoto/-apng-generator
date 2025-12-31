@@ -4,6 +4,8 @@
 // Worker環境ではwindowが存在しないため、selfをwindowとして定義
 self.window = self;
 
+// pakoを先に読み込む（UPNGが依存）
+importScripts('/pako.min.js');
 importScripts('/upng.min.js');
 
 self.onmessage = function (e) {
