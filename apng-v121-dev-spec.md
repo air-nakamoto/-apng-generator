@@ -281,28 +281,16 @@ APNGGenerator.tsx:
   - 小さい画像対応: 200px以下の画像はそのままのサイズでテスト
   - **目的**: フルカラー達成率向上、スケール比縮小による推定精度向上
 
+- **V121.9** (2025-12-31): Worker Error修正 ✅ 完了
+  - `pako.min.js`を`public/`にコピー
+  - `apng.worker.js`で`pako`を`upng`より先に読み込む
+  - **原因**: UPNGがpako依存だがWorker環境でpakoがロードされていなかった
+
 ---
 
 ## 残タスク（今後の計画）
 
-### 1. Worker Error修正（優先度: 高） 🔴
-
-**問題**: 
-```
-Error: Cannot read properties of undefined (reading 'deflate')
-```
-
-**影響**: 
-- Workerが失敗しメインスレッドにフォールバック
-- プログレスバーが80%付近で停止
-- 大きなファイルで処理が遅い
-
-**修正方針**:
-1. `public/apng.worker.js` でのUPNG読み込み確認
-2. `importScripts()` の順序・パス確認
-3. 必要ならUPNGをインライン化
-
-### 2. 退場・演出エフェクト係数調整（優先度: 中）
+### 1. 退場・演出エフェクト係数調整（優先度: 中）
 
 登場エフェクトの係数は検証済み。残り:
 - 退場エフェクト（fadeOut, slideOut, etc.）
