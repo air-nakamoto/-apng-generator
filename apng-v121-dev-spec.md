@@ -14,8 +14,8 @@
 
 ### 1. 初期リサイズ (Base Scale) - V121.4更新
 画像読み込み時および生成開始時に、以下の基準でリサイズ判定を行います。
-- **1MB制限時:** 長辺 **1400px** 以下
-- **5MB制限時:** 長辺 **2000px** 以下
+- **1MB制限時:** 長辺 **1000px** 以下
+- **5MB制限時:** 長辺 **1200px** 以下
 
 ※V121.3以前は1000px/1200pxだったが、制限ギリギリの高画質を狙うため引き上げ
 
@@ -267,3 +267,83 @@ APNGGenerator.tsx:
   - UIフェーズ表示追加（測定中/生成中/エンコード中）
   - ボタン押下直後にモーダル表示（即時フィードバック）
   - **検証結果**: 利用率17% → 93%に大幅改善、設計思想達成
+
+- **V121.6** (2025-12-31): 登場エフェクト係数修正 ✅ 検証完了
+  - HEAVY_MEDIUM (zoomUp, doorClose, cardFlipIn, sliceIn): 統一係数25.0
+  - medium減色係数: 3.0 → 3.5
+  - LIGHT_MEDIUM特別扱い削除（tileInは通常medium係数を使用）
+  - **検証結果**: 全13テストケース成功（5MB以下達成）
+
+- **V121.8** (2025-12-31): 初期サイズ最適化・フルカラー達成率向上
+  - Base Scale変更:
+    - 5MB制限: 2000px → **1200px**
+    - 1MB制限: 1400px → **1000px**
+  - 小さい画像対応: 200px以下の画像はそのままのサイズでテスト
+  - **目的**: フルカラー達成率向上、スケール比縮小による推定精度向上
+
+---
+
+## 残タスク（今後の計画）
+
+### 1. Worker Error修正（優先度: 高） 🔴
+
+**問題**: 
+```
+Error: Cannot read properties of undefined (reading 'deflate')
+```
+
+**影響**: 
+- Workerが失敗しメインスレッドにフォールバック
+- プログレスバーが80%付近で停止
+- 大きなファイルで処理が遅い
+
+**修正方針**:
+1. `public/apng.worker.js` でのUPNG読み込み確認
+2. `importScripts()` の順序・パス確認
+3. 必要ならUPNGをインライン化
+
+### 2. 退場・演出エフェクト係数調整（優先度: 中）
+
+登場エフェクトの係数は検証済み。残り:
+- 退場エフェクト（fadeOut, slideOut, etc.）
+- 演出エフェクト（rotate, vibration, glitch, etc.）
+
+### 3. 推定精度向上（優先度: 中）
+
+**現状の問題**:
+- テスト描画がフェード近似（本番と異なる）
+- 固定係数で画像複雑度を考慮しない
+
+**改善案**:
+- テスト描画を本番と同じに変更
+- テストサイズを本番の25%に変更（スケール比一定化）
+
+### 4. リトライ機構（優先度: 低）
+
+推定精度が改善されれば不要の可能性。
+超過時のみ1つ下のステップで再試行。
+
+---
+
+## 現在の係数設定（V121.6）
+
+```typescript
+if (HEAVY_MEDIUM_EFFECTS.includes(transition)) {
+    // zoomUp, doorClose, cardFlipIn, sliceIn
+    compressionFactor = 25.0
+} else if (effectCategory === 'complex') {
+    compressionFactor = step.colorNum === 0 ? 3.0 : 1.5
+} else if (effectCategory === 'medium') {
+    compressionFactor = step.colorNum === 0 ? 4.0 : 3.5
+} else {
+    // 軽量
+    compressionFactor = step.colorNum === 0 ? 4.5 : 3.5
+}
+```
+
+## 現在の初期サイズ設定（V121.8）
+
+| 制限 | 最大サイズ |
+|------|-----------|
+| 5MB | 1200px |
+| 1MB | 1000px |

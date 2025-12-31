@@ -1504,8 +1504,9 @@ export default function APNGGenerator() {
             // 高画質Base Scale（V121.4: 制限ギリギリを狙う）
             let baseScale = 1.0
             if (sizeLimit !== null) {
-                // 高画質優先: 5MB → 2000px, 1MB → 1400px
-                const maxDimension = sizeLimit >= 5 ? 2000 : 1400
+                // V121.8: さらに初期サイズを下げてフルカラー達成率向上
+                // 5MB → 1200px, 1MB → 1000px
+                const maxDimension = sizeLimit >= 5 ? 1200 : 1000
                 const longerSide = Math.max(sourceImage.width, sourceImage.height)
                 if (longerSide > maxDimension) {
                     baseScale = maxDimension / longerSide
@@ -1530,73 +1531,97 @@ export default function APNGGenerator() {
             let selectedStep = COMPRESSION_STEPS[0]
             let estimatedSizeBytes = 0
             const targetBytes = sizeLimit !== null ? sizeLimit * 1024 * 1024 : Infinity
+            // ココフォリアは制限より少し大きくても許容するため、バッファを設ける
+            // 5MB制限: 5.3MBまで許容（6%オーバー）、1MB制限: 1.2MBまで許容（20%オーバー）
+            const allowedOverage = sizeLimit !== null ? (sizeLimit >= 5 ? 1.06 : 1.2) : 1.0
+            const allowedBytes = targetBytes * allowedOverage
 
-            // フレーム生成ヘルパー（テスト用と本番用で共用）
+            // エフェクトカテゴリ定義（圧縮係数決定用）- 関数より先に定義
+            const LIGHT_EFFECTS = ['fadeIn', 'fadeOut', 'slideIn', 'slideOut', 'wipeIn', 'wipeOut', 'blindIn', 'blindOut', 'none']
+            const MEDIUM_EFFECTS = ['zoomUp', 'zoomUpOut', 'irisIn', 'irisOut', 'pageFlipIn', 'pageFlipOut', 'cardFlipIn', 'cardFlipOut', 'swordSlashOut', 'focusIn', 'focusOut', 'sliceIn', 'sliceOut', 'tileIn', 'tileOut']
+            const COMPLEX_EFFECTS = ['rgbShift', 'pixelate', 'pixelateIn', 'pixelateOut', 'glitch', 'glitchIn', 'glitchOut', 'tvStatic', 'tvStaticIn', 'tvStaticOut', 'pulsation', 'silhouette']
+            const effectCategory: 'light' | 'medium' | 'complex' = LIGHT_EFFECTS.includes(transition) ? 'light' : MEDIUM_EFFECTS.includes(transition) ? 'medium' : COMPLEX_EFFECTS.includes(transition) ? 'complex' : 'medium'
+            const isComplexEffect = effectCategory === 'complex'
+            const categoryLabel = effectCategory === 'light' ? '軽量' : effectCategory === 'medium' ? '中程度' : '複雑'
+
+            // フレーム生成ヘルパー（テスト専用キャンバスを使用）
             const generateFramesAtScale = (testScale: number, colorNum: number): ArrayBuffer => {
                 const testWidth = Math.floor(sourceImage.width * testScale)
                 const testHeight = Math.floor(sourceImage.height * testScale)
-                canvas.width = testWidth
-                canvas.height = testHeight
+
+                // テスト専用の独立したキャンバスを作成（本番キャンバスとの干渉を防ぐ）
+                const testCanvas = document.createElement('canvas')
+                testCanvas.width = testWidth
+                testCanvas.height = testHeight
+                const testCtx = testCanvas.getContext('2d')!
 
                 const testFrames: ArrayBuffer[] = []
                 const testDelays: number[] = []
 
                 const drawTestImage = (x: number, y: number, w: number, h: number) => {
-                    ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, y, w, h)
+                    testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, y, w, h)
                 }
 
                 for (let i = 0; i < frameCount; i++) {
                     const progress = i / (frameCount - 1)
-                    ctx.clearRect(0, 0, canvas.width, canvas.height)
+                    testCtx.clearRect(0, 0, testCanvas.width, testCanvas.height)
 
-                    // 簡略化されたエフェクト処理（主要なエフェクトのみ）
+                    // 簡略化されたエフェクト処理
                     switch (transition) {
                         case 'fadeIn':
-                            ctx.globalAlpha = progress
-                            drawTestImage(0, 0, canvas.width, canvas.height)
-                            ctx.globalAlpha = 1
+                            testCtx.globalAlpha = progress
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.globalAlpha = 1
                             break
                         case 'fadeOut':
                             if (effectIntensity !== 'none' || effectOption !== 'none') {
                                 if (progress >= 0.95) break
                             }
-                            ctx.globalAlpha = 1 - progress
-                            drawTestImage(0, 0, canvas.width, canvas.height)
-                            ctx.globalAlpha = 1
+                            testCtx.globalAlpha = 1 - progress
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.globalAlpha = 1
                             break
                         case 'none':
-                            drawTestImage(0, 0, canvas.width, canvas.height)
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             break
                         default:
-                            // その他のエフェクト: 簡略化（フェード近似）
-                            if (transition.endsWith('Out')) {
+                            // 複雑なエフェクト: フレーム毎にわずかなオフセットを加えてデルタ圧縮を無効化
+                            if (isComplexEffect) {
+                                // 1-2pxのランダムオフセットで各フレームを異ならせる
+                                const offsetX = (i % 3) - 1  // -1, 0, 1
+                                const offsetY = ((i + 1) % 3) - 1
+                                drawTestImage(offsetX, offsetY, testCanvas.width, testCanvas.height)
+                            } else if (transition.endsWith('Out')) {
                                 if (effectIntensity !== 'none' || effectOption !== 'none') {
                                     if (progress >= 0.95) break
                                 }
-                                ctx.globalAlpha = 1 - progress
+                                testCtx.globalAlpha = 1 - progress
+                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                                testCtx.globalAlpha = 1
                             } else if (transition.endsWith('In')) {
-                                ctx.globalAlpha = progress
+                                testCtx.globalAlpha = progress
+                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                                testCtx.globalAlpha = 1
                             } else {
-                                ctx.globalAlpha = 1
+                                testCtx.globalAlpha = 1
+                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             }
-                            drawTestImage(0, 0, canvas.width, canvas.height)
-                            ctx.globalAlpha = 1
                             break
                     }
 
-                    testFrames.push(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer)
+                    testFrames.push(testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height).data.buffer)
                     testDelays.push(Math.round(1000 / fps))
                 }
 
-                return UPNG.encode(testFrames, canvas.width, canvas.height, colorNum, testDelays, { loop: isLooping ? 0 : 1 })
+                return UPNG.encode(testFrames, testCanvas.width, testCanvas.height, colorNum, testDelays, { loop: isLooping ? 0 : 1 })
             }
 
             if (sizeLimit !== null) {
-                console.log('縮小版実測テスト開始（V121.4）...')
+                console.log(`縮小版実測テスト開始（V121.4）... エフェクト: ${transition} [${categoryLabel}]`)
 
-                // 固定200pxでテスト（高速・一貫性のため）
-                const testLongestSide = 200
+                // テストサイズ: 200px、ただし元画像が200px以下ならそのままのサイズ
                 const longerSide = Math.max(sourceImage.width, sourceImage.height)
+                const testLongestSide = Math.min(200, longerSide)
 
                 for (const step of COMPRESSION_STEPS) {
                     // 本番サイズとテストサイズを計算
@@ -1613,14 +1638,35 @@ export default function APNGGenerator() {
                     const testApng = generateFramesAtScale(testScale, step.colorNum)
                     const testSize = testApng.byteLength
 
-                    // スケール比でフルサイズを推定 + グローバル圧縮係数
-                    // 実測データより、APNGはスケール比の約75%程度のサイズになる
-                    const compressionFactor = 0.75
+                    // スケール比でフルサイズを推定 + 圧縮係数
+                    // V121.6: 登場エフェクト検証データに基づく係数修正（2024-12-31）
+                    let compressionFactor: number
+
+                    // エフェクト個別の係数（検証データより算出）
+                    const HEAVY_MEDIUM_EFFECTS = ['zoomUp', 'doorClose', 'cardFlipIn', 'sliceIn']
+
+                    if (HEAVY_MEDIUM_EFFECTS.includes(transition)) {
+                        // zoomUp等: フルカラー・減色とも推定困難なため同じ高い係数
+                        // V121.5で256色6.0→実際7-13MB超過 → 25.0に統一
+                        compressionFactor = 25.0
+                    } else if (effectCategory === 'complex') {
+                        // glitchIn, pixelateIn: 過大評価傾向（安全側）
+                        // tvStaticIn: 過小評価だが暫定維持
+                        compressionFactor = step.colorNum === 0 ? 3.0 : 1.5
+                    } else if (effectCategory === 'medium') {
+                        // tileIn, irisIn, focusIn, pageFlipIn等
+                        // V121.5でirisIn(diamond)が5.46MB微超過 → 減色係数3.0→3.5
+                        compressionFactor = step.colorNum === 0 ? 4.0 : 3.5
+                    } else {
+                        // 軽量: fadeIn, slideIn, wipeIn, blindIn
+                        // V121.5で全て成功（3.8-4.7MB）
+                        compressionFactor = step.colorNum === 0 ? 4.5 : 3.5
+                    }
                     const estimatedFullSize = testSize * scaleRatio * compressionFactor
 
                     console.log(`    テスト: ${(testSize / 1024).toFixed(1)}KB × ${scaleRatio.toFixed(1)}倍 × ${compressionFactor} → 推定: ${(estimatedFullSize / 1024 / 1024).toFixed(2)}MB`)
 
-                    if (estimatedFullSize <= targetBytes) {
+                    if (estimatedFullSize <= allowedBytes) {
                         selectedStep = step
                         estimatedSizeBytes = estimatedFullSize
                         console.log(`    → ${step.name} を採用`)
