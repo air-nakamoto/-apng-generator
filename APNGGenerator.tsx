@@ -1984,15 +1984,16 @@ export default function APNGGenerator() {
                             if (effectIntensity !== 'none' || effectOption !== 'none') {
                                 if (progress >= 0.95) break
                             }
-                            const flipOutDir = effectDirection === 'right' ? 1 : -1
-                            const scaleX = Math.cos(progress * Math.PI / 2)
-                            const w = Math.floor(testCanvas.width * scaleX)
-                            const x = flipOutDir === 1 ? 0 : Math.floor(testCanvas.width - w)
-                            if (w > 0) {
-                                testCtx.globalAlpha = 1 - progress * 0.5
-                                testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, 0, w, testCanvas.height)
-                                testCtx.globalAlpha = 1
-                            }
+                            testCtx.save()
+                            const flipOutCount = effectOption ? parseInt((effectOption as string).replace('x', '')) : 1
+                            const endAngleOut = (flipOutCount - 1) * Math.PI + (Math.PI / 2)
+                            const currentAngleOut = endAngleOut * progress
+                            const cardOutScale = Math.cos(currentAngleOut)
+                            testCtx.translate(testCanvas.width / 2, testCanvas.height / 2)
+                            testCtx.scale(cardOutScale, 1)
+                            testCtx.translate(-testCanvas.width / 2, -testCanvas.height / 2)
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
                             break
                         }
                         case 'pageFlipOut': {
