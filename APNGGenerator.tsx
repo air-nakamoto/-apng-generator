@@ -3164,6 +3164,11 @@ export default function APNGGenerator() {
                     const tryScale = baseScale * step.scale
                     console.log(`試行${retry + 1}: ${step.name} (scale=${tryScale.toFixed(3)})`)
 
+                    // リトライごとにプログレスを更新（90%から95%の間で進行）
+                    setGenerationProgress(0.9 + (retry / MAX_RETRIES) * 0.05)
+                    // UIに制御を戻す
+                    await new Promise(resolve => setTimeout(resolve, 16))
+
                     const tryApng = generateFramesAtScale(tryScale, step.colorNum)
                     const trySizeMB = tryApng.byteLength / 1024 / 1024
                     const estimatedMB = estimateSize(step) / 1024 / 1024
@@ -4095,7 +4100,7 @@ export default function APNGGenerator() {
                                             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                                                 <div
                                                     className="h-2 bg-blue-600 rounded-full transition-all duration-300 ease-in-out"
-                                                    style={{ width: (generationPhase === 'encoding' || generationPhase === 'completing') ? '100%' : `${generationProgress * 100}%` }}
+                                                    style={{ width: generationPhase === 'completing' ? '100%' : `${generationProgress * 100}%` }}
                                                 ></div>
                                             </div>
                                         </div>
