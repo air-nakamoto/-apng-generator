@@ -3977,21 +3977,10 @@ export default function APNGGenerator() {
                                         <h2 className="text-2xl font-bold mb-4 text-gray-800">APNG生成中</h2>
                                         <div className="mb-6">
                                             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                {generationPhase === 'encoding' ? (
-                                                    // エンコード中: 左右に動くアニメーション
-                                                    <div
-                                                        className="h-2 bg-blue-600 rounded-full w-1/3 animate-[shimmer_1.5s_ease-in-out_infinite]"
-                                                        style={{
-                                                            animation: 'shimmer 1.5s ease-in-out infinite',
-                                                        }}
-                                                    ></div>
-                                                ) : (
-                                                    // 通常: 進捗表示
-                                                    <div
-                                                        className="h-2 bg-blue-600 rounded-full transition-all duration-300 ease-in-out"
-                                                        style={{ width: `${generationProgress * 100}%` }}
-                                                    ></div>
-                                                )}
+                                                <div
+                                                    className="h-2 bg-blue-600 rounded-full transition-all duration-300 ease-in-out"
+                                                    style={{ width: generationPhase === 'encoding' ? '100%' : `${generationProgress * 100}%` }}
+                                                ></div>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-center">
