@@ -1815,6 +1815,119 @@ export default function APNGGenerator() {
                             }
                             break
                         }
+                        // --- 退場エフェクト（V121.21追加） ---
+                        case 'slideOut': {
+                            let offsetX = 0, offsetY = 0
+                            switch (effectDirection) {
+                                case 'left': offsetX = Math.floor(-progress * testCanvas.width); break
+                                case 'right': offsetX = Math.floor(progress * testCanvas.width); break
+                                case 'up': offsetY = Math.floor(-progress * testCanvas.height); break
+                                case 'down': default: offsetY = Math.floor(progress * testCanvas.height); break
+                            }
+                            drawTestImage(offsetX, offsetY, testCanvas.width, testCanvas.height)
+                            break
+                        }
+                        case 'wipeOut': {
+                            testCtx.save()
+                            testCtx.beginPath()
+                            switch (effectDirection) {
+                                case 'left': testCtx.rect(0, 0, Math.ceil(testCanvas.width * (1 - progress)), testCanvas.height); break
+                                case 'right': testCtx.rect(Math.floor(testCanvas.width * progress), 0, Math.ceil(testCanvas.width * (1 - progress)), testCanvas.height); break
+                                case 'up': testCtx.rect(0, 0, testCanvas.width, Math.ceil(testCanvas.height * (1 - progress))); break
+                                case 'down': default: testCtx.rect(0, Math.floor(testCanvas.height * progress), testCanvas.width, Math.ceil(testCanvas.height * (1 - progress))); break
+                            }
+                            testCtx.clip()
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'zoomUpOut':
+                        case 'zoomDownOut': {
+                            const isUp = transition === 'zoomUpOut'
+                            const scaleOut = isUp ? (1 + progress * 0.5) : (1 - progress * 0.5)
+                            const w = Math.floor(testCanvas.width * scaleOut)
+                            const h = Math.floor(testCanvas.height * scaleOut)
+                            const x = Math.floor(testCanvas.width / 2 - w / 2)
+                            const y = Math.floor(testCanvas.height / 2 - h / 2)
+                            testCtx.globalAlpha = 1 - progress
+                            testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, y, w, h)
+                            testCtx.globalAlpha = 1
+                            break
+                        }
+                        case 'doorOpen': {
+                            const halfW = Math.floor(testCanvas.width / 2)
+                            const openProgress = 1 - progress
+                            testCtx.drawImage(sourceImage, 0, 0, Math.floor(sourceImage.width / 2), sourceImage.height,
+                                Math.floor(-halfW + openProgress * halfW), 0, halfW, testCanvas.height)
+                            testCtx.drawImage(sourceImage, Math.floor(sourceImage.width / 2), 0, Math.floor(sourceImage.width / 2), sourceImage.height,
+                                Math.floor(testCanvas.width - openProgress * halfW), 0, halfW, testCanvas.height)
+                            break
+                        }
+                        case 'tvStaticOut': {
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            const staticData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height)
+                            const staticIntensity = progress
+                            for (let p = 0; p < staticData.data.length; p += 4) {
+                                if (Math.random() < staticIntensity) {
+                                    const noise = Math.random() * 255
+                                    staticData.data[p] = staticData.data[p + 1] = staticData.data[p + 2] = noise
+                                }
+                            }
+                            testCtx.putImageData(staticData, 0, 0)
+                            break
+                        }
+                        case 'blindOut': {
+                            const blindCount = effectOption ? parseInt(effectOption as string) : 7
+                            const isVertical = effectDirection === 'horizontal'
+                            for (let bi = 0; bi < blindCount; bi++) {
+                                const start = Math.floor(bi * (isVertical ? testCanvas.height : testCanvas.width) / blindCount)
+                                const next = Math.floor((bi + 1) * (isVertical ? testCanvas.height : testCanvas.width) / blindCount)
+                                const size = next - start
+                                const openAmount = Math.ceil((1 - progress) * size)
+                                testCtx.save()
+                                testCtx.beginPath()
+                                if (isVertical) { testCtx.rect(0, start, testCanvas.width, openAmount) }
+                                else { testCtx.rect(start, 0, openAmount, testCanvas.height) }
+                                testCtx.clip()
+                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                                testCtx.restore()
+                            }
+                            break
+                        }
+                        case 'irisOut': {
+                            const maxRadius = Math.max(testCanvas.width, testCanvas.height)
+                            const radius = maxRadius * (1 - progress)
+                            testCtx.save()
+                            testCtx.beginPath()
+                            testCtx.arc(testCanvas.width / 2, testCanvas.height / 2, radius, 0, Math.PI * 2)
+                            testCtx.clip()
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'tileOut': {
+                            const tileCount = effectOption ? parseInt(effectOption as string) : 4
+                            for (let ty = 0; ty < tileCount; ty++) {
+                                for (let tx = 0; tx < tileCount; tx++) {
+                                    const tileIndex = ty * tileCount + tx
+                                    const tileProgress = Math.max(0, Math.min(1, progress * tileCount * tileCount - tileIndex))
+                                    const tileAlpha = 1 - tileProgress
+                                    if (tileAlpha > 0) {
+                                        const tw = testCanvas.width / tileCount
+                                        const th = testCanvas.height / tileCount
+                                        testCtx.save()
+                                        testCtx.beginPath()
+                                        testCtx.rect(tx * tw, ty * th, tw, th)
+                                        testCtx.clip()
+                                        testCtx.globalAlpha = tileAlpha
+                                        drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                                        testCtx.globalAlpha = 1
+                                        testCtx.restore()
+                                    }
+                                }
+                            }
+                            break
+                        }
                         default:
                             // その他のエフェクト: フェード近似
                             if (transition.endsWith('Out')) {
