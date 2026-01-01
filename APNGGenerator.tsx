@@ -3068,6 +3068,9 @@ export default function APNGGenerator() {
                 finalApng = UPNG.encode(frames, canvas.width, canvas.height, selectedStep.colorNum, delays, { loop: isLooping ? 0 : 1 })
             }
 
+            // エンコード完了後、UIに制御を戻す（アニメーション継続のため）
+            await new Promise(resolve => setTimeout(resolve, 16))
+
             const finalSizeMB = finalApng.byteLength / 1024 / 1024
             console.log(`フルカラー100%結果: ${finalSizeMB.toFixed(2)}MB (許容: ${(allowedBytes / 1024 / 1024).toFixed(2)}MB)`)
 
@@ -3077,6 +3080,8 @@ export default function APNGGenerator() {
             // V121.22: 圧縮効率ベースの動的係数 + フルカラー70%ルール
             if (sizeLimit !== null && finalApng.byteLength > allowedBytes) {
                 setGenerationPhase('optimizing')
+                // UIに制御を戻す
+                await new Promise(resolve => setTimeout(resolve, 16))
 
                 const fullColorSize = finalApng.byteLength
                 console.log(`サイズ超過: ${finalSizeMB.toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB`)
@@ -3166,10 +3171,14 @@ export default function APNGGenerator() {
 
                     // リトライごとにプログレスを更新（90%から95%の間で進行）
                     setGenerationProgress(0.9 + (retry / MAX_RETRIES) * 0.05)
-                    // UIに制御を戻す
+                    // UIに制御を戻す（アニメーション継続のため）
                     await new Promise(resolve => setTimeout(resolve, 16))
 
                     const tryApng = generateFramesAtScale(tryScale, step.colorNum)
+
+                    // エンコード後もUIに制御を戻す
+                    await new Promise(resolve => setTimeout(resolve, 16))
+
                     const trySizeMB = tryApng.byteLength / 1024 / 1024
                     const estimatedMB = estimateSize(step) / 1024 / 1024
                     console.log(`  結果: ${trySizeMB.toFixed(2)}MB (推測: ${estimatedMB.toFixed(2)}MB)`)
@@ -3220,10 +3229,14 @@ export default function APNGGenerator() {
             setGenerationProgress(1)
             setGenerationPhase('completing')
 
-            await new Promise(resolve => setTimeout(resolve, 500))
+            // UIに制御を戻す（短い待機）
+            await new Promise(resolve => setTimeout(resolve, 100))
 
             a.click()
             URL.revokeObjectURL(url)
+
+            // ダウンロード開始後、少し待ってから完了状態に
+            await new Promise(resolve => setTimeout(resolve, 100))
 
             setGenerationState('completed')
             setGenerationPhase('idle')
