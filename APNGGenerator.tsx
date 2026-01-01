@@ -1997,23 +1997,19 @@ export default function APNGGenerator() {
                         }
                         case 'pageFlipOut': {
                             if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break
+                                if (progress >= 0.98) break
                             }
-                            const pageOutDir = effectDirection === 'right' ? 1 : -1
-                            const pageOutAngle = progress * Math.PI / 2
-                            const cosVal = Math.cos(pageOutAngle)
-                            const visibleW = Math.floor(testCanvas.width * cosVal)
-                            if (visibleW > 0) {
-                                testCtx.save()
-                                if (pageOutDir === 1) {
-                                    testCtx.scale(cosVal, 1)
-                                } else {
-                                    testCtx.translate(testCanvas.width, 0)
-                                    testCtx.scale(-cosVal, 1)
-                                }
-                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
-                                testCtx.restore()
+                            const isRightFlipOut = effectOption === 'right'
+                            testCtx.save()
+                            const flipOutSkew = progress * 0.5
+                            if (isRightFlipOut) {
+                                testCtx.transform(1 - progress, 0, flipOutSkew, 1, testCanvas.width * progress, 0)
+                            } else {
+                                testCtx.transform(1 - progress, 0, -flipOutSkew, 1, 0, 0)
                             }
+                            testCtx.globalAlpha = Math.max(0, Math.min(1, (1 - progress) * 1.5))
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
                             break
                         }
                         case 'swordSlashOut': {
