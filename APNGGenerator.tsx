@@ -155,7 +155,7 @@ export default function APNGGenerator() {
     const playbackSpeedRef = useRef<number>(1.0)
     const [error, setError] = useState<string | null>(null)
     const [generationProgress, setGenerationProgress] = useState(0)
-    const [generationPhase, setGenerationPhase] = useState<'idle' | 'measuring' | 'generating' | 'encoding' | 'optimizing'>('idle')
+    const [generationPhase, setGenerationPhase] = useState<'idle' | 'measuring' | 'generating' | 'encoding' | 'optimizing' | 'completing'>('idle')
     const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
     const [estimatedSize, setEstimatedSize] = useState<number | null>(null)
     // adjustToOneMB は sizeLimit に置換されたため削除
@@ -3213,6 +3213,7 @@ export default function APNGGenerator() {
             a.download = `apng-${transition}-${isLooping ? 'loop' : 'noloop'}.png`
 
             setGenerationProgress(1)
+            setGenerationPhase('completing')
 
             await new Promise(resolve => setTimeout(resolve, 500))
 
@@ -4094,7 +4095,7 @@ export default function APNGGenerator() {
                                             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                                                 <div
                                                     className="h-2 bg-blue-600 rounded-full transition-all duration-300 ease-in-out"
-                                                    style={{ width: generationPhase === 'encoding' ? '100%' : `${generationProgress * 100}%` }}
+                                                    style={{ width: (generationPhase === 'encoding' || generationPhase === 'completing') ? '100%' : `${generationProgress * 100}%` }}
                                                 ></div>
                                             </div>
                                         </div>
@@ -4113,6 +4114,9 @@ export default function APNGGenerator() {
                                             )}
                                             {generationPhase === 'optimizing' && (
                                                 <>サイズ最適化中... ({Math.floor(generationProgress * 100)}%)</>
+                                            )}
+                                            {generationPhase === 'completing' && (
+                                                <>ダウンロード準備中...</>
                                             )}
                                             {generationPhase === 'idle' && (
                                                 <>準備中...</>
