@@ -3008,46 +3008,48 @@ export default function APNGGenerator() {
             // 実際のファイルサイズを記録
             setCompressionInfo(prev => prev ? { ...prev, actualMB: finalSizeMB } : null)
 
-            // V121.20: トップダウン方式 + 推測ジャンプ
+            // V121.21: 推測サイズベースの最適ステップ選択
             if (sizeLimit !== null && finalApng.byteLength > allowedBytes) {
                 setGenerationPhase('optimizing')
 
-                // サイズ比から次のステップを推測
-                const ratio = allowedBytes / finalApng.byteLength
-                console.log(`サイズ超過: ratio=${ratio.toFixed(3)} (${finalSizeMB.toFixed(2)}MB → 目標${(allowedBytes / 1024 / 1024).toFixed(2)}MB)`)
+                const fullColorSize = finalApng.byteLength
+                console.log(`サイズ超過: ${finalSizeMB.toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB`)
 
-                // 推測ジャンプ先を決定
-                // ratio >= 0.7: 少し縮小で済む → フルカラー85%
-                // ratio >= 0.5: 中程度縮小 → フルカラー70%
-                // ratio >= 0.3: 色数削減で対応 → 256色100%（色数削減で約50%圧縮）
-                // ratio < 0.3: 大幅縮小必要 → 256色85%以下
-
-                let nextStepIndex: number
-                if (ratio >= 0.7) {
-                    nextStepIndex = 1 // フルカラー85%
-                    console.log(`推測: ratio≥0.7 → フルカラー85%を試行`)
-                } else if (ratio >= 0.5) {
-                    nextStepIndex = 2 // フルカラー70%
-                    console.log(`推測: ratio≥0.5 → フルカラー70%を試行`)
-                } else if (ratio >= 0.25) {
-                    nextStepIndex = 3 // 256色100%
-                    console.log(`推測: ratio≥0.25 → 256色100%を試行（色数削減）`)
-                } else {
-                    // ratio < 0.25: さらに縮小が必要
-                    const scaleRatio = Math.sqrt(ratio * 2) // 256色で約50%圧縮を想定
-                    if (scaleRatio >= 0.85) {
-                        nextStepIndex = 4 // 256色85%
-                    } else if (scaleRatio >= 0.70) {
-                        nextStepIndex = 5 // 256色70%
-                    } else {
-                        nextStepIndex = 6 // 128色60%
-                    }
-                    console.log(`推測: ratio<0.25, scaleRatio=${scaleRatio.toFixed(3)} → ステップ${nextStepIndex}`)
+                // 各ステップの推測サイズを計算
+                // 推測式: フルカラー100%サイズ × (scale^2) × 色係数
+                // 色係数: フルカラー=1.0, 256色=0.35, 128色=0.25, 64色=0.20
+                const estimateSize = (step: typeof COMPRESSION_STEPS[0]): number => {
+                    const areaRatio = step.scale * step.scale
+                    let colorFactor = 1.0
+                    if (step.colorNum === 256) colorFactor = 0.35
+                    else if (step.colorNum === 128) colorFactor = 0.25
+                    else if (step.colorNum === 64) colorFactor = 0.20
+                    return fullColorSize * areaRatio * colorFactor
                 }
 
-                // 推測したステップで生成してみる
-                let currentStepIndex = nextStepIndex
-                const MAX_RETRIES = 5
+                // 各ステップの推測サイズをログ出力
+                console.log(`【推測サイズ一覧】`)
+                COMPRESSION_STEPS.forEach((step, idx) => {
+                    const est = estimateSize(step) / 1024 / 1024
+                    const mark = est <= (allowedBytes / 1024 / 1024) ? '✓' : '✗'
+                    console.log(`  ${idx}: ${step.name} → 推測${est.toFixed(2)}MB ${mark}`)
+                })
+
+                // 制限内に収まる最も高画質なステップを特定（インデックス1から、0はフルカラー100%で既に超過）
+                let optimalStepIndex = COMPRESSION_STEPS.length - 1 // デフォルトは最後
+                for (let i = 1; i < COMPRESSION_STEPS.length; i++) {
+                    const estimated = estimateSize(COMPRESSION_STEPS[i])
+                    if (estimated <= allowedBytes) {
+                        optimalStepIndex = i
+                        break
+                    }
+                }
+
+                console.log(`最適ステップ推測: ${COMPRESSION_STEPS[optimalStepIndex].name}`)
+
+                // 推測したステップで生成
+                let currentStepIndex = optimalStepIndex
+                const MAX_RETRIES = 4
 
                 for (let retry = 0; retry < MAX_RETRIES && currentStepIndex < COMPRESSION_STEPS.length; retry++) {
                     const step = COMPRESSION_STEPS[currentStepIndex]
@@ -3056,7 +3058,8 @@ export default function APNGGenerator() {
 
                     const tryApng = generateFramesAtScale(tryScale, step.colorNum)
                     const trySizeMB = tryApng.byteLength / 1024 / 1024
-                    console.log(`  結果: ${trySizeMB.toFixed(2)}MB`)
+                    const estimatedMB = estimateSize(step) / 1024 / 1024
+                    console.log(`  結果: ${trySizeMB.toFixed(2)}MB (推測: ${estimatedMB.toFixed(2)}MB)`)
 
                     if (tryApng.byteLength <= allowedBytes) {
                         finalApng = tryApng
@@ -3065,13 +3068,13 @@ export default function APNGGenerator() {
                         setCompressionInfo({ colorNum: step.colorNum, estimatedMB: trySizeMB, actualMB: trySizeMB })
                         break
                     } else {
-                        console.log(`  まだ超過 → 次のステップへ`)
+                        console.log(`  超過 → 次のステップへ`)
                         currentStepIndex++
                     }
                 }
 
                 // 最終的に収まらなかった場合は最後のステップを使用
-                if (finalApng.byteLength > allowedBytes && currentStepIndex < COMPRESSION_STEPS.length) {
+                if (finalApng.byteLength > allowedBytes) {
                     const lastStep = COMPRESSION_STEPS[COMPRESSION_STEPS.length - 1]
                     const lastScale = baseScale * lastStep.scale
                     console.log(`最終フォールバック: ${lastStep.name}`)
