@@ -76,6 +76,62 @@ function calculateCRC32(data: Uint8Array): number {
     return (crc ^ 0xFFFFFFFF) >>> 0
 }
 
+/**
+ * Web Workerを使ってAPNGをエンコードする（UIブロック防止）
+ * V121.20: 汎用関数として抽出し、リトライ時にも使用可能に
+ */
+interface EncodeParams {
+    frames: ArrayBuffer[]
+    width: number
+    height: number
+    colorNum: number
+    delays: number[]
+    loop: number
+    onProgress?: (progress: number) => void
+}
+
+async function encodeApngWithWorker(params: EncodeParams): Promise<ArrayBuffer> {
+    const { frames, width, height, colorNum, delays, loop, onProgress } = params
+
+    return new Promise((resolve, reject) => {
+        const worker = new Worker('/apng.worker.js')
+
+        worker.onmessage = (e) => {
+            const { type, payload } = e.data
+            if (type === 'progress') {
+                onProgress?.(payload.progress)
+            } else if (type === 'complete') {
+                worker.terminate()
+                resolve(payload.apngBuffer)
+            } else if (type === 'error') {
+                worker.terminate()
+                reject(new Error(payload.message))
+            }
+        }
+
+        worker.onerror = (error) => {
+            worker.terminate()
+            reject(new Error(`Worker error: ${error.message}`))
+        }
+
+        // ArrayBufferをWorkerに転送（Transferable）
+        const transferableFrames = frames.map(f => f.slice(0))
+        worker.postMessage(
+            {
+                type: 'encode',
+                payload: {
+                    frames: transferableFrames,
+                    width,
+                    height,
+                    colorNum,
+                    delays,
+                    loop
+                }
+            },
+            transferableFrames
+        )
+    })
+}
 
 // タイル効果用のランダム順序（プレビュー・生成共通）
 const tileOrders: { [key: number]: number[] } = {
@@ -1611,7 +1667,8 @@ export default function APNGGenerator() {
             const categoryLabel = effectCategory === 'light' ? '軽量' : effectCategory === 'medium' ? '中程度' : '複雑'
 
             // フレーム生成ヘルパー（テスト専用キャンバスを使用）
-            const generateFramesAtScale = (testScale: number, colorNum: number): ArrayBuffer => {
+            // V121.20: フレーム生成のみ（エンコードは別途Workerで実行）
+            const generateFramesOnly = (testScale: number): { frames: ArrayBuffer[], delays: number[], width: number, height: number } => {
                 const testWidth = Math.floor(sourceImage.width * testScale)
                 const testHeight = Math.floor(sourceImage.height * testScale)
 
@@ -1781,8 +1838,13 @@ export default function APNGGenerator() {
                     testDelays.push(Math.round(1000 / fps))
                 }
 
-                console.log(`UPNG.encode loop設定: isLooping=${isLooping}, loop=${isLooping ? 0 : 1}`)
-                return UPNG.encode(testFrames, testCanvas.width, testCanvas.height, colorNum, testDelays, { loop: isLooping ? 0 : 1 })
+                // V121.20: エンコードせずフレームデータのみ返す（エンコードは呼び出し側でWorker使用）
+                return {
+                    frames: testFrames,
+                    delays: testDelays,
+                    width: testCanvas.width,
+                    height: testCanvas.height
+                }
             }
 
             // V121.20: トップダウン方式 - 常にフルカラー100%から開始
@@ -3017,51 +3079,20 @@ export default function APNGGenerator() {
                 canvas.height = scaledHeight
             }
 
-            // Web Workerでエンコード（UIブロック防止）
-            const encodeWithWorker = (): Promise<ArrayBuffer> => {
-                return new Promise((resolve, reject) => {
-                    const worker = new Worker('/apng.worker.js')
-
-                    worker.onmessage = (e) => {
-                        const { type, payload } = e.data
-                        if (type === 'progress') {
-                            setGenerationProgress(payload.progress)
-                        } else if (type === 'complete') {
-                            worker.terminate()
-                            resolve(payload.apngBuffer)
-                        } else if (type === 'error') {
-                            worker.terminate()
-                            reject(new Error(payload.message))
-                        }
-                    }
-
-                    worker.onerror = (error) => {
-                        worker.terminate()
-                        reject(new Error(`Worker error: ${error.message}`))
-                    }
-
-                    // ArrayBufferをWorkerに転送（Transferable）
-                    const transferableFrames = frames.map(f => f.slice(0))
-                    worker.postMessage(
-                        {
-                            type: 'encode',
-                            payload: {
-                                frames: transferableFrames,
-                                width: canvas.width,
-                                height: canvas.height,
-                                colorNum: selectedStep.colorNum,
-                                delays,
-                                loop: (() => { console.log(`Worker送信 loop設定: isLooping=${isLooping}, loop=${isLooping ? 0 : 1}`); return isLooping ? 0 : 1; })()
-                            }
-                        },
-                        transferableFrames
-                    )
-                })
-            }
+            // V121.20: 共通のWorkerエンコード関数を使用
+            console.log(`Worker送信 loop設定: isLooping=${isLooping}, loop=${isLooping ? 0 : 1}`)
 
             let finalApng: ArrayBuffer
             try {
-                finalApng = await encodeWithWorker()
+                finalApng = await encodeApngWithWorker({
+                    frames,
+                    width: canvas.width,
+                    height: canvas.height,
+                    colorNum: selectedStep.colorNum,
+                    delays,
+                    loop: isLooping ? 0 : 1,
+                    onProgress: setGenerationProgress
+                })
             } catch (workerError) {
                 // Workerが失敗した場合はフォールバック（同期処理）
                 console.warn('Worker failed, falling back to main thread:', workerError)
@@ -3174,10 +3205,25 @@ export default function APNGGenerator() {
                     // UIに制御を戻す（アニメーション継続のため）
                     await new Promise(resolve => setTimeout(resolve, 16))
 
-                    const tryApng = generateFramesAtScale(tryScale, step.colorNum)
+                    // V121.20: フレーム生成 + 非同期Workerエンコード
+                    const frameData = generateFramesOnly(tryScale)
+                    console.log(`UPNG.encode loop設定: isLooping=${isLooping}, loop=${isLooping ? 0 : 1}`)
 
-                    // エンコード後もUIに制御を戻す
-                    await new Promise(resolve => setTimeout(resolve, 16))
+                    let tryApng: ArrayBuffer
+                    try {
+                        tryApng = await encodeApngWithWorker({
+                            frames: frameData.frames,
+                            width: frameData.width,
+                            height: frameData.height,
+                            colorNum: step.colorNum,
+                            delays: frameData.delays,
+                            loop: isLooping ? 0 : 1,
+                            onProgress: (p) => setGenerationProgress(0.9 + (retry / MAX_RETRIES) * 0.05 + p * 0.01)
+                        })
+                    } catch (workerError) {
+                        console.warn('Worker failed in retry, falling back:', workerError)
+                        tryApng = UPNG.encode(frameData.frames, frameData.width, frameData.height, step.colorNum, frameData.delays, { loop: isLooping ? 0 : 1 })
+                    }
 
                     const trySizeMB = tryApng.byteLength / 1024 / 1024
                     const estimatedMB = estimateSize(step) / 1024 / 1024
@@ -3200,7 +3246,22 @@ export default function APNGGenerator() {
                     const lastStep = COMPRESSION_STEPS[COMPRESSION_STEPS.length - 1]
                     const lastScale = baseScale * lastStep.scale
                     console.log(`最終フォールバック: ${lastStep.name}`)
-                    finalApng = generateFramesAtScale(lastScale, lastStep.colorNum)
+
+                    const lastFrameData = generateFramesOnly(lastScale)
+                    try {
+                        finalApng = await encodeApngWithWorker({
+                            frames: lastFrameData.frames,
+                            width: lastFrameData.width,
+                            height: lastFrameData.height,
+                            colorNum: lastStep.colorNum,
+                            delays: lastFrameData.delays,
+                            loop: isLooping ? 0 : 1
+                        })
+                    } catch (workerError) {
+                        console.warn('Worker failed in fallback, falling back:', workerError)
+                        finalApng = UPNG.encode(lastFrameData.frames, lastFrameData.width, lastFrameData.height, lastStep.colorNum, lastFrameData.delays, { loop: isLooping ? 0 : 1 })
+                    }
+
                     selectedStep = lastStep
                     const lastSizeMB = finalApng.byteLength / 1024 / 1024
                     setCompressionInfo({ colorNum: lastStep.colorNum, estimatedMB: lastSizeMB, actualMB: lastSizeMB })
