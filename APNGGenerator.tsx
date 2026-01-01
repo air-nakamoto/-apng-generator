@@ -1928,6 +1928,122 @@ export default function APNGGenerator() {
                             }
                             break
                         }
+                        // --- 追加の退場エフェクト（V121.22） ---
+                        case 'glitchOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break
+                            }
+                            const glitchOutBase = effectOption === 'weak' ? 0.15 : effectOption === 'strong' ? 0.5 : 0.3
+                            const glitchOutIntensity = progress
+                            testCtx.globalAlpha = 1 - progress
+                            for (let s = 0; s < 10; s++) {
+                                const sliceY = Math.floor(s * testCanvas.height / 10)
+                                const nextSliceY = Math.floor((s + 1) * testCanvas.height / 10)
+                                const sliceH = nextSliceY - sliceY
+                                const srcSliceY = Math.floor(s * sourceImage.height / 10)
+                                const srcSliceH = Math.floor(sourceImage.height / 10)
+                                const offsetX = Math.floor((Math.random() - 0.5) * testCanvas.width * glitchOutBase * glitchOutIntensity)
+                                if (sliceH > 0 && srcSliceH > 0) {
+                                    testCtx.drawImage(sourceImage, 0, srcSliceY, sourceImage.width, srcSliceH, offsetX, sliceY, testCanvas.width, sliceH)
+                                }
+                            }
+                            testCtx.globalAlpha = 1
+                            break
+                        }
+                        case 'focusOut': {
+                            if (effectOption !== 'none' && progress >= 0.99) break
+                            if (effectOption === 'fade') testCtx.globalAlpha = 1 - progress
+                            testCtx.filter = `blur(${progress * 20}px)`
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.filter = 'none'
+                            if (effectOption === 'fade') testCtx.globalAlpha = 1
+                            break
+                        }
+                        case 'sliceOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break
+                            }
+                            const sliceOutCount = effectOption ? parseInt(effectOption as string) : 4
+                            testCtx.globalAlpha = 1 - progress
+                            for (let s = 0; s < sliceOutCount; s++) {
+                                const dstY = Math.floor(s * testCanvas.height / sliceOutCount)
+                                const dstNextY = Math.floor((s + 1) * testCanvas.height / sliceOutCount)
+                                const dstH = dstNextY - dstY
+                                const srcY = Math.floor(s * sourceImage.height / sliceOutCount)
+                                const srcNextY = Math.floor((s + 1) * sourceImage.height / sliceOutCount)
+                                const srcH = srcNextY - srcY
+                                const offsetX = (s % 2 === 0 ? -1 : 1) * progress * testCanvas.width * 0.5
+                                if (dstH > 0 && srcH > 0) {
+                                    testCtx.drawImage(sourceImage, 0, srcY, sourceImage.width, srcH, offsetX, dstY, testCanvas.width, dstH)
+                                }
+                            }
+                            testCtx.globalAlpha = 1
+                            break
+                        }
+                        case 'cardFlipOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break
+                            }
+                            const flipOutDir = effectDirection === 'right' ? 1 : -1
+                            const scaleX = Math.cos(progress * Math.PI / 2)
+                            const w = Math.floor(testCanvas.width * scaleX)
+                            const x = flipOutDir === 1 ? 0 : Math.floor(testCanvas.width - w)
+                            if (w > 0) {
+                                testCtx.globalAlpha = 1 - progress * 0.5
+                                testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, x, 0, w, testCanvas.height)
+                                testCtx.globalAlpha = 1
+                            }
+                            break
+                        }
+                        case 'pageFlipOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break
+                            }
+                            const pageOutDir = effectDirection === 'right' ? 1 : -1
+                            const pageOutAngle = progress * Math.PI / 2
+                            const cosVal = Math.cos(pageOutAngle)
+                            const visibleW = Math.floor(testCanvas.width * cosVal)
+                            if (visibleW > 0) {
+                                testCtx.save()
+                                if (pageOutDir === 1) {
+                                    testCtx.scale(cosVal, 1)
+                                } else {
+                                    testCtx.translate(testCanvas.width, 0)
+                                    testCtx.scale(-cosVal, 1)
+                                }
+                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                                testCtx.restore()
+                            }
+                            break
+                        }
+                        case 'swordSlashOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break
+                            }
+                            if (progress < 0.3) {
+                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            } else if (progress < 0.5) {
+                                const slashProg = (progress - 0.3) / 0.2
+                                testCtx.globalAlpha = slashProg * 0.8
+                                testCtx.fillStyle = 'white'
+                                testCtx.fillRect(0, 0, testCanvas.width, testCanvas.height)
+                                testCtx.globalAlpha = 1
+                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            } else {
+                                const fadeProg = (progress - 0.5) / 0.5
+                                const numSlices = 4
+                                for (let s = 0; s < numSlices; s++) {
+                                    const sliceH = testCanvas.height / numSlices
+                                    const sliceY = s * sliceH
+                                    const offsetX = (s % 2 === 0 ? -1 : 1) * fadeProg * testCanvas.width * 0.3
+                                    testCtx.globalAlpha = 1 - fadeProg
+                                    testCtx.drawImage(sourceImage, 0, Math.floor(s * sourceImage.height / numSlices), sourceImage.width, Math.floor(sourceImage.height / numSlices),
+                                        offsetX, sliceY, testCanvas.width, sliceH)
+                                }
+                                testCtx.globalAlpha = 1
+                            }
+                            break
+                        }
                         default:
                             // その他のエフェクト: フェード近似
                             if (transition.endsWith('Out')) {
