@@ -94,3 +94,16 @@ body {
         @apply bg-background text-foreground;
     }
 }
+
+/* プログレスバーのシマーアニメーション（エンコード中） */
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    50% {
+        transform: translateX(200%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
