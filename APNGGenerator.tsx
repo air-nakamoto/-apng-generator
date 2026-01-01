@@ -11,6 +11,71 @@ import { findEffectByName, findCategoryByEffectName } from './constants/transiti
 // @ts-ignore
 import UPNG from 'upng-js'
 
+/**
+ * APNGのacTLチャンクのnum_playsを修正する
+ * UPNGは常にnum_plays=0（無限ループ）でエンコードするため、
+ * ループなしの場合はバイナリを直接修正する必要がある
+ * @param apngData - UPNG.encodeで生成されたArrayBuffer
+ * @param numPlays - 再生回数（0=無限、1=1回のみ、など）
+ * @returns 修正されたArrayBuffer
+ */
+function setApngLoopCount(apngData: ArrayBuffer, numPlays: number): ArrayBuffer {
+    const data = new Uint8Array(apngData)
+
+    // acTLチャンクを探す（'acTL' = 0x61, 0x63, 0x54, 0x4C）
+    for (let i = 8; i < data.length - 12; i++) {
+        if (data[i] === 0x61 && data[i + 1] === 0x63 &&
+            data[i + 2] === 0x54 && data[i + 3] === 0x4C) {
+            // acTLチャンク発見: チャンクタイプの後にnum_frames(4bytes)とnum_plays(4bytes)
+            // num_playsはオフセット i+8 から i+11 (4バイト、ビッグエンディアン)
+            const numPlaysOffset = i + 8
+            data[numPlaysOffset] = (numPlays >> 24) & 0xFF
+            data[numPlaysOffset + 1] = (numPlays >> 16) & 0xFF
+            data[numPlaysOffset + 2] = (numPlays >> 8) & 0xFF
+            data[numPlaysOffset + 3] = numPlays & 0xFF
+
+            // CRCを再計算（チャンクタイプ + データ）
+            // acTLのデータ長は8バイト
+            const crcStart = i  // チャンクタイプの開始位置
+            const crcData = data.slice(crcStart, crcStart + 12)  // 'acTL' + 8バイトデータ
+            const crc = calculateCRC32(crcData)
+
+            // CRCを書き込み（データの直後）
+            const crcOffset = crcStart + 12
+            data[crcOffset] = (crc >> 24) & 0xFF
+            data[crcOffset + 1] = (crc >> 16) & 0xFF
+            data[crcOffset + 2] = (crc >> 8) & 0xFF
+            data[crcOffset + 3] = crc & 0xFF
+
+            console.log(`acTLチャンクを修正: num_plays=${numPlays}`)
+            break
+        }
+    }
+
+    return data.buffer
+}
+
+/**
+ * CRC32を計算する（PNG仕様準拠）
+ */
+function calculateCRC32(data: Uint8Array): number {
+    // CRC32テーブル（PNG/zlib標準）
+    const crcTable: number[] = []
+    for (let n = 0; n < 256; n++) {
+        let c = n
+        for (let k = 0; k < 8; k++) {
+            c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1))
+        }
+        crcTable[n] = c
+    }
+
+    let crc = 0xFFFFFFFF
+    for (let i = 0; i < data.length; i++) {
+        crc = crcTable[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8)
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0
+}
+
 
 // タイル効果用のランダム順序（プレビュー・生成共通）
 const tileOrders: { [key: number]: number[] } = {
@@ -1716,6 +1781,7 @@ export default function APNGGenerator() {
                     testDelays.push(Math.round(1000 / fps))
                 }
 
+                console.log(`UPNG.encode loop設定: isLooping=${isLooping}, loop=${isLooping ? 0 : 1}`)
                 return UPNG.encode(testFrames, testCanvas.width, testCanvas.height, colorNum, testDelays, { loop: isLooping ? 0 : 1 })
             }
 
@@ -2985,7 +3051,7 @@ export default function APNGGenerator() {
                                 height: canvas.height,
                                 colorNum: selectedStep.colorNum,
                                 delays,
-                                loop: isLooping ? 0 : 1
+                                loop: (() => { console.log(`Worker送信 loop設定: isLooping=${isLooping}, loop=${isLooping ? 0 : 1}`); return isLooping ? 0 : 1; })()
                             }
                         },
                         transferableFrames
@@ -3008,23 +3074,52 @@ export default function APNGGenerator() {
             // 実際のファイルサイズを記録
             setCompressionInfo(prev => prev ? { ...prev, actualMB: finalSizeMB } : null)
 
-            // V121.21: 推測サイズベースの最適ステップ選択
+            // V121.22: 圧縮効率ベースの動的係数 + フルカラー70%ルール
             if (sizeLimit !== null && finalApng.byteLength > allowedBytes) {
                 setGenerationPhase('optimizing')
 
                 const fullColorSize = finalApng.byteLength
                 console.log(`サイズ超過: ${finalSizeMB.toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB`)
 
-                // 各ステップの推測サイズを計算
-                // 推測式: フルカラー100%サイズ × (scale^2) × 色係数
-                // 色係数: フルカラー=1.0, 256色=0.35, 128色=0.25, 64色=0.20
+                // 圧縮効率を算出（低いほど圧縮が効いている）
+                const rawSize = scaledWidth * scaledHeight * 4 * frameCount
+                const compressionRatio = fullColorSize / rawSize
+                console.log(`圧縮効率: ${(compressionRatio * 100).toFixed(1)}% (${(rawSize / 1024 / 1024).toFixed(1)}MB → ${finalSizeMB.toFixed(2)}MB)`)
+
+                // 圧縮効率から色数別係数を動的に計算
+                // 圧縮が効いている（ratio低い）→ 256色でさらに圧縮される
+                // 圧縮が効いていない（ratio高い）→ 256色でもあまり変わらない
+                const color256Factor = 0.15 + (compressionRatio * 0.8)
+                const color128Factor = 0.10 + (compressionRatio * 0.6)
+                const color64Factor = 0.08 + (compressionRatio * 0.5)
+                console.log(`動的係数: 256色=${color256Factor.toFixed(2)}, 128色=${color128Factor.toFixed(2)}, 64色=${color64Factor.toFixed(2)}`)
+
+                // 推測サイズを計算
                 const estimateSize = (step: typeof COMPRESSION_STEPS[0]): number => {
                     const areaRatio = step.scale * step.scale
                     let colorFactor = 1.0
-                    if (step.colorNum === 256) colorFactor = 0.35
-                    else if (step.colorNum === 128) colorFactor = 0.25
-                    else if (step.colorNum === 64) colorFactor = 0.20
+                    if (step.colorNum === 256) colorFactor = color256Factor
+                    else if (step.colorNum === 128) colorFactor = color128Factor
+                    else if (step.colorNum === 64) colorFactor = color64Factor
                     return fullColorSize * areaRatio * colorFactor
+                }
+
+                // フルカラー70%ルール: 70%までならフルカラー、それ以上縮小なら256色へ
+                const fc70Size = fullColorSize * 0.70 * 0.70  // 70%スケール
+                const color256Size = estimateSize({ colorNum: 256, scale: 1.0, name: '256色100%' })
+
+                console.log(`【フルカラー70%ルール判定】`)
+                console.log(`  FC70%推測: ${(fc70Size / 1024 / 1024).toFixed(2)}MB`)
+                console.log(`  256色100%推測: ${(color256Size / 1024 / 1024).toFixed(2)}MB`)
+
+                let useFullColor70Rule = false
+                if (fc70Size <= allowedBytes) {
+                    // FC70%で収まる → フルカラーを優先
+                    useFullColor70Rule = true
+                    console.log(`  → フルカラー70%で収まる見込み、フルカラー優先`)
+                } else {
+                    // FC70%でも超過 → 256色へ移行
+                    console.log(`  → フルカラー70%でも超過、256色へ移行`)
                 }
 
                 // 各ステップの推測サイズをログ出力
@@ -3035,13 +3130,26 @@ export default function APNGGenerator() {
                     console.log(`  ${idx}: ${step.name} → 推測${est.toFixed(2)}MB ${mark}`)
                 })
 
-                // 制限内に収まる最も高画質なステップを特定（インデックス1から、0はフルカラー100%で既に超過）
-                let optimalStepIndex = COMPRESSION_STEPS.length - 1 // デフォルトは最後
-                for (let i = 1; i < COMPRESSION_STEPS.length; i++) {
-                    const estimated = estimateSize(COMPRESSION_STEPS[i])
-                    if (estimated <= allowedBytes) {
-                        optimalStepIndex = i
-                        break
+                // 最適ステップを決定
+                let optimalStepIndex = COMPRESSION_STEPS.length - 1
+
+                if (useFullColor70Rule) {
+                    // フルカラー優先: 85% → 70% の順で試す
+                    for (let i = 1; i <= 2; i++) {  // インデックス1=85%, 2=70%
+                        const estimated = estimateSize(COMPRESSION_STEPS[i])
+                        if (estimated <= allowedBytes) {
+                            optimalStepIndex = i
+                            break
+                        }
+                    }
+                } else {
+                    // 256色へ移行: 256色100%から試す
+                    for (let i = 3; i < COMPRESSION_STEPS.length; i++) {
+                        const estimated = estimateSize(COMPRESSION_STEPS[i])
+                        if (estimated <= allowedBytes) {
+                            optimalStepIndex = i
+                            break
+                        }
                     }
                 }
 
@@ -3089,6 +3197,13 @@ export default function APNGGenerator() {
 
             if (sizeLimit !== null && finalApng.byteLength > targetBytes) {
                 console.warn(`警告: 目標サイズ(${sizeLimit}MB)を超過: ${(finalApng.byteLength / 1024 / 1024).toFixed(2)}MB`)
+            }
+
+            // ループなしの場合、acTLチャンクのnum_playsを1に修正
+            // UPNGは常にnum_plays=0（無限ループ）でエンコードするため、バイナリを直接修正
+            if (!isLooping) {
+                finalApng = setApngLoopCount(finalApng, 1)
+                console.log('ループなし設定を適用: num_plays=1')
             }
 
             const blob = new Blob([finalApng], { type: 'image/png' })
