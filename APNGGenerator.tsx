@@ -3780,49 +3780,96 @@ export default function APNGGenerator() {
 
             // V121.20: 共通のWorkerエンコード関数を使用
             console.log(`Worker送信 loop設定: isLooping=${isLooping}, loop=${isLooping ? 0 : 1}`)
-            console.time('⏱初回エンコード')
 
+            // V121.32: 初回エンコードスキップ最適化（実験的）
+            const SKIP_INITIAL_ENCODE = true  // falseにすると従来動作
+            const rawSize = scaledWidth * scaledHeight * 4 * frameCount
+
+            // エフェクト別の推定圧縮率（フルカラー100%時）
+            const EFFECT_COMPRESSION_RATIOS: Record<string, number> = {
+                // 軽量エフェクト（圧縮が効きやすい）
+                fadeIn: 0.15, fadeOut: 0.15,
+                slideIn: 0.10, slideOut: 0.10,
+                wipeIn: 0.10, wipeOut: 0.10,
+                blindIn: 0.10, blindOut: 0.10,
+                tileIn: 0.08, tileOut: 0.08,
+                irisIn: 0.08, irisOut: 0.08,
+                sliceIn: 0.16, sliceOut: 0.16,
+                // 中程度
+                rotate: 0.19, spiral: 0.12, bounce: 0.18,
+                enlarge: 0.22, minimize: 0.22,
+                zoomUp: 0.17, zoomUpOut: 0.17,
+                doorClose: 0.07, doorOpen: 0.07,
+                cardFlipIn: 0.14, cardFlipOut: 0.14, cardFlipLoop: 0.13,
+                pageFlipIn: 0.09, pageFlipOut: 0.09,
+                focusIn: 0.13, focusOut: 0.13,
+                pixelateIn: 0.05, pixelateOut: 0.05,
+                // 演出エフェクト
+                rgbShift: 0.20, pulsation: 0.20, scanlines: 0.19,
+                vignette: 0.20, flash: 0.15, silhouette: 0.14,
+                concentrationLines: 0.21, vibration: 0.16, glitch: 0.20,
+                // 高負荷（圧縮が効きにくい）
+                tvStaticIn: 0.21, tvStaticOut: 0.21, tvStatic: 0.35,
+                glitchIn: 0.15, glitchOut: 0.15,
+            }
+            const estimatedRatio = EFFECT_COMPRESSION_RATIOS[transition] || 0.20
+            const estimatedFullColorSize = rawSize * estimatedRatio
+            const estimatedSizeMB = estimatedFullColorSize / 1024 / 1024
+
+            let skipInitialEncode = false
             let finalApng: ArrayBuffer
-            try {
-                finalApng = await encodeApngWithWorker({
-                    frames,
-                    width: canvas.width,
-                    height: canvas.height,
-                    colorNum: selectedStep.colorNum,
-                    delays,
-                    loop: isLooping ? 0 : 1,
-                    onProgress: setGenerationProgress
-                })
-            } catch (workerError) {
-                // Workerが失敗した場合はフォールバック（同期処理）
-                console.warn('Worker failed, falling back to main thread:', workerError)
-                finalApng = UPNG.encode(frames, canvas.width, canvas.height, selectedStep.colorNum, delays, { loop: isLooping ? 0 : 1 })
+
+            // サイズ制限があり、推定サイズが許容の2倍以上なら初回スキップ
+            if (SKIP_INITIAL_ENCODE && sizeLimit !== null && estimatedFullColorSize > allowedBytes * 2) {
+                skipInitialEncode = true
+                console.log(`⚡ 初回エンコードスキップ: 推定${estimatedSizeMB.toFixed(1)}MB > 許容${(allowedBytes / 1024 / 1024).toFixed(1)}MBの2倍`)
+                // ダミーのArrayBufferを設定（後でリトライで上書き）
+                finalApng = new ArrayBuffer(0)
+            } else {
+                console.time('⏱初回エンコード')
+                try {
+                    finalApng = await encodeApngWithWorker({
+                        frames,
+                        width: canvas.width,
+                        height: canvas.height,
+                        colorNum: selectedStep.colorNum,
+                        delays,
+                        loop: isLooping ? 0 : 1,
+                        onProgress: setGenerationProgress
+                    })
+                } catch (workerError) {
+                    // Workerが失敗した場合はフォールバック（同期処理）
+                    console.warn('Worker failed, falling back to main thread:', workerError)
+                    finalApng = UPNG.encode(frames, canvas.width, canvas.height, selectedStep.colorNum, delays, { loop: isLooping ? 0 : 1 })
+                }
+                console.timeEnd('⏱初回エンコード')
             }
 
             // エンコード完了後、UIに制御を戻す（アニメーション継続のため）
             await new Promise(resolve => setTimeout(resolve, 16))
 
-            console.timeEnd('⏱初回エンコード')
-            const finalSizeMB = finalApng.byteLength / 1024 / 1024
-            console.log(`フルカラー100%結果: ${finalSizeMB.toFixed(2)}MB (許容: ${(allowedBytes / 1024 / 1024).toFixed(2)}MB)`)
+            const finalSizeMB = skipInitialEncode ? estimatedSizeMB : finalApng.byteLength / 1024 / 1024
+            const actualFullColorSize = skipInitialEncode ? estimatedFullColorSize : finalApng.byteLength
+            console.log(`フルカラー100%結果: ${finalSizeMB.toFixed(2)}MB (許容: ${(allowedBytes / 1024 / 1024).toFixed(2)}MB)${skipInitialEncode ? ' [推定]' : ''}`)
 
             // 実際のファイルサイズを記録
             setCompressionInfo(prev => prev ? { ...prev, actualMB: finalSizeMB } : null)
 
             // V121.22: 圧縮効率ベースの動的係数 + フルカラー70%ルール
-            if (sizeLimit !== null && finalApng.byteLength > allowedBytes) {
+            if (sizeLimit !== null && (skipInitialEncode || finalApng.byteLength > allowedBytes)) {
                 console.time('⏱圧縮リトライ')
                 setGenerationPhase('optimizing')
                 // UIに制御を戻す
                 await new Promise(resolve => setTimeout(resolve, 16))
 
-                const fullColorSize = finalApng.byteLength
-                console.log(`サイズ超過: ${finalSizeMB.toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB`)
+                const fullColorSize = actualFullColorSize
+                if (!skipInitialEncode) {
+                    console.log(`サイズ超過: ${finalSizeMB.toFixed(2)}MB > ${(allowedBytes / 1024 / 1024).toFixed(2)}MB`)
+                }
 
                 // 圧縮効率を算出（低いほど圧縮が効いている）
-                const rawSize = scaledWidth * scaledHeight * 4 * frameCount
-                const compressionRatio = fullColorSize / rawSize
-                console.log(`圧縮効率: ${(compressionRatio * 100).toFixed(1)}% (${(rawSize / 1024 / 1024).toFixed(1)}MB → ${finalSizeMB.toFixed(2)}MB)`)
+                const compressionRatio = skipInitialEncode ? estimatedRatio : fullColorSize / rawSize
+                console.log(`圧縮効率: ${(compressionRatio * 100).toFixed(1)}% (${(rawSize / 1024 / 1024).toFixed(1)}MB → ${finalSizeMB.toFixed(2)}MB)${skipInitialEncode ? ' [推定]' : ''}`)
 
                 // 圧縮効率から色数別係数を動的に計算
                 // 圧縮が効いている（ratio低い）→ 256色でさらに圧縮される
