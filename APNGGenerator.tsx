@@ -2240,8 +2240,10 @@ export default function APNGGenerator() {
                         case 'tvStatic': {
                             drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             const tvData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height)
+                            // ループ時は常に一定の砂嵐を表示（progressを使わない）
+                            const noiseIntensity = 0.5
                             for (let p = 0; p < tvData.data.length; p += 4) {
-                                if (Math.random() < 1 - progress) {
+                                if (Math.random() < noiseIntensity) {
                                     const noise = Math.random() * 255
                                     tvData.data[p] = (tvData.data[p] + noise) / 2
                                     tvData.data[p + 1] = (tvData.data[p + 1] + noise) / 2
@@ -2531,6 +2533,7 @@ export default function APNGGenerator() {
                 selectedStep = COMPRESSION_STEPS[0] // フルカラー100%
                 selectedStepIndex = 0
                 console.log(`トップダウン方式開始（V121.20）... エフェクト: ${transition} [${categoryLabel}]`)
+                console.time('⏱総生成時間')
                 setGenerationPhase('generating')
             } else {
                 // 容量制限なしはフルカラー
@@ -2564,6 +2567,7 @@ export default function APNGGenerator() {
             }
 
             // フレーム生成（選択したスケールで1回のみ）
+            console.time('⏱フレーム生成')
             let frames: ArrayBuffer[] = []
             let delays: number[] = []
 
@@ -2774,8 +2778,10 @@ export default function APNGGenerator() {
                     case 'tvStatic':
                         ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, canvas.width, canvas.height)
                         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                        // ループ時は常に一定の砂嵐を表示（progressを使わない）
+                        const staticIntensity = 0.5
                         for (let i = 0; i < imageData.data.length; i += 4) {
-                            if (Math.random() < 1 - progress) {
+                            if (Math.random() < staticIntensity) {
                                 const noise = Math.random() * 255
                                 imageData.data[i] = (imageData.data[i] + noise) / 2
                                 imageData.data[i + 1] = (imageData.data[i + 1] + noise) / 2
@@ -3756,6 +3762,7 @@ export default function APNGGenerator() {
                 delays.push(3600000);
             }
 
+            console.timeEnd('⏱フレーム生成')
             setGenerationProgress(0.9)
             setGenerationPhase('encoding')
             // エンコード前にUIに制御を戻す
@@ -3773,6 +3780,7 @@ export default function APNGGenerator() {
 
             // V121.20: 共通のWorkerエンコード関数を使用
             console.log(`Worker送信 loop設定: isLooping=${isLooping}, loop=${isLooping ? 0 : 1}`)
+            console.time('⏱初回エンコード')
 
             let finalApng: ArrayBuffer
             try {
@@ -3794,6 +3802,7 @@ export default function APNGGenerator() {
             // エンコード完了後、UIに制御を戻す（アニメーション継続のため）
             await new Promise(resolve => setTimeout(resolve, 16))
 
+            console.timeEnd('⏱初回エンコード')
             const finalSizeMB = finalApng.byteLength / 1024 / 1024
             console.log(`フルカラー100%結果: ${finalSizeMB.toFixed(2)}MB (許容: ${(allowedBytes / 1024 / 1024).toFixed(2)}MB)`)
 
@@ -3802,6 +3811,7 @@ export default function APNGGenerator() {
 
             // V121.22: 圧縮効率ベースの動的係数 + フルカラー70%ルール
             if (sizeLimit !== null && finalApng.byteLength > allowedBytes) {
+                console.time('⏱圧縮リトライ')
                 setGenerationPhase('optimizing')
                 // UIに制御を戻す
                 await new Promise(resolve => setTimeout(resolve, 16))
@@ -3826,26 +3836,42 @@ export default function APNGGenerator() {
                 // fadeIn: デルタ圧縮が非常に効く（推測37-64%）→ 0.5で補正
                 // tvStaticIn: ノイズでデルタ圧縮が効かない（推測134-205%）→ 2.0で補正
                 const EFFECT_DELTA_FACTORS: Record<string, number> = {
-                    // 超高効率（フレーム間変化が局所的）→ 推測を下げる
-                    fadeIn: 0.5,
-                    fadeOut: 0.5,
-                    wipeIn: 0.6,
-                    wipeOut: 0.6,
-                    tileIn: 0.6,
-                    tileOut: 0.6,
-                    blindIn: 0.6,
-                    blindOut: 0.6,
-                    irisIn: 0.7,
-                    irisOut: 0.7,
-                    // 低効率（フレーム間変化が大きい）→ 推測を上げる
-                    tvStaticIn: 2.0,
-                    tvStaticOut: 2.0,
-                    glitchIn: 1.5,
-                    glitchOut: 1.5,
-                    zoomUp: 1.3,
-                    zoomUpOut: 1.3,
-                    doorClose: 1.3,
-                    doorOpen: 1.3,
+                    // 入退場エフェクト（V121.31: In/Out同期）
+                    fadeIn: 0.63, fadeOut: 0.63,
+                    wipeIn: 1.13, wipeOut: 1.13,
+                    slideIn: 1.13, slideOut: 1.13,
+                    sliceIn: 0.49, sliceOut: 0.49,
+                    tileIn: 1.33, tileOut: 1.33,
+                    blindIn: 1.18, blindOut: 1.18,
+                    irisIn: 0.7, irisOut: 0.7,
+                    focusIn: 0.78, focusOut: 0.78,
+                    pageFlipIn: 1.11, pageFlipOut: 1.11,
+                    cardFlipIn: 1.12, cardFlipOut: 1.12,
+                    swordSlashIn: 1.71, swordSlashOut: 1.71,
+                    zoomUp: 0.64, zoomUpOut: 0.64,
+                    doorClose: 0.60, doorOpen: 0.60,
+                    pixelateIn: 1.0, pixelateOut: 1.0,
+                    lightLeakIn: 1.0, lightLeakOut: 1.0,
+                    // 演出エフェクト
+                    rgbShift: 0.68,
+                    pulsation: 0.88,
+                    scanlines: 0.80,
+                    vignette: 0.89,
+                    concentrationLines: 0.83,
+                    flash: 0.95,
+                    glitch: 1.00,
+                    silhouette: 0.88,
+                    cardFlipLoop: 1.14,
+                    rotate: 1.04,
+                    enlarge: 0.96,
+                    minimize: 0.96,
+                    spiral: 1.19,
+                    bounce: 1.05,
+                    vibration: 1.31,
+                    // 特殊（ノイズ系）
+                    tvStaticIn: 1.80, tvStaticOut: 1.80,
+                    tvStatic: 1.17,
+                    glitchIn: 0.69, glitchOut: 0.69,
                 }
                 const effectDeltaFactor = EFFECT_DELTA_FACTORS[transition] || 1.0
                 console.log(`エフェクト補正: ${transition} → ${effectDeltaFactor}`)
@@ -3866,52 +3892,50 @@ export default function APNGGenerator() {
                 const fc70Size = fullColorSize * 0.70 * 0.70  // 70%スケール
                 const color256Size = estimateSize({ colorNum: 256, scale: 1.0, name: '256色100%' })
 
-                console.log(`【フルカラー70%ルール判定】`)
-                console.log(`  FC70%推測: ${(fc70Size / 1024 / 1024).toFixed(2)}MB`)
-                console.log(`  256色100%推測: ${(color256Size / 1024 / 1024).toFixed(2)}MB`)
+                // V121.25: ログ簡略化（開発時のみ詳細出力）
+                const isDev = process.env.NODE_ENV === 'development'
+                if (isDev) {
+                    console.log(`【フルカラー70%ルール判定】FC70%推測: ${(fc70Size / 1024 / 1024).toFixed(2)}MB, 256色100%推測: ${(color256Size / 1024 / 1024).toFixed(2)}MB`)
+                }
 
                 let useFullColor70Rule = false
                 if (fc70Size <= allowedBytes) {
-                    // FC70%で収まる → フルカラーを優先
                     useFullColor70Rule = true
-                    console.log(`  → フルカラー70%で収まる見込み、フルカラー優先`)
+                    if (isDev) console.log(`  → フルカラー70%で収まる見込み、フルカラー優先`)
                 } else {
-                    // FC70%でも超過 → 256色へ移行
-                    console.log(`  → フルカラー70%でも超過、256色へ移行`)
+                    if (isDev) console.log(`  → フルカラー70%でも超過、256色へ移行`)
                 }
 
-                // 各ステップの推測サイズをログ出力
-                console.log(`【推測サイズ一覧】`)
-                COMPRESSION_STEPS.forEach((step, idx) => {
-                    const est = estimateSize(step) / 1024 / 1024
-                    const mark = est <= (allowedBytes / 1024 / 1024) ? '✓' : '✗'
-                    console.log(`  ${idx}: ${step.name} → 推測${est.toFixed(2)}MB ${mark}`)
-                })
+                // V121.25: 安全マージン15%追加でリトライ削減
+                const SAFETY_MARGIN = 0.85  // 推測サイズの85%以下なら採用（15%マージン）
+                const safeAllowedBytes = allowedBytes * SAFETY_MARGIN
 
-                // 最適ステップを決定
-                let optimalStepIndex = COMPRESSION_STEPS.length - 1
+                // 最適ステップを決定（安全マージン付き）
+                let optimalStepIndex: number
 
                 if (useFullColor70Rule) {
-                    // フルカラー優先: 85% → 70% の順で試す
-                    for (let i = 1; i <= 2; i++) {  // インデックス1=85%, 2=70%
+                    // フルカラー優先: 85% → 70% の順で試す、見つからなければ70%をデフォルトに
+                    optimalStepIndex = 2  // デフォルト: フルカラー70%
+                    for (let i = 1; i <= 2; i++) {
                         const estimated = estimateSize(COMPRESSION_STEPS[i])
-                        if (estimated <= allowedBytes) {
+                        if (estimated <= safeAllowedBytes) {
                             optimalStepIndex = i
                             break
                         }
                     }
                 } else {
                     // 256色へ移行: 256色100%から試す
+                    optimalStepIndex = 3  // デフォルト: 256色100%
                     for (let i = 3; i < COMPRESSION_STEPS.length; i++) {
                         const estimated = estimateSize(COMPRESSION_STEPS[i])
-                        if (estimated <= allowedBytes) {
+                        if (estimated <= safeAllowedBytes) {
                             optimalStepIndex = i
                             break
                         }
                     }
                 }
 
-                console.log(`最適ステップ推測: ${COMPRESSION_STEPS[optimalStepIndex].name}`)
+                console.log(`最適ステップ: ${COMPRESSION_STEPS[optimalStepIndex].name} (推測${(estimateSize(COMPRESSION_STEPS[optimalStepIndex]) / 1024 / 1024).toFixed(2)}MB, 許容${(allowedBytes / 1024 / 1024).toFixed(2)}MB)`)
 
                 // 推測したステップで生成
                 let currentStepIndex = optimalStepIndex
@@ -3955,6 +3979,7 @@ export default function APNGGenerator() {
                         finalApng = tryApng
                         selectedStep = step
                         console.log(`→ ${step.name}を採用`)
+                        console.timeEnd('⏱圧縮リトライ')
                         setCompressionInfo({ colorNum: step.colorNum, estimatedMB: trySizeMB, actualMB: trySizeMB })
                         break
                     } else {
@@ -3991,6 +4016,8 @@ export default function APNGGenerator() {
             } else if (sizeLimit !== null) {
                 console.log(`→ フルカラー100%を採用（制限内）`)
             }
+
+            console.timeEnd('⏱総生成時間')
 
             if (sizeLimit !== null && finalApng.byteLength > targetBytes) {
                 console.warn(`警告: 目標サイズ(${sizeLimit}MB)を超過: ${(finalApng.byteLength / 1024 / 1024).toFixed(2)}MB`)
