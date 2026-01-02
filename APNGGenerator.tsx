@@ -348,7 +348,7 @@ export default function APNGGenerator() {
         if (!sourceImage || !previewCanvasRef.current || !previewContainerRef.current) return
 
         const canvas = previewCanvasRef.current
-        const ctx = canvas.getContext('2d')
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
         if (!ctx) return
 
         // プレビューサイズを計算（コンテナに収まる最大サイズ）
@@ -535,7 +535,7 @@ export default function APNGGenerator() {
                 const tempCanvas = document.createElement('canvas')
                 tempCanvas.width = canvas.width / pixelSize
                 tempCanvas.height = canvas.height / pixelSize
-                const tempCtx = tempCanvas.getContext('2d')!
+                const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true })!
                 tempCtx.drawImage(sourceImage, 0, 0, tempCanvas.width, tempCanvas.height)
                 ctx.imageSmoothingEnabled = false
                 // fadeオプションの場合、透明度も変化
@@ -800,7 +800,7 @@ export default function APNGGenerator() {
                 const tempOutCanvas = document.createElement('canvas')
                 tempOutCanvas.width = canvas.width / pixelOutSize
                 tempOutCanvas.height = canvas.height / pixelOutSize
-                const tempOutCtx = tempOutCanvas.getContext('2d')!
+                const tempOutCtx = tempOutCanvas.getContext('2d', { willReadFrequently: true })!
                 tempOutCtx.drawImage(sourceImage, 0, 0, tempOutCanvas.width, tempOutCanvas.height)
                 ctx.imageSmoothingEnabled = false
                 // fadeオプションの場合、透明度も変化
@@ -1625,9 +1625,9 @@ export default function APNGGenerator() {
             // 高画質Base Scale（V121.4: 制限ギリギリを狙う）
             let baseScale = 1.0
             if (sizeLimit !== null) {
-                // V121.8: さらに初期サイズを下げてフルカラー達成率向上
+                // V121.23: 10MB以上の場合は高解像度(2000px)を許容
                 // 5MB → 1200px, 1MB → 1000px
-                const maxDimension = sizeLimit >= 5 ? 1200 : 1000
+                const maxDimension = sizeLimit >= 10 ? 2000 : (sizeLimit >= 5 ? 1200 : 1000)
                 const longerSide = Math.max(sourceImage.width, sourceImage.height)
                 if (longerSide > maxDimension) {
                     baseScale = maxDimension / longerSide
@@ -1676,7 +1676,7 @@ export default function APNGGenerator() {
                 const testCanvas = document.createElement('canvas')
                 testCanvas.width = testWidth
                 testCanvas.height = testHeight
-                const testCtx = testCanvas.getContext('2d')!
+                const testCtx = testCanvas.getContext('2d', { willReadFrequently: true })!
 
                 const testFrames: ArrayBuffer[] = []
                 const testDelays: number[] = []
@@ -1812,6 +1812,121 @@ export default function APNGGenerator() {
                                         testCtx.restore()
                                     }
                                 }
+                            }
+                            break
+                        }
+                        // --- 追加の登場エフェクト（V121.22追加） ---
+                        case 'glitchIn': {
+                            const glitchInBase = effectOption === 'weak' ? 0.15 : effectOption === 'strong' ? 0.5 : 0.3
+                            const glitchInIntensity = 1 - progress
+                            testCtx.globalAlpha = progress
+                            for (let s = 0; s < 10; s++) {
+                                const sliceY = Math.floor(s * testCanvas.height / 10)
+                                const nextSliceY = Math.floor((s + 1) * testCanvas.height / 10)
+                                const sliceH = nextSliceY - sliceY
+                                const srcSliceY = Math.floor(s * sourceImage.height / 10)
+                                const srcSliceH = Math.floor(sourceImage.height / 10)
+                                const offsetX = Math.floor((Math.random() - 0.5) * testCanvas.width * glitchInBase * glitchInIntensity)
+                                if (sliceH > 0 && srcSliceH > 0) {
+                                    testCtx.drawImage(sourceImage, 0, srcSliceY, sourceImage.width, srcSliceH, offsetX, sliceY, testCanvas.width, sliceH)
+                                }
+                            }
+                            testCtx.globalAlpha = 1
+                            break
+                        }
+                        case 'focusIn': {
+                            testCtx.filter = `blur(${(1 - progress) * 20}px)`
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.filter = 'none'
+                            break
+                        }
+                        case 'sliceIn': {
+                            const sliceInCount = effectOption ? parseInt(effectOption as string) : 4
+                            testCtx.globalAlpha = progress
+                            for (let s = 0; s < sliceInCount; s++) {
+                                const dstY = Math.floor(s * testCanvas.height / sliceInCount)
+                                const dstNextY = Math.floor((s + 1) * testCanvas.height / sliceInCount)
+                                const dstH = dstNextY - dstY
+                                const srcY = Math.floor(s * sourceImage.height / sliceInCount)
+                                const srcNextY = Math.floor((s + 1) * sourceImage.height / sliceInCount)
+                                const srcH = srcNextY - srcY
+                                const offsetX = (s % 2 === 0 ? -1 : 1) * (1 - progress) * testCanvas.width * 0.5
+                                if (dstH > 0 && srcH > 0) {
+                                    testCtx.drawImage(sourceImage, 0, srcY, sourceImage.width, srcH, offsetX, dstY, testCanvas.width, dstH)
+                                }
+                            }
+                            testCtx.globalAlpha = 1
+                            break
+                        }
+                        case 'pixelateIn': {
+                            const maxPixelSize = 32
+                            const pixelSize = Math.max(1, Math.floor(maxPixelSize * (1 - progress)))
+                            const tempCanvas = document.createElement('canvas')
+                            const smallW = Math.max(1, Math.floor(testCanvas.width / pixelSize))
+                            const smallH = Math.max(1, Math.floor(testCanvas.height / pixelSize))
+                            tempCanvas.width = smallW
+                            tempCanvas.height = smallH
+                            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true })!
+                            tempCtx.drawImage(sourceImage, 0, 0, smallW, smallH)
+                            testCtx.imageSmoothingEnabled = false
+                            testCtx.drawImage(tempCanvas, 0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.imageSmoothingEnabled = true
+                            break
+                        }
+                        case 'cardFlipIn': {
+                            testCtx.save()
+                            const flipInCount = effectOption ? parseInt((effectOption as string).replace('x', '')) : 1
+                            const startAngleIn = (flipInCount - 1) * Math.PI + (Math.PI / 2)
+                            const currentAngleIn = startAngleIn * (1 - progress)
+                            const cardInScale = Math.cos(currentAngleIn)
+                            testCtx.translate(testCanvas.width / 2, testCanvas.height / 2)
+                            testCtx.scale(cardInScale, 1)
+                            testCtx.translate(-testCanvas.width / 2, -testCanvas.height / 2)
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'pageFlipIn': {
+                            const isRightFlipIn = effectOption === 'right'
+                            testCtx.save()
+                            const flipInSkew = (1 - progress) * 0.5
+                            if (isRightFlipIn) {
+                                testCtx.transform(progress, 0, -flipInSkew, 1, testCanvas.width * (1 - progress), 0)
+                            } else {
+                                testCtx.transform(progress, 0, flipInSkew, 1, 0, 0)
+                            }
+                            testCtx.globalAlpha = Math.max(0, Math.min(1, progress * 1.5))
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'swordSlashIn': {
+                            if (progress < 0.3) {
+                                const flashProg = progress / 0.3
+                                testCtx.globalAlpha = flashProg * 0.8
+                                testCtx.fillStyle = 'white'
+                                testCtx.fillRect(0, 0, testCanvas.width, testCanvas.height)
+                                testCtx.globalAlpha = 1
+                            } else if (progress < 0.5) {
+                                const slashProg = (progress - 0.3) / 0.2
+                                testCtx.globalAlpha = 1 - slashProg * 0.2
+                                testCtx.fillStyle = 'white'
+                                testCtx.fillRect(0, 0, testCanvas.width, testCanvas.height)
+                                testCtx.globalAlpha = slashProg
+                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                                testCtx.globalAlpha = 1
+                            } else {
+                                const fadeProg = (progress - 0.5) / 0.5
+                                const numSlices = 4
+                                for (let s = 0; s < numSlices; s++) {
+                                    const sliceH = testCanvas.height / numSlices
+                                    const sliceY = s * sliceH
+                                    const offsetX = (s % 2 === 0 ? -1 : 1) * (1 - fadeProg) * testCanvas.width * 0.3
+                                    testCtx.globalAlpha = 0.5 + fadeProg * 0.5
+                                    testCtx.drawImage(sourceImage, 0, Math.floor(s * sourceImage.height / numSlices), sourceImage.width, Math.floor(sourceImage.height / numSlices),
+                                        offsetX, sliceY, testCanvas.width, sliceH)
+                                }
+                                testCtx.globalAlpha = 1
                             }
                             break
                         }
@@ -2039,6 +2154,343 @@ export default function APNGGenerator() {
                                 }
                                 testCtx.globalAlpha = 1
                             }
+                            break
+                        }
+                        case 'pixelateOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break
+                            }
+                            const maxPixelSizeOut = 32
+                            const pixelSizeOut = Math.max(1, Math.floor(maxPixelSizeOut * progress))
+                            const tempCanvasOut = document.createElement('canvas')
+                            const smallWOut = Math.max(1, Math.floor(testCanvas.width / pixelSizeOut))
+                            const smallHOut = Math.max(1, Math.floor(testCanvas.height / pixelSizeOut))
+                            tempCanvasOut.width = smallWOut
+                            tempCanvasOut.height = smallHOut
+                            const tempCtxOut = tempCanvasOut.getContext('2d', { willReadFrequently: true })!
+                            tempCtxOut.drawImage(sourceImage, 0, 0, smallWOut, smallHOut)
+                            testCtx.imageSmoothingEnabled = false
+                            testCtx.globalAlpha = 1 - progress * 0.5
+                            testCtx.drawImage(tempCanvasOut, 0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.globalAlpha = 1
+                            testCtx.imageSmoothingEnabled = true
+                            break
+                        }
+                        // === 演出エフェクト ===
+                        case 'rotate': {
+                            const rotateDir = effectOption === 'right' ? 1 : -1
+                            testCtx.save()
+                            testCtx.translate(testCanvas.width / 2, testCanvas.height / 2)
+                            testCtx.rotate(progress * Math.PI * 2 * rotateDir)
+                            testCtx.translate(-testCanvas.width / 2, -testCanvas.height / 2)
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'spiral': {
+                            const spiralDir = effectOption === 'right' ? 1 : -1
+                            testCtx.save()
+                            testCtx.translate(testCanvas.width / 2, testCanvas.height / 2)
+                            testCtx.rotate(progress * Math.PI * 4 * spiralDir)
+                            testCtx.scale(1 - progress * 0.5, 1 - progress * 0.5)
+                            testCtx.translate(-testCanvas.width / 2, -testCanvas.height / 2)
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'bounce': {
+                            const bounceProgress = Math.sin(progress * Math.PI)
+                            const bounceOffset = Math.floor(bounceProgress * testCanvas.height * 0.05)
+                            drawTestImage(0, bounceOffset, testCanvas.width, testCanvas.height)
+                            break
+                        }
+                        case 'vibration': {
+                            const intensityVal = effectIntensity === 'weak' ? 5 : effectIntensity === 'strong' ? 20 : 10
+                            let vOffsetX = 0, vOffsetY = 0
+                            if (effectDirection === 'vertical') {
+                                vOffsetY = Math.floor((Math.random() - 0.5) * intensityVal * 2)
+                            } else if (effectDirection === 'horizontal') {
+                                vOffsetX = Math.floor((Math.random() - 0.5) * intensityVal * 2)
+                            } else {
+                                vOffsetX = Math.floor((Math.random() - 0.5) * intensityVal * 2)
+                                vOffsetY = Math.floor((Math.random() - 0.5) * intensityVal * 2)
+                            }
+                            drawTestImage(vOffsetX, vOffsetY, testCanvas.width, testCanvas.height)
+                            break
+                        }
+                        case 'glitch': {
+                            // effectOptionで強度を決定（本番と同じ: weak=0.05, medium=0.1, strong=0.2）
+                            const glitchBase = effectOption === 'weak' ? 0.05 : effectOption === 'strong' ? 0.2 : 0.1
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            const glitchIntensity = 1 - progress
+                            for (let j = 0; j < 10; j++) {
+                                const y = Math.floor(Math.random() * testCanvas.height)
+                                const height = Math.ceil(Math.random() * testCanvas.height * 0.1)
+                                const offset = Math.floor((Math.random() - 0.5) * testCanvas.width * glitchBase * glitchIntensity)
+
+                                const srcY = Math.floor((y / testCanvas.height) * sourceImage.height)
+                                const srcH = Math.ceil((height / testCanvas.height) * sourceImage.height)
+
+                                if (height > 0 && srcH > 0) {
+                                    testCtx.drawImage(sourceImage, 0, srcY, sourceImage.width, srcH, offset, y, testCanvas.width, height)
+                                }
+                            }
+                            break
+                        }
+                        case 'tvStatic': {
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            const tvData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height)
+                            for (let p = 0; p < tvData.data.length; p += 4) {
+                                if (Math.random() < 1 - progress) {
+                                    const noise = Math.random() * 255
+                                    tvData.data[p] = (tvData.data[p] + noise) / 2
+                                    tvData.data[p + 1] = (tvData.data[p + 1] + noise) / 2
+                                    tvData.data[p + 2] = (tvData.data[p + 2] + noise) / 2
+                                }
+                            }
+                            testCtx.putImageData(tvData, 0, 0)
+                            break
+                        }
+                        case 'enlarge': {
+                            const enlargeScale = 1 + progress * 4
+                            const ew = Math.floor(testCanvas.width * enlargeScale)
+                            const eh = Math.floor(testCanvas.height * enlargeScale)
+                            const ex = Math.floor((testCanvas.width - ew) / 2)
+                            const ey = Math.floor((testCanvas.height - eh) / 2)
+                            testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, ex, ey, ew, eh)
+                            break
+                        }
+                        case 'minimize': {
+                            const minimizeScale = 5 - progress * 4
+                            const mw = Math.floor(testCanvas.width * minimizeScale)
+                            const mh = Math.floor(testCanvas.height * minimizeScale)
+                            const mx = Math.floor((testCanvas.width - mw) / 2)
+                            const my = Math.floor((testCanvas.height - mh) / 2)
+                            testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, mx, my, mw, mh)
+                            break
+                        }
+                        case 'cardFlipLoop': {
+                            testCtx.save()
+                            const flipProg = Math.sin(progress * Math.PI * 2)
+                            const loopScale = Math.abs(flipProg)
+                            testCtx.translate(testCanvas.width / 2, testCanvas.height / 2)
+                            testCtx.scale(Math.max(0.01, loopScale), 1)
+                            testCtx.translate(-testCanvas.width / 2, -testCanvas.height / 2)
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'concentrationLines': {
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+
+                            // 透過部分を保持するため、source-atopモードでエフェクトを描画
+                            testCtx.save()
+                            testCtx.globalCompositeOperation = 'source-atop'
+
+                            // 周辺のぼかし強め
+                            const clVigGrad = testCtx.createRadialGradient(
+                                testCanvas.width / 2, testCanvas.height / 2, testCanvas.width * 0.15,
+                                testCanvas.width / 2, testCanvas.height / 2, testCanvas.width * 0.8
+                            )
+                            clVigGrad.addColorStop(0, 'transparent')
+                            clVigGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.3)')
+                            clVigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.8)')
+                            testCtx.fillStyle = clVigGrad
+                            testCtx.fillRect(0, 0, testCanvas.width, testCanvas.height)
+
+                            // 三角形の放射状線
+                            const rayCount = 40
+                            const shake = Math.sin(progress * Math.PI * 6) * 3
+                            const centerX = testCanvas.width / 2
+                            const centerY = testCanvas.height / 2
+
+                            // オプションによる半径調整
+                            let baseRadiusRatio = 0.25 // default
+                            if (effectOption === 'weak') baseRadiusRatio = 0.4
+                            if (effectOption === 'strong') baseRadiusRatio = 0.1
+
+                            const inRadius = testCanvas.width * baseRadiusRatio + shake
+                            const outRadius = Math.max(testCanvas.width, testCanvas.height) * 0.9
+
+                            testCtx.fillStyle = 'rgba(255, 255, 255, 0.9)'
+                            for (let j = 0; j < rayCount; j++) {
+                                const baseAngle = (j / rayCount) * Math.PI * 2
+                                const angleWidth = (Math.PI * 2 / rayCount) * 0.3
+                                const jitter = Math.sin(j * 3 + progress * Math.PI * 4) * 0.02
+
+                                const angle1 = baseAngle - angleWidth / 2 + jitter
+                                const angle2 = baseAngle + angleWidth / 2 + jitter
+
+                                testCtx.beginPath()
+                                testCtx.moveTo(centerX + Math.cos(baseAngle) * inRadius, centerY + Math.sin(baseAngle) * inRadius)
+                                testCtx.lineTo(centerX + Math.cos(angle1) * outRadius, centerY + Math.sin(angle1) * outRadius)
+                                testCtx.lineTo(centerX + Math.cos(angle2) * outRadius, centerY + Math.sin(angle2) * outRadius)
+                                testCtx.closePath()
+                                testCtx.fill()
+                            }
+                            testCtx.restore()
+                            break
+                        }
+                        case 'flash': {
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            const flashInt = Math.sin(progress * Math.PI)
+                            testCtx.save()
+                            testCtx.globalCompositeOperation = 'source-atop'
+                            testCtx.fillStyle = `rgba(255, 255, 255, ${flashInt * 0.8})`
+                            testCtx.fillRect(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'vignette': {
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            const vigGrad = testCtx.createRadialGradient(
+                                testCanvas.width / 2, testCanvas.height / 2, 0,
+                                testCanvas.width / 2, testCanvas.height / 2, Math.max(testCanvas.width, testCanvas.height) * 0.7
+                            )
+                            vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)')
+                            vigGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0)')
+                            vigGrad.addColorStop(1, `rgba(0, 0, 0, ${0.3 + progress * 0.5})`)
+                            // 透過部分を保持するため、source-atopモードでビネットを描画
+                            testCtx.save()
+                            testCtx.globalCompositeOperation = 'source-atop'
+                            testCtx.fillStyle = vigGrad
+                            testCtx.fillRect(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+                            break
+                        }
+                        // === 複雑なエフェクト（ピクセル操作） ===
+                        case 'rgbShift': {
+                            const baseShift = effectOption === 'small' ? 2 : effectOption === 'large' ? 12 : 6
+                            const shiftAmt = Math.sin(progress * Math.PI) * testCanvas.width * (baseShift / 100)
+
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            const rgbData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height)
+                            const tempData = new Uint8ClampedArray(rgbData.data)
+                            const newData = testCtx.createImageData(testCanvas.width, testCanvas.height)
+                            const out = newData.data
+
+                            // R, G, Bのオフセット計算（120度間隔）- Y軸も含める
+                            const rOffsetX = Math.round(Math.sin(0) * shiftAmt)
+                            const rOffsetY = Math.round(-Math.cos(0) * shiftAmt)
+                            const gOffsetX = Math.round(Math.sin(Math.PI * 4 / 3) * shiftAmt)
+                            const gOffsetY = Math.round(-Math.cos(Math.PI * 4 / 3) * shiftAmt)
+                            const bOffsetX = Math.round(Math.sin(Math.PI * 2 / 3) * shiftAmt)
+                            const bOffsetY = Math.round(-Math.cos(Math.PI * 2 / 3) * shiftAmt)
+
+                            for (let y = 0; y < testCanvas.height; y++) {
+                                for (let x = 0; x < testCanvas.width; x++) {
+                                    const idx = (y * testCanvas.width + x) * 4
+                                    const rX = Math.min(Math.max(x - rOffsetX, 0), testCanvas.width - 1)
+                                    const rY = Math.min(Math.max(y - rOffsetY, 0), testCanvas.height - 1)
+                                    const rIdx = (rY * testCanvas.width + rX) * 4
+                                    out[idx] = tempData[rIdx]
+
+                                    const gX = Math.min(Math.max(x - gOffsetX, 0), testCanvas.width - 1)
+                                    const gY = Math.min(Math.max(y - gOffsetY, 0), testCanvas.height - 1)
+                                    const gIdx = (gY * testCanvas.width + gX) * 4
+                                    out[idx + 1] = tempData[gIdx + 1]
+
+                                    const bX = Math.min(Math.max(x - bOffsetX, 0), testCanvas.width - 1)
+                                    const bY = Math.min(Math.max(y - bOffsetY, 0), testCanvas.height - 1)
+                                    const bIdx = (bY * testCanvas.width + bX) * 4
+                                    out[idx + 2] = tempData[bIdx + 2]
+
+                                    out[idx + 3] = tempData[idx + 3] // アルファチャンネルをコピー
+                                }
+                            }
+                            testCtx.putImageData(newData, 0, 0)
+                            break
+                        }
+                        case 'pulsation': {
+                            // 脈動: エッジ部分に色のフリンジ（本番と同じ実装）
+                            const pulsationSize = effectOption === 'small' ? 3 : effectOption === 'large' ? 12 : 6
+                            const aberAmt = Math.sin(progress * Math.PI) * pulsationSize
+                            // 元画像を先に描画
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+
+                            // エッジに色を乗せる
+                            testCtx.globalCompositeOperation = 'screen'
+                            testCtx.globalAlpha = 0.3
+
+                            // 赤（左上にズレ）
+                            testCtx.save()
+                            testCtx.translate(-aberAmt, -aberAmt)
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+
+                            // シアン（右下にズレ）
+                            testCtx.save()
+                            testCtx.translate(aberAmt, aberAmt)
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            testCtx.restore()
+
+                            testCtx.globalAlpha = 1
+                            testCtx.globalCompositeOperation = 'source-over'
+                            break
+                        }
+                        case 'scanlines': {
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+
+                            const scanlineThickness = effectOption === 'thin' ? 1 : effectOption === 'thick' ? 4 : 2
+                            const scanlineSpacing = scanlineThickness * 2
+
+                            // effectIntensityで色を決定（gray/blue/green）
+                            const scanlineColor = effectIntensity === 'blue' ? 'rgba(0, 100, 255, 0.3)' :
+                                effectIntensity === 'green' ? 'rgba(0, 200, 100, 0.3)' :
+                                    'rgba(0, 0, 0, 0.3)'
+
+                            // 透過部分を保持するため、source-atopモードでスキャンラインを描画
+                            testCtx.save()
+                            testCtx.globalCompositeOperation = 'source-atop'
+                            testCtx.fillStyle = scanlineColor
+                            for (let y = 0; y < testCanvas.height; y += scanlineSpacing) {
+                                testCtx.fillRect(0, y, testCanvas.width, scanlineThickness)
+                            }
+
+                            // 動く光のライン効果
+                            const scanOffset = (progress * testCanvas.height) % testCanvas.height
+                            const scanGrad = testCtx.createLinearGradient(0, scanOffset - 30, 0, scanOffset + 30)
+                            scanGrad.addColorStop(0, 'rgba(255, 255, 255, 0)')
+                            scanGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.15)')
+                            scanGrad.addColorStop(1, 'rgba(255, 255, 255, 0)')
+                            testCtx.fillStyle = scanGrad
+                            testCtx.fillRect(0, scanOffset - 30, testCanvas.width, 60)
+                            testCtx.restore()
+                            break
+                        }
+                        case 'silhouette': {
+                            drawTestImage(0, 0, testCanvas.width, testCanvas.height)
+                            const isSilhouetteRelease = effectIntensity === 'from-silhouette'
+
+                            let silInt: number
+                            if (isSilhouetteRelease) {
+                                const holdDuration = 0.3
+                                if (progress < holdDuration) {
+                                    silInt = 1
+                                } else {
+                                    silInt = 1 - ((progress - holdDuration) / (1 - holdDuration))
+                                }
+                            } else {
+                                silInt = progress
+                            }
+
+                            const silData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height)
+                            const colorMap: { [key: string]: [number, number, number] } = {
+                                white: [255, 255, 255],
+                                black: [0, 0, 0],
+                                red: [255, 0, 0],
+                            }
+                            const baseColor = effectOption?.startsWith('outline-') ? effectOption.replace('outline-', '') : (effectOption || 'black')
+                            const silColor = colorMap[baseColor] || [0, 0, 0]
+
+                            for (let i = 0; i < silData.data.length; i += 4) {
+                                if (silData.data[i + 3] > 0) {
+                                    silData.data[i] = Math.round(silData.data[i] * (1 - silInt) + silColor[0] * silInt)
+                                    silData.data[i + 1] = Math.round(silData.data[i + 1] * (1 - silInt) + silColor[1] * silInt)
+                                    silData.data[i + 2] = Math.round(silData.data[i + 2] * (1 - silInt) + silColor[2] * silInt)
+                                }
+                            }
+                            testCtx.putImageData(silData, 0, 0)
                             break
                         }
                         default:
@@ -2884,7 +3336,7 @@ export default function APNGGenerator() {
                         const tempIn = document.createElement('canvas')
                         tempIn.width = Math.floor(canvas.width / pixelSize)
                         tempIn.height = Math.floor(canvas.height / pixelSize)
-                        const tempInCtx = tempIn.getContext('2d')!
+                        const tempInCtx = tempIn.getContext('2d', { willReadFrequently: true })!
                         tempInCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, tempIn.width, tempIn.height)
                         ctx.imageSmoothingEnabled = false
                         // fadeオプションの場合、透明度も変化
@@ -2906,7 +3358,7 @@ export default function APNGGenerator() {
                         const tempOut = document.createElement('canvas')
                         tempOut.width = Math.floor(canvas.width / pixelOutSize)
                         tempOut.height = Math.floor(canvas.height / pixelOutSize)
-                        const tempOutCtx = tempOut.getContext('2d')!
+                        const tempOutCtx = tempOut.getContext('2d', { willReadFrequently: true })!
                         tempOutCtx.drawImage(sourceImage, 0, 0, tempOut.width, tempOut.height)
                         ctx.imageSmoothingEnabled = false
                         // fadeオプションの場合、透明度も変化
@@ -3042,6 +3494,20 @@ export default function APNGGenerator() {
                         const cardOutScale = Math.cos(currentAngleOut)
                         ctx.translate(canvas.width / 2, canvas.height / 2)
                         ctx.scale(cardOutScale, 1)
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2)
+                        drawScaledImage(0, 0, canvas.width, canvas.height)
+                        ctx.restore()
+                        break
+                    }
+
+                    // カード回転ループ（演出）
+                    case 'cardFlipLoop': {
+                        ctx.save()
+                        // sin関数で往復回転（-1 ～ 1）
+                        const flipProg = Math.sin(progress * Math.PI * 2)
+                        const loopScale = Math.abs(flipProg)
+                        ctx.translate(canvas.width / 2, canvas.height / 2)
+                        ctx.scale(Math.max(0.01, loopScale), 1)
                         ctx.translate(-canvas.width / 2, -canvas.height / 2)
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         ctx.restore()
@@ -3356,6 +3822,34 @@ export default function APNGGenerator() {
                 const color64Factor = 0.08 + (compressionRatio * 0.5)
                 console.log(`動的係数: 256色=${color256Factor.toFixed(2)}, 128色=${color128Factor.toFixed(2)}, 64色=${color64Factor.toFixed(2)}`)
 
+                // V121.23: エフェクト別デルタ圧縮効率の補正係数
+                // fadeIn: デルタ圧縮が非常に効く（推測37-64%）→ 0.5で補正
+                // tvStaticIn: ノイズでデルタ圧縮が効かない（推測134-205%）→ 2.0で補正
+                const EFFECT_DELTA_FACTORS: Record<string, number> = {
+                    // 超高効率（フレーム間変化が局所的）→ 推測を下げる
+                    fadeIn: 0.5,
+                    fadeOut: 0.5,
+                    wipeIn: 0.6,
+                    wipeOut: 0.6,
+                    tileIn: 0.6,
+                    tileOut: 0.6,
+                    blindIn: 0.6,
+                    blindOut: 0.6,
+                    irisIn: 0.7,
+                    irisOut: 0.7,
+                    // 低効率（フレーム間変化が大きい）→ 推測を上げる
+                    tvStaticIn: 2.0,
+                    tvStaticOut: 2.0,
+                    glitchIn: 1.5,
+                    glitchOut: 1.5,
+                    zoomUp: 1.3,
+                    zoomUpOut: 1.3,
+                    doorClose: 1.3,
+                    doorOpen: 1.3,
+                }
+                const effectDeltaFactor = EFFECT_DELTA_FACTORS[transition] || 1.0
+                console.log(`エフェクト補正: ${transition} → ${effectDeltaFactor}`)
+
                 // 推測サイズを計算
                 const estimateSize = (step: typeof COMPRESSION_STEPS[0]): number => {
                     const areaRatio = step.scale * step.scale
@@ -3363,6 +3857,8 @@ export default function APNGGenerator() {
                     if (step.colorNum === 256) colorFactor = color256Factor
                     else if (step.colorNum === 128) colorFactor = color128Factor
                     else if (step.colorNum === 64) colorFactor = color64Factor
+                    // エフェクト別補正を適用
+                    colorFactor *= effectDeltaFactor
                     return fullColorSize * areaRatio * colorFactor
                 }
 
