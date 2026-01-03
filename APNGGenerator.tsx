@@ -1784,10 +1784,24 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'irisIn': {
-                            const radius = Math.max(testCanvas.width, testCanvas.height) * progress
+                            const irisInRadius = Math.max(testCanvas.width, testCanvas.height) * progress
+                            const irisInCx = testCanvas.width / 2
+                            const irisInCy = testCanvas.height / 2
                             testCtx.save()
                             testCtx.beginPath()
-                            testCtx.arc(testCanvas.width / 2, testCanvas.height / 2, radius, 0, Math.PI * 2)
+                            if (effectOption === 'square') {
+                                const halfSize = irisInRadius * 0.7
+                                testCtx.rect(irisInCx - halfSize, irisInCy - halfSize, halfSize * 2, halfSize * 2)
+                            } else if (effectOption === 'diamond') {
+                                const halfSize = irisInRadius * 0.7
+                                testCtx.moveTo(irisInCx, irisInCy - halfSize)
+                                testCtx.lineTo(irisInCx + halfSize, irisInCy)
+                                testCtx.lineTo(irisInCx, irisInCy + halfSize)
+                                testCtx.lineTo(irisInCx - halfSize, irisInCy)
+                                testCtx.closePath()
+                            } else {
+                                testCtx.arc(irisInCx, irisInCy, irisInRadius, 0, Math.PI * 2)
+                            }
                             testCtx.clip()
                             drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             testCtx.restore()
@@ -1932,6 +1946,9 @@ export default function APNGGenerator() {
                         }
                         // --- 退場エフェクト（V121.21追加） ---
                         case 'slideOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break // 最終フレームは完全透明
+                            }
                             let offsetX = 0, offsetY = 0
                             switch (effectDirection) {
                                 case 'left': offsetX = Math.floor(-progress * testCanvas.width); break
@@ -1943,6 +1960,9 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'wipeOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break // 最終フレームは完全透明
+                            }
                             testCtx.save()
                             testCtx.beginPath()
                             switch (effectDirection) {
@@ -1958,6 +1978,9 @@ export default function APNGGenerator() {
                         }
                         case 'zoomUpOut':
                         case 'zoomDownOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break // 最終フレームは完全透明
+                            }
                             const isUp = transition === 'zoomUpOut'
                             const scaleOut = isUp ? (1 + progress * 0.5) : (1 - progress * 0.5)
                             const w = Math.floor(testCanvas.width * scaleOut)
@@ -1970,6 +1993,9 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'doorOpen': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break // 最終フレームは完全透明
+                            }
                             const halfW = Math.floor(testCanvas.width / 2)
                             const openProgress = 1 - progress
                             testCtx.drawImage(sourceImage, 0, 0, Math.floor(sourceImage.width / 2), sourceImage.height,
@@ -1979,6 +2005,9 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'tvStaticOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break // 最終フレームは完全透明
+                            }
                             drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             const staticData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height)
                             const staticIntensity = progress
@@ -1992,6 +2021,9 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'blindOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break // 最終フレームは完全透明
+                            }
                             const blindCount = effectOption ? parseInt(effectOption as string) : 7
                             const isVertical = effectDirection === 'horizontal'
                             for (let bi = 0; bi < blindCount; bi++) {
@@ -2010,17 +2042,37 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'irisOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break
+                            }
                             const maxRadius = Math.max(testCanvas.width, testCanvas.height)
-                            const radius = maxRadius * (1 - progress)
+                            const irisOutRadius = maxRadius * (1 - progress)
+                            const irisOutCx = testCanvas.width / 2
+                            const irisOutCy = testCanvas.height / 2
                             testCtx.save()
                             testCtx.beginPath()
-                            testCtx.arc(testCanvas.width / 2, testCanvas.height / 2, radius, 0, Math.PI * 2)
+                            if (effectOption === 'square') {
+                                const halfSize = irisOutRadius * 0.7
+                                testCtx.rect(irisOutCx - halfSize, irisOutCy - halfSize, halfSize * 2, halfSize * 2)
+                            } else if (effectOption === 'diamond') {
+                                const halfSize = irisOutRadius * 0.7
+                                testCtx.moveTo(irisOutCx, irisOutCy - halfSize)
+                                testCtx.lineTo(irisOutCx + halfSize, irisOutCy)
+                                testCtx.lineTo(irisOutCx, irisOutCy + halfSize)
+                                testCtx.lineTo(irisOutCx - halfSize, irisOutCy)
+                                testCtx.closePath()
+                            } else {
+                                testCtx.arc(irisOutCx, irisOutCy, irisOutRadius, 0, Math.PI * 2)
+                            }
                             testCtx.clip()
                             drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             testCtx.restore()
                             break
                         }
                         case 'tileOut': {
+                            if (effectIntensity !== 'none' || effectOption !== 'none') {
+                                if (progress >= 0.95) break // 最終フレームは完全透明
+                            }
                             const tileCount = effectOption ? parseInt(effectOption as string) : 4
                             for (let ty = 0; ty < tileCount; ty++) {
                                 for (let tx = 0; tx < tileCount; tx++) {
@@ -2132,28 +2184,80 @@ export default function APNGGenerator() {
                             if (effectIntensity !== 'none' || effectOption !== 'none') {
                                 if (progress >= 0.95) break
                             }
-                            if (progress < 0.3) {
-                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
-                            } else if (progress < 0.5) {
-                                const slashProg = (progress - 0.3) / 0.2
-                                testCtx.globalAlpha = slashProg * 0.8
-                                testCtx.fillStyle = 'white'
-                                testCtx.fillRect(0, 0, testCanvas.width, testCanvas.height)
-                                testCtx.globalAlpha = 1
-                                drawTestImage(0, 0, testCanvas.width, testCanvas.height)
-                            } else {
-                                const fadeProg = (progress - 0.5) / 0.5
-                                const numSlices = 4
-                                for (let s = 0; s < numSlices; s++) {
-                                    const sliceH = testCanvas.height / numSlices
-                                    const sliceY = s * sliceH
-                                    const offsetX = (s % 2 === 0 ? -1 : 1) * fadeProg * testCanvas.width * 0.3
-                                    testCtx.globalAlpha = 1 - fadeProg
-                                    testCtx.drawImage(sourceImage, 0, Math.floor(s * sourceImage.height / numSlices), sourceImage.width, Math.floor(sourceImage.height / numSlices),
-                                        offsetX, sliceY, testCanvas.width, sliceH)
+                            const isRightSlash = effectOption !== 'left' // デフォルトは右斬り（╲）
+                            testCtx.save()
+
+                            // 斬撃フラッシュ効果（0-15%のプログレス）
+                            const flashPhase = progress < 0.15
+                            if (flashPhase) {
+                                // 斬撃線を描画
+                                testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, testCanvas.width, testCanvas.height)
+                                const flashIntensity = Math.sin((progress / 0.15) * Math.PI)
+                                testCtx.strokeStyle = `rgba(255, 255, 255, ${flashIntensity})`
+                                testCtx.lineWidth = Math.max(4, testCanvas.width * 0.02)
+                                testCtx.beginPath()
+                                if (isRightSlash) {
+                                    testCtx.moveTo(0, 0)
+                                    testCtx.lineTo(testCanvas.width, testCanvas.height)
+                                } else {
+                                    testCtx.moveTo(testCanvas.width, 0)
+                                    testCtx.lineTo(0, testCanvas.height)
                                 }
-                                testCtx.globalAlpha = 1
+                                testCtx.stroke()
+                            } else {
+                                // スライドフェーズ
+                                const slideProgress = (progress - 0.15) / 0.85
+                                const slideAmount = slideProgress * testCanvas.width * 0.6
+                                const fadeAlpha = 1 - slideProgress
+
+                                testCtx.globalAlpha = fadeAlpha
+
+                                // 上三角形（対角線の上側）
+                                testCtx.save()
+                                testCtx.beginPath()
+                                if (isRightSlash) {
+                                    testCtx.moveTo(0, 0)
+                                    testCtx.lineTo(testCanvas.width, testCanvas.height)
+                                    testCtx.lineTo(testCanvas.width, 0)
+                                    testCtx.closePath()
+                                    testCtx.clip()
+                                    testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                        Math.floor(-slideAmount), Math.floor(-slideAmount * 0.5), testCanvas.width, testCanvas.height)
+                                } else {
+                                    testCtx.moveTo(testCanvas.width, 0)
+                                    testCtx.lineTo(0, testCanvas.height)
+                                    testCtx.lineTo(0, 0)
+                                    testCtx.closePath()
+                                    testCtx.clip()
+                                    testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                        Math.floor(slideAmount), Math.floor(-slideAmount * 0.5), testCanvas.width, testCanvas.height)
+                                }
+                                testCtx.restore()
+
+                                // 下三角形（対角線の下側）
+                                testCtx.save()
+                                testCtx.globalAlpha = fadeAlpha
+                                testCtx.beginPath()
+                                if (isRightSlash) {
+                                    testCtx.moveTo(0, 0)
+                                    testCtx.lineTo(testCanvas.width, testCanvas.height)
+                                    testCtx.lineTo(0, testCanvas.height)
+                                    testCtx.closePath()
+                                    testCtx.clip()
+                                    testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                        Math.floor(slideAmount), Math.floor(slideAmount * 0.5), testCanvas.width, testCanvas.height)
+                                } else {
+                                    testCtx.moveTo(testCanvas.width, 0)
+                                    testCtx.lineTo(0, testCanvas.height)
+                                    testCtx.lineTo(testCanvas.width, testCanvas.height)
+                                    testCtx.closePath()
+                                    testCtx.clip()
+                                    testCtx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height,
+                                        Math.floor(-slideAmount), Math.floor(slideAmount * 0.5), testCanvas.width, testCanvas.height)
+                                }
+                                testCtx.restore()
                             }
+                            testCtx.restore()
                             break
                         }
                         case 'pixelateOut': {
@@ -4684,6 +4788,25 @@ export default function APNGGenerator() {
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            {/* 5MB超過時の対処法アコーディオン */}
+                                            <details className="mb-3 border border-amber-200 rounded-lg bg-amber-50">
+                                                <summary className="flex items-center gap-2 p-2.5 cursor-pointer text-sm font-medium text-amber-700 hover:bg-amber-100 rounded-lg">
+                                                    <span>💡</span>
+                                                    <span>ファイルサイズが5MBを超える場合</span>
+                                                </summary>
+                                                <div className="px-3 pb-3 text-xs text-gray-600">
+                                                    <p className="mb-2">ココフォリア等のTRPGツールでは、アップロードできる画像サイズに制限があります。</p>
+                                                    <p className="font-medium text-gray-700 mb-1">対処法：</p>
+                                                    <ul className="space-y-1 pl-3">
+                                                        <li>• <span className="text-amber-700 font-medium">※優先：</span>容量制限を「5MB」に設定する</li>
+                                                        <li>• 元画像を小さくしてからアップロード</li>
+                                                        <li>• フレームレートを下げる（20fps→12fps等）</li>
+                                                        <li>• 再生スピードを上げて長さを短くする</li>
+                                                    </ul>
+                                                </div>
+                                            </details>
+
                                             <a
                                                 href="/manual"
                                                 className="flex items-center justify-center gap-1 w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"

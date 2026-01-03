@@ -13,3 +13,6 @@ node_modules
 
 # OS files
 .DS_Store
+
+# Test output (large APNG files)
+結果/
