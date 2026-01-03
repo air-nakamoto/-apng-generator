@@ -11,6 +11,32 @@ import { findEffectByName, findCategoryByEffectName } from './constants/transiti
 // @ts-ignore
 import UPNG from 'upng-js'
 
+const EXIT_EFFECTS = new Set([
+    'fadeOut',
+    'slideOut',
+    'wipeOut',
+    'zoomUpOut',
+    'doorOpen',
+    'tvStaticOut',
+    'glitchOut',
+    'focusOut',
+    'sliceOut',
+    'blindOut',
+    'tileOut',
+    'pixelateOut',
+    'irisOut',
+    'pageFlipOut',
+    'cardFlipOut',
+    'swordSlashOut',
+])
+
+const isEffectOnlyExit = (transition: string, effectOption: string, effectIntensity: string) => {
+    if (transition === 'tvStaticOut' && effectOption === 'none') return true
+    if (transition === 'focusOut' && effectOption === 'none') return true
+    if (transition === 'pixelateOut' && effectIntensity === 'none') return true
+    return false
+}
+
 /**
  * APNGのacTLチャンクのnum_playsを修正する
  * UPNGは常にnum_plays=0（無限ループ）でエンコードするため、
@@ -56,6 +82,62 @@ function setApngLoopCount(apngData: ArrayBuffer, numPlays: number): ArrayBuffer 
 }
 
 /**
+ * 最終fcTLチャンクのdispose/blend設定を調整して完全透明フレームを反映させる
+ * @param apngData - APNGバイナリ
+ * @param disposeOp - 0:保持, 1:背景クリア, 2:前フレーム復帰
+ * @param blendOp - 0: Source, 1: Over
+ */
+function enforceFinalFrameDispose(apngData: ArrayBuffer, disposeOp = 1, blendOp = 0): ArrayBuffer {
+    const data = new Uint8Array(apngData)
+
+    const readUint32 = (offset: number) => (
+        (data[offset] << 24) |
+        (data[offset + 1] << 16) |
+        (data[offset + 2] << 8) |
+        (data[offset + 3])
+    ) >>> 0
+
+    let lastFcTLOffset = -1
+    let offset = 8 // PNGシグネチャの後から開始
+    while (offset + 8 < data.length) {
+        const length = readUint32(offset)
+        const typeOffset = offset + 4
+        const type =
+            String.fromCharCode(data[typeOffset]) +
+            String.fromCharCode(data[typeOffset + 1]) +
+            String.fromCharCode(data[typeOffset + 2]) +
+            String.fromCharCode(data[typeOffset + 3])
+
+        if (type === 'fcTL') {
+            lastFcTLOffset = offset
+        }
+
+        offset += 12 + length // length(4) + type(4) + data(length) + CRC(4)
+    }
+
+    if (lastFcTLOffset !== -1) {
+        const dataStart = lastFcTLOffset + 8 // length + type
+        const disposeIndex = dataStart + 24
+        const blendIndex = dataStart + 25
+        if (disposeIndex < data.length) data[disposeIndex] = disposeOp
+        if (blendIndex < data.length) data[blendIndex] = blendOp
+
+        // CRCを再計算（'fcTL' + 26バイトのデータ）
+        const chunkTypeAndData = data.slice(lastFcTLOffset + 4, dataStart + 26)
+        const crc = calculateCRC32(chunkTypeAndData)
+        const crcOffset = dataStart + 26
+        if (crcOffset + 3 < data.length) {
+            data[crcOffset] = (crc >> 24) & 0xFF
+            data[crcOffset + 1] = (crc >> 16) & 0xFF
+            data[crcOffset + 2] = (crc >> 8) & 0xFF
+            data[crcOffset + 3] = crc & 0xFF
+        }
+    }
+
+    return data.buffer
+}
+
+/**
  * CRC32を計算する（PNG仕様準拠）
  */
 function calculateCRC32(data: Uint8Array): number {
@@ -87,11 +169,12 @@ interface EncodeParams {
     colorNum: number
     delays: number[]
     loop: number
+    forceFullCanvasLastFrame: boolean
     onProgress?: (progress: number) => void
 }
 
 async function encodeApngWithWorker(params: EncodeParams): Promise<ArrayBuffer> {
-    const { frames, width, height, colorNum, delays, loop, onProgress } = params
+    const { frames, width, height, colorNum, delays, loop, forceFullCanvasLastFrame, onProgress } = params
 
     return new Promise((resolve, reject) => {
         const worker = new Worker('/apng.worker.js')
@@ -125,7 +208,8 @@ async function encodeApngWithWorker(params: EncodeParams): Promise<ArrayBuffer> 
                     height,
                     colorNum,
                     delays,
-                    loop
+                    loop,
+                    forceFullCanvasLastFrame
                 }
             },
             transferableFrames
@@ -387,9 +471,7 @@ export default function APNGGenerator() {
                 ctx.globalAlpha = 1
                 break
             case 'fadeOut':
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 ctx.globalAlpha = 1 - progress
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 ctx.globalAlpha = 1
@@ -412,9 +494,7 @@ export default function APNGGenerator() {
                 }
                 break
             case 'slideOut':
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 switch (effectDirection) {
                     case 'left':
                         ctx.drawImage(sourceImage, progress * -canvas.width, 0, canvas.width, canvas.height)
@@ -472,9 +552,7 @@ export default function APNGGenerator() {
                 break
             }
             case 'zoomUpOut': {
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 // アップ: 通常→大 (1.0→1.5) + フェードアウト, ダウン: 通常→小 (1.0→0.5) + フェードアウト
                 const isUpOut = effectOption === 'up'
                 const scaleZoomUpOut = isUpOut ? (1.0 + progress * 0.5) : (1.0 - progress * 0.5)
@@ -495,6 +573,7 @@ export default function APNGGenerator() {
                     canvas.width - progress * halfW, 0, halfW, canvas.height)
                 break
             case 'doorOpen':
+                if (progress >= 0.95) break // 退場は最終フレームで完全に透明（効果のみ以外）
                 const doHalfW = canvas.width / 2
                 ctx.drawImage(sourceImage, 0, 0, sourceImage.width / 2, sourceImage.height,
                     -progress * doHalfW, 0, doHalfW, canvas.height)
@@ -727,9 +806,7 @@ export default function APNGGenerator() {
             }
             // === 退場エフェクト ===
             case 'wipeOut':
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 ctx.save()
                 switch (effectDirection) {
                     case 'left':
@@ -759,9 +836,7 @@ export default function APNGGenerator() {
                 break
             case 'sliceOut': {
                 // effectOptionで分割数を決定（デフォルト4）
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 const sliceOutCount = effectOption ? parseInt(effectOption) : 4
                 ctx.globalAlpha = 1 - progress
                 for (let s = 0; s < sliceOutCount; s++) {
@@ -774,9 +849,7 @@ export default function APNGGenerator() {
                 break
             }
             case 'tileOut':
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 const tileOutCount = effectOption ? parseInt(effectOption) : 9
                 const tileOutCols = Math.sqrt(tileOutCount), tileOutRows = Math.sqrt(tileOutCount)
                 const srcTileOutW = sourceImage.width / tileOutCols, srcTileOutH = sourceImage.height / tileOutRows
@@ -793,7 +866,7 @@ export default function APNGGenerator() {
                 }
                 break
             case 'pixelateOut': {
-                if (effectIntensity !== 'none' && progress >= 0.9) break // 最終フレームは完全透明（効果のみ以外）閾値を緩和
+                if (effectIntensity !== 'none' && progress >= 0.999) break // 効果のみ以外は最終フレームで完全に透明化
                 // effectOptionでブロックサイズを決定（small=15, medium=30, large=60）
                 const maxPixelOut = effectOption === 'small' ? 15 : effectOption === 'large' ? 60 : 30
                 const pixelOutSize = Math.max(1, Math.floor(progress * maxPixelOut))
@@ -813,6 +886,7 @@ export default function APNGGenerator() {
                 break
             }
             case 'focusOut':
+                if (effectOption !== 'none' && progress >= 0.999) break // 効果のみ以外は最終フレームで完全に透明化
                 if (effectOption === 'fade') ctx.globalAlpha = 1 - progress
                 ctx.filter = `blur(${progress * 20}px)`
                 drawScaledImage(0, 0, canvas.width, canvas.height)
@@ -820,9 +894,7 @@ export default function APNGGenerator() {
                 if (effectOption === 'fade') ctx.globalAlpha = 1
                 break
             case 'irisOut': {
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 ctx.save()
                 ctx.beginPath()
                 const irisOutRadius = Math.max(canvas.width, canvas.height) * (1 - progress)
@@ -852,12 +924,7 @@ export default function APNGGenerator() {
                 // ページめくりアウト：左めくり（デフォルト）と右めくりに対応
                 const isRightFlipOut = effectOption === 'right'
 
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress > 0.98) {
-                        // ほぼ終わりなら描画しない（消える）（効果のみ以外）
-                        break
-                    }
-                }
+                if (progress > 0.98) break // 最終フレームは完全透明
 
                 ctx.save()
 
@@ -922,9 +989,7 @@ export default function APNGGenerator() {
                 ctx.restore()
                 break
             case 'cardFlipOut':
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 ctx.save()
                 const flipOutCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
 
@@ -945,6 +1010,7 @@ export default function APNGGenerator() {
                 ctx.restore()
                 break
             case 'tvStaticOut':
+                if (effectOption !== 'none' && progress >= 0.999) break // 効果のみ以外は最終フレームで完全に透明化
                 drawScaledImage(0, 0, canvas.width, canvas.height)
                 const tvOutData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                 for (let p = 0; p < tvOutData.data.length; p += 4) {
@@ -964,9 +1030,7 @@ export default function APNGGenerator() {
                 ctx.putImageData(tvOutData, 0, 0)
                 break
             case 'glitchOut': {
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 // effectOptionで強度を決定（weak=0.15, medium=0.3, strong=0.5）
                 const glitchOutBase = effectOption === 'weak' ? 0.15 : effectOption === 'strong' ? 0.5 : 0.3
                 const glitchOutIntensity = progress
@@ -984,9 +1048,7 @@ export default function APNGGenerator() {
             }
             // V118: blindOut効果
             case 'blindOut': {
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 const blindOutCount = effectOption ? parseInt(effectOption) : 7
                 const isVerticalOut = effectDirection === 'horizontal' // 逆にする
                 const blindOutSize = isVerticalOut ? canvas.height / blindOutCount : canvas.width / blindOutCount
@@ -1008,9 +1070,7 @@ export default function APNGGenerator() {
             }
             // V118: 斬撃効果（斜めに斬られて上下がスライドして消える）
             case 'swordSlashOut': {
-                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                    if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                }
+                if (progress >= 0.95) break // 最終フレームは完全透明
                 const isRightSlash = effectOption !== 'left' // デフォルトは右斬り（╲）
                 ctx.save()
 
@@ -1602,6 +1662,9 @@ export default function APNGGenerator() {
             return
         }
 
+        const effectOnlyExit = isEffectOnlyExit(transition, effectOption, effectIntensity)
+        const requiresFinalClear = EXIT_EFFECTS.has(transition) && !effectOnlyExit
+
         setGenerationState('generating')
         setGenerationProgress(0)
         setGenerationPhase('measuring')  // 即座にフェーズ表示
@@ -1698,9 +1761,7 @@ export default function APNGGenerator() {
                             testCtx.globalAlpha = 1
                             break
                         case 'fadeOut':
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break
-                            }
+                            if (progress >= 0.95) break
                             testCtx.globalAlpha = 1 - progress
                             drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             testCtx.globalAlpha = 1
@@ -1946,9 +2007,7 @@ export default function APNGGenerator() {
                         }
                         // --- 退場エフェクト（V121.21追加） ---
                         case 'slideOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break // 最終フレームは完全透明
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             let offsetX = 0, offsetY = 0
                             switch (effectDirection) {
                                 case 'left': offsetX = Math.floor(-progress * testCanvas.width); break
@@ -1960,9 +2019,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'wipeOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break // 最終フレームは完全透明
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             testCtx.save()
                             testCtx.beginPath()
                             switch (effectDirection) {
@@ -1978,9 +2035,7 @@ export default function APNGGenerator() {
                         }
                         case 'zoomUpOut':
                         case 'zoomDownOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break // 最終フレームは完全透明
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             const isUp = transition === 'zoomUpOut'
                             const scaleOut = isUp ? (1 + progress * 0.5) : (1 - progress * 0.5)
                             const w = Math.floor(testCanvas.width * scaleOut)
@@ -1993,9 +2048,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'doorOpen': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break // 最終フレームは完全透明
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             const halfW = Math.floor(testCanvas.width / 2)
                             const openProgress = 1 - progress
                             testCtx.drawImage(sourceImage, 0, 0, Math.floor(sourceImage.width / 2), sourceImage.height,
@@ -2005,9 +2058,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'tvStaticOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break // 最終フレームは完全透明
-                            }
+                            if (effectOption !== 'none' && progress >= 0.999) break // 効果のみ以外は最終フレームで完全に透明化
                             drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             const staticData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height)
                             const staticIntensity = progress
@@ -2021,9 +2072,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'blindOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break // 最終フレームは完全透明
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             const blindCount = effectOption ? parseInt(effectOption as string) : 7
                             const isVertical = effectDirection === 'horizontal'
                             for (let bi = 0; bi < blindCount; bi++) {
@@ -2042,9 +2091,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'irisOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             const maxRadius = Math.max(testCanvas.width, testCanvas.height)
                             const irisOutRadius = maxRadius * (1 - progress)
                             const irisOutCx = testCanvas.width / 2
@@ -2070,9 +2117,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'tileOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break // 最終フレームは完全透明
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             const tileCount = effectOption ? parseInt(effectOption as string) : 4
                             for (let ty = 0; ty < tileCount; ty++) {
                                 for (let tx = 0; tx < tileCount; tx++) {
@@ -2097,9 +2142,7 @@ export default function APNGGenerator() {
                         }
                         // --- 追加の退場エフェクト（V121.22） ---
                         case 'glitchOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             const glitchOutBase = effectOption === 'weak' ? 0.15 : effectOption === 'strong' ? 0.5 : 0.3
                             const glitchOutIntensity = progress
                             testCtx.globalAlpha = 1 - progress
@@ -2118,7 +2161,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'focusOut': {
-                            if (effectOption !== 'none' && progress >= 0.99) break
+                            if (effectOption !== 'none' && progress >= 0.999) break // 効果のみ以外は最終フレームで完全に透明化
                             if (effectOption === 'fade') testCtx.globalAlpha = 1 - progress
                             testCtx.filter = `blur(${progress * 20}px)`
                             drawTestImage(0, 0, testCanvas.width, testCanvas.height)
@@ -2127,9 +2170,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'sliceOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             const sliceOutCount = effectOption ? parseInt(effectOption as string) : 4
                             testCtx.globalAlpha = 1 - progress
                             for (let s = 0; s < sliceOutCount; s++) {
@@ -2148,9 +2189,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'cardFlipOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             testCtx.save()
                             const flipOutCount = effectOption ? parseInt((effectOption as string).replace('x', '')) : 1
                             const endAngleOut = (flipOutCount - 1) * Math.PI + (Math.PI / 2)
@@ -2164,9 +2203,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'pageFlipOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.98) break
-                            }
+                            if (progress >= 0.98) break // 最終フレームは完全透明
                             const isRightFlipOut = effectOption === 'right'
                             testCtx.save()
                             const flipOutSkew = progress * 0.5
@@ -2181,9 +2218,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'swordSlashOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break
-                            }
+                            if (progress >= 0.95) break // 最終フレームは完全透明
                             const isRightSlash = effectOption !== 'left' // デフォルトは右斬り（╲）
                             testCtx.save()
 
@@ -2261,9 +2296,7 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'pixelateOut': {
-                            if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                if (progress >= 0.95) break
-                            }
+                            if (effectIntensity !== 'none' && progress >= 0.999) break // 効果のみ以外は最終フレームで完全に透明化
                             const maxPixelSizeOut = 32
                             const pixelSizeOut = Math.max(1, Math.floor(maxPixelSizeOut * progress))
                             const tempCanvasOut = document.createElement('canvas')
@@ -2602,9 +2635,7 @@ export default function APNGGenerator() {
                         default:
                             // その他のエフェクト: フェード近似
                             if (transition.endsWith('Out')) {
-                                if (effectIntensity !== 'none' || effectOption !== 'none') {
-                                    if (progress >= 0.95) break
-                                }
+                                if (progress >= 0.95) break
                                 testCtx.globalAlpha = 1 - progress
                                 drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                                 testCtx.globalAlpha = 1
@@ -2620,6 +2651,23 @@ export default function APNGGenerator() {
 
                     testFrames.push(testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height).data.buffer)
                     testDelays.push(Math.round(1000 / fps))
+                }
+
+                if (requiresFinalClear) {
+                    const transparentFrame = new Uint8ClampedArray(testCanvas.width * testCanvas.height * 4)
+                    // UPNGのクロップ・減色による消失を防ぐため、全画面をわずかな不透明度（Alpha=1）で埋める
+                    // これにより「全画面にデータがある」と認識させ、強制的にフルサイズフレーム等として保持させる
+                    for (let i = 3; i < transparentFrame.length; i += 4) {
+                        transparentFrame[i] = 1
+                    }
+                    testFrames.push(transparentFrame.buffer)
+                    testDelays.push(Math.round(1000 / fps))
+                }
+
+                if (!isLooping && testFrames.length > 0) {
+                    const lastFrameBuffer = testFrames[testFrames.length - 1]
+                    testFrames.push(lastFrameBuffer)
+                    testDelays.push(3600000)
                 }
 
                 // V121.20: エンコードせずフレームデータのみ返す（エンコードは呼び出し側でWorker使用）
@@ -2687,9 +2735,7 @@ export default function APNGGenerator() {
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         break
                     case 'fadeOut':
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         ctx.globalAlpha = 1 - progress
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         break
@@ -2716,9 +2762,7 @@ export default function APNGGenerator() {
                         }
                         break
                     case 'slideOut':
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         // 方向に応じてスライドアウト（整数化）
                         switch (effectDirection) {
                             case 'left':
@@ -2786,9 +2830,7 @@ export default function APNGGenerator() {
                         ctx.restore()
                         break
                     case 'wipeOut':
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         ctx.save()
                         ctx.beginPath()
                         switch (effectDirection) {
@@ -2855,9 +2897,7 @@ export default function APNGGenerator() {
                         break
                     }
                     case 'zoomUpOut': {
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         const isUpOut = effectOption === 'up'
                         const scaleOut = isUpOut ? (1.0 + progress * 0.5) : (1.0 - progress * 0.5)
                         const w = Math.floor(canvas.width * scaleOut)
@@ -3014,6 +3054,7 @@ export default function APNGGenerator() {
                         break
                     }
                     case 'doorOpen':
+                        if (progress >= 0.95) break // 退場は最終フレームで完全に透明（効果のみ以外）
                         const doorProgress = Math.min(progress * 2, 1)
                         const halfWidth = Math.floor(canvas.width / 2)
                         // 左扉
@@ -3080,7 +3121,7 @@ export default function APNGGenerator() {
 
                     // 砂嵐アウト
                     case 'tvStaticOut':
-                        if (effectOption !== 'none' && progress >= 0.99) break // 最終フレームは完全透明（効果のみ以外）
+                        if (effectOption !== 'none' && progress >= 0.999) break // 効果のみ以外は最終フレームで完全に透明化
                         drawScaledImage(0, 0, canvas.width, canvas.height)
                         const tvOutGenData = ctx.getImageData(0, 0, canvas.width, canvas.height)
                         for (let p = 0; p < tvOutGenData.data.length; p += 4) {
@@ -3122,9 +3163,7 @@ export default function APNGGenerator() {
 
                     // グリッチアウト
                     case 'glitchOut': {
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         // effectOptionで強度を決定（weak=0.15, medium=0.3, strong=0.5）
                         const glitchOutBase = effectOption === 'weak' ? 0.15 : effectOption === 'strong' ? 0.5 : 0.3
                         const glitchOutIntensity = progress
@@ -3157,7 +3196,7 @@ export default function APNGGenerator() {
                         if (effectOption === 'fade') ctx.globalAlpha = 1
                         break
                     case 'focusOut':
-                        if (effectOption !== 'none' && progress >= 0.99) break // 最終フレームは完全透明（効果のみ以外）
+                        if (effectOption !== 'none' && progress >= 0.999) break // 効果のみ以外は最終フレームで完全に透明化
                         if (effectOption === 'fade') ctx.globalAlpha = 1 - progress
                         ctx.filter = `blur(${progress * 20}px)`
                         ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, canvas.width, canvas.height)
@@ -3190,9 +3229,7 @@ export default function APNGGenerator() {
 
                     // スライスアウト
                     case 'sliceOut': {
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         const sliceOutCount = effectOption ? parseInt(effectOption) : 4
                         ctx.globalAlpha = 1 - progress
                         for (let s = 0; s < sliceOutCount; s++) {
@@ -3247,9 +3284,7 @@ export default function APNGGenerator() {
                     // V118: ブラインドアウト
                     // V118: ブラインドアウト
                     case 'blindOut': {
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         const blindOutCount = effectOption ? parseInt(effectOption) : 7
                         const isVerticalOut = effectDirection === 'horizontal' // 逆にする
 
@@ -3277,9 +3312,7 @@ export default function APNGGenerator() {
 
                     // V118: 斬撃効果（斜めに斬られて上下がスライドして消える）
                     case 'swordSlashOut': {
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         const isRightSlash = effectOption !== 'left' // デフォルトは右斬り（╲）
                         ctx.save()
 
@@ -3401,9 +3434,7 @@ export default function APNGGenerator() {
 
                     // タイルアウト（ランダム順）
                     case 'tileOut':
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         const tileOutCount = effectOption ? parseInt(effectOption) : 9
                         const tileOutCols = Math.sqrt(tileOutCount), tileOutRows = Math.sqrt(tileOutCount)
                         const tileOutTotal = tileOutCols * tileOutRows
@@ -3462,7 +3493,7 @@ export default function APNGGenerator() {
 
                     // ピクセレートアウト
                     case 'pixelateOut': {
-                        if (effectIntensity !== 'none' && progress >= 0.9) break // 最終フレームは完全透明（効果のみ以外）閾値を緩和
+                        if (effectIntensity !== 'none' && progress >= 0.999) break // 効果のみ以外は最終フレームで完全に透明化
                         // effectOptionでブロックサイズを決定
                         const maxPixelOut = effectOption === 'small' ? 15 : effectOption === 'large' ? 60 : 30
                         const pixelOutSize = Math.max(1, Math.floor(progress * maxPixelOut))
@@ -3510,9 +3541,7 @@ export default function APNGGenerator() {
 
                     // アイリスアウト
                     case 'irisOut': {
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         ctx.save()
                         ctx.beginPath()
                         const irisOutRadius = Math.max(canvas.width, canvas.height) * (1 - progress)
@@ -3560,11 +3589,7 @@ export default function APNGGenerator() {
                     // 本めくりアウト（2Dスキュー効果）
                     case 'pageFlipOut': {
                         const isRightFlipOut = effectOption === 'right'
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress > 0.98) {
-                                break
-                            }
-                        }
+                        if (progress > 0.98) break // 最終フレームは完全透明
                         ctx.save()
                         const flipOutSkew = progress * 0.5
                         if (isRightFlipOut) {
@@ -3595,9 +3620,7 @@ export default function APNGGenerator() {
 
                     // カード回転アウト（3D風Y軸回転で退場）
                     case 'cardFlipOut': {
-                        if (effectIntensity !== 'none' || effectOption !== 'none') {
-                            if (progress >= 0.95) break // 最終フレームは完全透明（効果のみ以外）
-                        }
+                        if (progress >= 0.95) break // 最終フレームは完全透明
                         ctx.save()
                         const flipOutCount = effectOption ? parseInt(effectOption.replace('x', '')) : 1
                         const endAngleOut = (flipOutCount - 1) * Math.PI + (Math.PI / 2)
@@ -3862,7 +3885,17 @@ export default function APNGGenerator() {
                 await new Promise(resolve => setTimeout(resolve, 0))
             }
 
-            if (!isLooping) {
+            if (requiresFinalClear) {
+                const transparentFrame = new Uint8ClampedArray(canvas.width * canvas.height * 4)
+                // UPNGのクロップ・減色による消失を防ぐため、全画面をわずかな不透明度（Alpha=1）で埋める
+                for (let i = 3; i < transparentFrame.length; i += 4) {
+                    transparentFrame[i] = 1
+                }
+                frames.push(transparentFrame.buffer)
+                delays.push(1000 / fps)
+            }
+
+            if (!isLooping && frames.length > 0) {
                 frames.push(frames[frames.length - 1]);
                 delays.push(3600000);
             }
@@ -3940,12 +3973,19 @@ export default function APNGGenerator() {
                         colorNum: selectedStep.colorNum,
                         delays,
                         loop: isLooping ? 0 : 1,
+                        forceFullCanvasLastFrame: requiresFinalClear,
                         onProgress: setGenerationProgress
                     })
                 } catch (workerError) {
                     // Workerが失敗した場合はフォールバック（同期処理）
                     console.warn('Worker failed, falling back to main thread:', workerError)
-                    finalApng = UPNG.encode(frames, canvas.width, canvas.height, selectedStep.colorNum, delays, { loop: isLooping ? 0 : 1 })
+                    const prevFlag = UPNG.forceFullCanvasLastFrame
+                    UPNG.forceFullCanvasLastFrame = requiresFinalClear
+                    try {
+                        finalApng = UPNG.encode(frames, canvas.width, canvas.height, selectedStep.colorNum, delays, { loop: isLooping ? 0 : 1 })
+                    } finally {
+                        UPNG.forceFullCanvasLastFrame = prevFlag
+                    }
                 }
                 console.timeEnd('⏱初回エンコード')
             }
@@ -4116,11 +4156,18 @@ export default function APNGGenerator() {
                             colorNum: step.colorNum,
                             delays: frameData.delays,
                             loop: isLooping ? 0 : 1,
+                            forceFullCanvasLastFrame: requiresFinalClear,
                             onProgress: (p) => setGenerationProgress(0.9 + (retry / MAX_RETRIES) * 0.05 + p * 0.01)
                         })
                     } catch (workerError) {
                         console.warn('Worker failed in retry, falling back:', workerError)
-                        tryApng = UPNG.encode(frameData.frames, frameData.width, frameData.height, step.colorNum, frameData.delays, { loop: isLooping ? 0 : 1 })
+                        const prevFlag = UPNG.forceFullCanvasLastFrame
+                        UPNG.forceFullCanvasLastFrame = requiresFinalClear
+                        try {
+                            tryApng = UPNG.encode(frameData.frames, frameData.width, frameData.height, step.colorNum, frameData.delays, { loop: isLooping ? 0 : 1 })
+                        } finally {
+                            UPNG.forceFullCanvasLastFrame = prevFlag
+                        }
                     }
 
                     const trySizeMB = tryApng.byteLength / 1024 / 1024
@@ -4154,11 +4201,18 @@ export default function APNGGenerator() {
                             height: lastFrameData.height,
                             colorNum: lastStep.colorNum,
                             delays: lastFrameData.delays,
-                            loop: isLooping ? 0 : 1
+                            loop: isLooping ? 0 : 1,
+                            forceFullCanvasLastFrame: requiresFinalClear
                         })
                     } catch (workerError) {
                         console.warn('Worker failed in fallback, falling back:', workerError)
-                        finalApng = UPNG.encode(lastFrameData.frames, lastFrameData.width, lastFrameData.height, lastStep.colorNum, lastFrameData.delays, { loop: isLooping ? 0 : 1 })
+                        const prevFlag = UPNG.forceFullCanvasLastFrame
+                        UPNG.forceFullCanvasLastFrame = requiresFinalClear
+                        try {
+                            finalApng = UPNG.encode(lastFrameData.frames, lastFrameData.width, lastFrameData.height, lastStep.colorNum, lastFrameData.delays, { loop: isLooping ? 0 : 1 })
+                        } finally {
+                            UPNG.forceFullCanvasLastFrame = prevFlag
+                        }
                     }
 
                     selectedStep = lastStep
@@ -4173,6 +4227,11 @@ export default function APNGGenerator() {
 
             if (sizeLimit !== null && finalApng.byteLength > targetBytes) {
                 console.warn(`警告: 目標サイズ(${sizeLimit}MB)を超過: ${(finalApng.byteLength / 1024 / 1024).toFixed(2)}MB`)
+            }
+
+            if (requiresFinalClear) {
+                finalApng = enforceFinalFrameDispose(finalApng, 1, 0)
+                console.log('最終フレームのdispose/blendを背景クリアに設定')
             }
 
             // ループなしの場合、acTLチャンクのnum_playsを1に修正
@@ -4323,6 +4382,7 @@ export default function APNGGenerator() {
                 const doorProgress = Math.min(previewProgress * 2, 1)
                 return {
                     ...baseStyle,
+                    opacity: Math.max(0, 1 - previewProgress),
                     clipPath: 'none',
                     '&::before, &::after': {
                         content: '""',
@@ -4437,13 +4497,17 @@ export default function APNGGenerator() {
                     opacity: 0.3 + previewProgress * 0.7,
                     filter: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='${staticInIntensity * 30}' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E#n") contrast(${1 + staticInIntensity * 2})`,
                 }
-            case 'tvStaticOut':
+            case 'tvStaticOut': {
                 const staticOutIntensity = previewProgress
+                const staticOutOpacity = effectOption === 'none'
+                    ? 1
+                    : Math.max(0, 1 - previewProgress)
                 return {
                     ...baseStyle,
-                    opacity: 1 - previewProgress * 0.7,
+                    opacity: staticOutOpacity,
                     filter: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='${staticOutIntensity * 30}' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/svg%3E#n") contrast(${1 + staticOutIntensity * 2})`,
                 }
+            }
 
             // グリッチイン/アウト（横スライスがランダムにズレる）
             case 'glitchIn':
@@ -4457,9 +4521,10 @@ export default function APNGGenerator() {
                 }
             case 'glitchOut':
                 const glitchOutSkew = Math.sin(previewProgress * Math.PI * 8) * previewProgress * 15
+                const glitchOutOpacity = Math.max(0, 1 - previewProgress)
                 return {
                     ...baseStyle,
-                    opacity: 1 - previewProgress * 0.7,
+                    opacity: glitchOutOpacity,
                     transform: `translate(calc(-50% + ${Math.sin(previewProgress * Math.PI * 6) * previewProgress * 20}px), -50%) skewX(${glitchOutSkew}deg)`,
                     filter: `hue-rotate(${previewProgress * 30}deg)`,
                 }
@@ -4467,8 +4532,12 @@ export default function APNGGenerator() {
             // フォーカスイン/アウト
             case 'focusIn':
                 return { ...baseStyle, filter: `blur(${(1 - previewProgress) * 20}px)` }
-            case 'focusOut':
-                return { ...baseStyle, filter: `blur(${previewProgress * 20}px)`, opacity: 1 - previewProgress * 0.5 }
+            case 'focusOut': {
+                const focusOutOpacity = effectOption === 'none'
+                    ? 1
+                    : Math.max(0, 1 - previewProgress)
+                return { ...baseStyle, filter: `blur(${previewProgress * 20}px)`, opacity: focusOutOpacity }
+            }
 
             // スライスイン（横スライス - 5つの横帯が交互に左右からスライドイン）
             case 'sliceIn':
@@ -4509,9 +4578,10 @@ export default function APNGGenerator() {
                 // CSSプレビューでは斜め分割の簡易表現
                 const slashProgress = previewProgress
                 const slideAmount = slashProgress * 30
+                const slashOpacity = Math.max(0, 1 - slashProgress)
                 return {
                     ...baseStyle,
-                    opacity: 1 - slashProgress * 0.8,
+                    opacity: slashOpacity,
                     transform: `translate(calc(-50% + ${slideAmount}px), calc(-50% + ${slideAmount * 0.3}px)) rotate(${slashProgress * 5}deg)`,
                     clipPath: slashProgress > 0.15
                         ? `polygon(0 0, 100% ${50 - slashProgress * 30}%, 100% 0)`
@@ -4563,15 +4633,18 @@ export default function APNGGenerator() {
                     imageRendering: 'pixelated' as React.CSSProperties['imageRendering'],
                     transform: `translate(-50%, -50%) scale(${0.95 + previewProgress * 0.05})`,
                 }
-            case 'pixelateOut':
-                const pixelBlurOut = previewProgress * 8
+            case 'pixelateOut': {
+                const pixelateOutOpacity = effectIntensity === 'none'
+                    ? 1
+                    : Math.max(0, 1 - previewProgress)
                 return {
                     ...baseStyle,
-                    opacity: 1 - previewProgress * 0.3,
+                    opacity: pixelateOutOpacity,
                     filter: `contrast(${1 + previewProgress * 0.5}) saturate(${1 - previewProgress * 0.5})`,
                     imageRendering: 'pixelated' as React.CSSProperties['imageRendering'],
                     transform: `translate(-50%, -50%) scale(${1 - previewProgress * 0.05})`,
                 }
+            }
 
             // アイリスイン/アウト
             case 'irisIn':
@@ -4811,7 +4884,7 @@ export default function APNGGenerator() {
                                                 href="/manual"
                                                 className="flex items-center justify-center gap-1 w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
                                             >
-                                                📖 詳細マニュアルを見る
+                                                📖 さらに詳細なマニュアルはこちら
                                             </a>
                                             <Popover.Arrow className="fill-white" />
                                         </Popover.Content>
