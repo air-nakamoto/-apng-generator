@@ -2529,15 +2529,16 @@ export default function APNGGenerator() {
 
             // V121.20: トップダウン方式 - 常にフルカラー100%から開始
             // baseScaleのみ適用（stepScaleとの二重縮小を廃止）
+            console.time('⏱総生成時間')
             if (sizeLimit !== null) {
                 selectedStep = COMPRESSION_STEPS[0] // フルカラー100%
                 selectedStepIndex = 0
                 console.log(`トップダウン方式開始（V121.20）... エフェクト: ${transition} [${categoryLabel}]`)
-                console.time('⏱総生成時間')
                 setGenerationPhase('generating')
             } else {
                 // 容量制限なしはフルカラー
                 selectedStep = { colorNum: 0, scale: 1.0, name: 'フルカラー' }
+                console.log(`容量制限なし... エフェクト: ${transition}`)
             }
 
             // V121.20: baseScaleのみ適用（stepScaleは使わない）
@@ -3782,7 +3783,7 @@ export default function APNGGenerator() {
             console.log(`Worker送信 loop設定: isLooping=${isLooping}, loop=${isLooping ? 0 : 1}`)
 
             // V121.32: 初回エンコードスキップ最適化（実験的）
-            const SKIP_INITIAL_ENCODE = true  // falseにすると従来動作
+            const SKIP_INITIAL_ENCODE = false  // trueにすると高速化（精度低下）
             const rawSize = scaledWidth * scaledHeight * 4 * frameCount
 
             // エフェクト別の推定圧縮率（フルカラー100%時）
