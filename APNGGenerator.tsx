@@ -4872,10 +4872,11 @@ export default function APNGGenerator() {
                                                     <p className="mb-2">ココフォリア等のTRPGツールでは、アップロードできる画像サイズに制限があります。</p>
                                                     <p className="font-medium text-gray-700 mb-1">対処法：</p>
                                                     <ul className="space-y-1 pl-3">
-                                                        <li>• <span className="text-amber-700 font-medium">※優先：</span>容量制限を「5MB」に設定する</li>
+                                                        <li>• <span className="text-amber-700 font-medium">※優先：</span>容量制限を「<span className="font-bold text-red-600">5MB</span>」に設定する</li>
                                                         <li>• 元画像を小さくしてからアップロード</li>
                                                         <li>• フレームレートを下げる（20fps→12fps等）</li>
                                                         <li>• 再生スピードを上げて長さを短くする</li>
+                                                        <li>• 生成したAPNGを<a href="https://minify.ccfolia.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500 underline">ココフォリアの圧縮ツール</a>を使用する</li>
                                                     </ul>
                                                 </div>
                                             </details>
