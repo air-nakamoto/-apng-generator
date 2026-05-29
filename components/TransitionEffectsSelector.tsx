@@ -272,7 +272,7 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                             <span className="text-sm text-gray-600 mr-2 min-w-[40px]">
                                 {selectedEffect.optionType === 'size' ? 'サイズ:' :
                                     selectedEffect.optionType === 'intensity' ? '強度:' :
-                                        selectedEffect.optionType === 'count' ? '分割:' :
+                                        selectedEffect.optionType === 'count' ? (selectedEffect.name.startsWith('blink') ? '瞬き:' : '分割:') :
                                             selectedEffect.optionType === 'shape' ? '形状:' : 'オプション:'}
                             </span>
                             <div className="flex gap-2">
@@ -299,10 +299,10 @@ export const TransitionEffectsSelector: React.FC<Props> = ({
                         </div>
                     )}
 
-                    {/* V118: 2段階オプション - 強度（振動用） */}
+                    {/* V118: 2段階オプション - 強度/演出 */}
                     {hasIntensityOptions && selectedEffect.intensityOptions && (
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600 mr-2 min-w-[40px]">強度:</span>
+                            <span className="text-sm text-gray-600 mr-2 min-w-[40px]">{selectedEffect.name.startsWith('blink') ? '演出:' : '強度:'}</span>
                             <div className="flex gap-2">
                                 {selectedEffect.intensityOptions.map((opt) => (
                                     <button

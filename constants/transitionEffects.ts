@@ -17,6 +17,8 @@ import {
     CircleDot,
     BookOpen,
     Blinds,
+    Eye,        // まばたきイン用
+    EyeOff,     // まばたきアウト用
 
     // 退場効果用
     MoveLeft,
@@ -241,6 +243,28 @@ export const transitionEffects: EffectCategory[] = [
                 ],
                 defaultOption: '1x'
             },
+            {
+                name: 'blinkIn',
+                label: 'まばたきイン',
+                icon: Eye,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'count',
+                options: [
+                    { value: '1', label: '1回', numericValue: 1 },
+                    { value: '2', label: '2回', numericValue: 2 },
+                    { value: '3', label: '3回', numericValue: 3 },
+                ],
+                defaultOption: '1',
+                hasIntensity: true,
+                intensityOptions: [
+                    { value: 'none', label: 'なし', numericValue: 0 },
+                    { value: 'blur', label: 'ぼやけ', numericValue: 1 },
+                    { value: 'shake', label: '揺れ', numericValue: 2 },
+                    { value: 'blur_shake', label: 'ぼやけ+揺れ', numericValue: 3 },
+                ],
+                defaultIntensity: 'none'
+            },
         ],
     },
     {
@@ -421,6 +445,28 @@ export const transitionEffects: EffectCategory[] = [
                     { value: 'left', label: '左斬り ╱', numericValue: 1 },
                 ],
                 defaultOption: 'right'
+            },
+            {
+                name: 'blinkOut',
+                label: 'まばたきアウト',
+                icon: EyeOff,
+                hasDirection: false,
+                hasOptions: true,
+                optionType: 'count',
+                options: [
+                    { value: '1', label: '1回', numericValue: 1 },
+                    { value: '2', label: '2回', numericValue: 2 },
+                    { value: '3', label: '3回', numericValue: 3 },
+                ],
+                defaultOption: '1',
+                hasIntensity: true,
+                intensityOptions: [
+                    { value: 'none', label: 'なし', numericValue: 0 },
+                    { value: 'blur', label: 'ぼやけ', numericValue: 1 },
+                    { value: 'shake', label: '揺れ', numericValue: 2 },
+                    { value: 'blur_shake', label: 'ぼやけ+揺れ', numericValue: 3 },
+                ],
+                defaultIntensity: 'none'
             },
         ],
     },
