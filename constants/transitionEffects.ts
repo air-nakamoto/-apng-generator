@@ -260,8 +260,6 @@ export const transitionEffects: EffectCategory[] = [
                 intensityOptions: [
                     { value: 'none', label: 'なし', numericValue: 0 },
                     { value: 'blur', label: 'ぼやけ', numericValue: 1 },
-                    { value: 'shake', label: '揺れ', numericValue: 2 },
-                    { value: 'blur_shake', label: 'ぼやけ+揺れ', numericValue: 3 },
                 ],
                 defaultIntensity: 'none'
             },
@@ -463,8 +461,6 @@ export const transitionEffects: EffectCategory[] = [
                 intensityOptions: [
                     { value: 'none', label: 'なし', numericValue: 0 },
                     { value: 'blur', label: 'ぼやけ', numericValue: 1 },
-                    { value: 'shake', label: '揺れ', numericValue: 2 },
-                    { value: 'blur_shake', label: 'ぼやけ+揺れ', numericValue: 3 },
                 ],
                 defaultIntensity: 'none'
             },

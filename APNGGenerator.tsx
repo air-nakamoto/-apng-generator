@@ -28,7 +28,6 @@ const EXIT_EFFECTS = new Set([
     'pageFlipOut',
     'cardFlipOut',
     'swordSlashOut',
-    'blinkOut',
 ])
 
 const isEffectOnlyExit = (transition: string, effectOption: string, effectIntensity: string) => {
@@ -300,22 +299,14 @@ function drawBlinkFrame(
 
     ctx.save()
 
-    const hasBlur = visualEffect === 'blur' || visualEffect === 'blur_shake'
-    const hasShake = visualEffect === 'shake' || visualEffect === 'blur_shake'
-
-    let offsetX = 0, offsetY = 0
-    if (hasShake) {
-        const shakeIntensity = (1 - openRatio) * 8
-        offsetX = (Math.sin(progress * 137.5) * 2 - 1) * shakeIntensity
-        offsetY = (Math.cos(progress * 173.3) * 2 - 1) * shakeIntensity
-    }
+    const hasBlur = visualEffect === 'blur'
 
     if (hasBlur) {
         const blurAmount = (1 - openRatio) * 6
         ctx.filter = `blur(${blurAmount}px)`
     }
 
-    ctx.drawImage(img, 0, 0, img.width, img.height, offsetX, offsetY, width, height)
+    ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height)
 
     if (hasBlur) {
         ctx.filter = 'none'
@@ -323,39 +314,44 @@ function drawBlinkFrame(
 
     ctx.restore()
 
-    if (openRatio < 0.999) {
-        const centerY = height / 2
-        const maxGap = height * 0.7
-        const currentGap = maxGap * openRatio
+    const centerY = height / 2
+    const maxGap = height * 0.7
+    const currentGap = maxGap * openRatio
 
-        ctx.fillStyle = '#000000'
+    ctx.save()
+    ctx.fillStyle = '#000000'
+    ctx.shadowColor = '#000000'
+    ctx.shadowBlur = 20
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = 0
 
-        // Upper eyelid - eye shape: meets at left/right corners, widest at center
-        ctx.beginPath()
-        ctx.moveTo(0, centerY)          // left corner of eye
-        ctx.lineTo(0, 0)                // top-left
-        ctx.lineTo(width, 0)            // top-right
-        ctx.lineTo(width, centerY)      // right corner of eye
-        ctx.quadraticCurveTo(
-            width / 2, centerY - currentGap / 2,
-            0, centerY
-        )
-        ctx.closePath()
-        ctx.fill()
+    // Upper eyelid
+    ctx.beginPath()
+    ctx.moveTo(0, centerY)
+    ctx.lineTo(0, 0)
+    ctx.lineTo(width, 0)
+    ctx.lineTo(width, centerY)
+    ctx.quadraticCurveTo(
+        width / 2, centerY - currentGap / 2,
+        0, centerY
+    )
+    ctx.closePath()
+    ctx.fill()
 
-        // Lower eyelid - eye shape: meets at left/right corners, widest at center
-        ctx.beginPath()
-        ctx.moveTo(0, centerY)          // left corner of eye
-        ctx.lineTo(0, height)           // bottom-left
-        ctx.lineTo(width, height)       // bottom-right
-        ctx.lineTo(width, centerY)      // right corner of eye
-        ctx.quadraticCurveTo(
-            width / 2, centerY + currentGap / 2,
-            0, centerY
-        )
-        ctx.closePath()
-        ctx.fill()
-    }
+    // Lower eyelid
+    ctx.beginPath()
+    ctx.moveTo(0, centerY)
+    ctx.lineTo(0, height)
+    ctx.lineTo(width, height)
+    ctx.lineTo(width, centerY)
+    ctx.quadraticCurveTo(
+        width / 2, centerY + currentGap / 2,
+        0, centerY
+    )
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.restore()
 }
 
 
@@ -1209,7 +1205,6 @@ export default function APNGGenerator() {
                 break
             }
             case 'blinkOut': {
-                if (progress >= 0.99) break
                 const blinkOutCount = effectOption ? parseInt(effectOption) : 1
                 const blinkOutVisual = effectIntensity || 'none'
                 drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkOutCount, blinkOutVisual, 'close')
@@ -1765,8 +1760,9 @@ export default function APNGGenerator() {
             playbackSpeedRef.current = savedSpeed // refも即時更新
         } else {
             // 初めて選ぶエフェクトはデフォルト速度
-            setPlaybackSpeed(1.0)
-            playbackSpeedRef.current = 1.0 // refも即時更新
+            const defaultSpeed = (newTransition === 'blinkIn' || newTransition === 'blinkOut') ? 0.5 : 1.0
+            setPlaybackSpeed(defaultSpeed)
+            playbackSpeedRef.current = defaultSpeed // refも即時更新
         }
 
         // 既存のアニメーションをキャンセルして再開（少し遅延させて状態更新を待つ）
@@ -2371,7 +2367,6 @@ export default function APNGGenerator() {
                             break
                         }
                         case 'blinkOut': {
-                            if (progress >= 0.99) break
                             const blinkOutCount = effectOption ? parseInt(effectOption) : 1
                             const blinkOutVisual = effectIntensity || 'none'
                             drawBlinkFrame(testCtx, sourceImage, testCanvas.width, testCanvas.height, progress, blinkOutCount, blinkOutVisual, 'close')
@@ -3477,7 +3472,6 @@ export default function APNGGenerator() {
                         break
                     }
                     case 'blinkOut': {
-                        if (progress >= 0.99) break
                         const blinkOutCount = effectOption ? parseInt(effectOption) : 1
                         const blinkOutVisual = effectIntensity || 'none'
                         drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkOutCount, blinkOutVisual, 'close')
@@ -4754,7 +4748,7 @@ export default function APNGGenerator() {
                 return {
                     ...baseStyle,
                     clipPath: `inset(${blinkInClip}% 0 ${blinkInClip}% 0 round 50%)`,
-                    filter: (effectIntensity === 'blur' || effectIntensity === 'blur_shake')
+                    filter: effectIntensity === 'blur'
                         ? `blur(${(1 - blinkInOpenCSS) * 6}px)` : undefined,
                 }
             }
@@ -4764,7 +4758,7 @@ export default function APNGGenerator() {
                 return {
                     ...baseStyle,
                     clipPath: `inset(${blinkOutClip}% 0 ${blinkOutClip}% 0 round 50%)`,
-                    filter: (effectIntensity === 'blur' || effectIntensity === 'blur_shake')
+                    filter: effectIntensity === 'blur'
                         ? `blur(${(1 - blinkOutOpenCSS) * 6}px)` : undefined,
                 }
             }
