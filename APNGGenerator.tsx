@@ -224,6 +224,138 @@ const tileOrders: { [key: number]: number[] } = {
     16: [7, 10, 1, 14, 4, 11, 2, 13, 8, 5, 15, 0, 9, 6, 3, 12]
 }
 
+function easeInOutCubic(t: number): number {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+function calcBlinkOpenRatio(progress: number, blinkCount: number): number {
+    const tremor = Math.sin(progress * Math.PI * 18) * 0.015 * (1 - progress)
+
+    if (blinkCount === 1) {
+        const microPhase = 0.2
+        if (progress < microPhase) {
+            const p = progress / microPhase
+            return Math.sin(p * Math.PI) * 0.05 + tremor
+        }
+        const mainP = (progress - microPhase) / (1 - microPhase)
+        return easeInOutCubic(mainP) + tremor * (1 - mainP)
+    }
+
+    if (blinkCount === 2) {
+        if (progress < 0.15) {
+            const p = progress / 0.15
+            return Math.sin(p * Math.PI) * 0.04 + tremor
+        }
+        if (progress < 0.35) {
+            const p = (progress - 0.15) / 0.2
+            return easeInOutCubic(p) * 0.4
+        }
+        if (progress < 0.45) {
+            const p = (progress - 0.35) / 0.1
+            return 0.4 * (1 - easeInOutCubic(p)) + 0.05
+        }
+        const p = (progress - 0.45) / 0.55
+        return 0.05 + easeInOutCubic(p) * 0.95
+    }
+
+    // blinkCount === 3
+    if (progress < 0.1) {
+        const p = progress / 0.1
+        return Math.sin(p * Math.PI) * 0.03 + tremor
+    }
+    if (progress < 0.25) {
+        const p = (progress - 0.1) / 0.15
+        return easeInOutCubic(p) * 0.3
+    }
+    if (progress < 0.32) {
+        const p = (progress - 0.25) / 0.07
+        return 0.3 * (1 - easeInOutCubic(p)) + 0.05
+    }
+    if (progress < 0.5) {
+        const p = (progress - 0.32) / 0.18
+        return 0.05 + easeInOutCubic(p) * 0.45
+    }
+    if (progress < 0.58) {
+        const p = (progress - 0.5) / 0.08
+        return 0.5 * (1 - easeInOutCubic(p)) + 0.1
+    }
+    const p = (progress - 0.58) / 0.42
+    return 0.1 + easeInOutCubic(p) * 0.9
+
+}
+
+function drawBlinkFrame(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    width: number,
+    height: number,
+    progress: number,
+    blinkCount: number,
+    direction: 'open' | 'close'
+) {
+    const effectiveProgress = direction === 'open' ? progress : 1 - progress
+    const openRatio = Math.max(0, Math.min(1, calcBlinkOpenRatio(effectiveProgress, blinkCount)))
+
+    ctx.save()
+
+    const blurAmount = (1 - openRatio) * 6
+    if (blurAmount > 0.1) {
+        ctx.filter = `blur(${blurAmount}px)`
+    }
+
+    ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height)
+
+    ctx.filter = 'none'
+    ctx.restore()
+
+    const centerY = height / 2
+    // openRatio が 1 に近づくにつれ、まぶたを画面外まで大きく退避させる
+    // 角はアーモンド型のため、隙間(gap)を画面全体クリアできるまで終盤で加速させる
+    const spread = openRatio * openRatio * width * 0.8
+    const leftX = -spread
+    const rightX = width + spread
+    const currentGap = height * (0.6 * openRatio + 2.6 * openRatio * openRatio * openRatio)
+
+    const curveTop = centerY - currentGap / 2
+    const curveBottom = centerY + currentGap / 2
+
+    ctx.save()
+    ctx.fillStyle = '#000000'
+    const shadowAmount = Math.max(0, 20 * (1 - openRatio))
+    ctx.shadowColor = '#000000'
+    ctx.shadowBlur = shadowAmount
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = 0
+
+    // Upper eyelid
+    ctx.beginPath()
+    ctx.moveTo(leftX, centerY)
+    ctx.lineTo(leftX, -spread)
+    ctx.lineTo(rightX, -spread)
+    ctx.lineTo(rightX, centerY)
+    ctx.quadraticCurveTo(
+        width / 2, curveTop,
+        leftX, centerY
+    )
+    ctx.closePath()
+    ctx.fill()
+
+    // Lower eyelid
+    ctx.beginPath()
+    ctx.moveTo(leftX, centerY)
+    ctx.lineTo(leftX, height + spread)
+    ctx.lineTo(rightX, height + spread)
+    ctx.lineTo(rightX, centerY)
+    ctx.quadraticCurveTo(
+        width / 2, curveBottom,
+        leftX, centerY
+    )
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.restore()
+}
+
 
 const DoorOpenPreview: React.FC<{ src: string; progress: number }> = ({ src, progress }) => {
     const doorProgress = Math.min(progress * 2, 1)
@@ -1068,6 +1200,16 @@ export default function APNGGenerator() {
                 }
                 break
             }
+            case 'blinkIn': {
+                const blinkInCount = effectOption ? parseInt(effectOption) : 1
+                drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkInCount, 'open')
+                break
+            }
+            case 'blinkOut': {
+                const blinkOutCount = effectOption ? parseInt(effectOption) : 1
+                drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkOutCount, 'close')
+                break
+            }
             // V118: 斬撃効果（斜めに斬られて上下がスライドして消える）
             case 'swordSlashOut': {
                 if (progress >= 0.95) break // 最終フレームは完全透明
@@ -1618,8 +1760,9 @@ export default function APNGGenerator() {
             playbackSpeedRef.current = savedSpeed // refも即時更新
         } else {
             // 初めて選ぶエフェクトはデフォルト速度
-            setPlaybackSpeed(1.0)
-            playbackSpeedRef.current = 1.0 // refも即時更新
+            const defaultSpeed = (newTransition === 'blinkIn' || newTransition === 'blinkOut') ? 0.5 : 1.0
+            setPlaybackSpeed(defaultSpeed)
+            playbackSpeedRef.current = defaultSpeed // refも即時更新
         }
 
         // 既存のアニメーションをキャンセルして再開（少し遅延させて状態更新を待つ）
@@ -2215,6 +2358,16 @@ export default function APNGGenerator() {
                             testCtx.globalAlpha = Math.max(0, Math.min(1, (1 - progress) * 1.5))
                             drawTestImage(0, 0, testCanvas.width, testCanvas.height)
                             testCtx.restore()
+                            break
+                        }
+                        case 'blinkIn': {
+                            const blinkInCount = effectOption ? parseInt(effectOption) : 1
+                            drawBlinkFrame(testCtx, sourceImage, testCanvas.width, testCanvas.height, progress, blinkInCount, 'open')
+                            break
+                        }
+                        case 'blinkOut': {
+                            const blinkOutCount = effectOption ? parseInt(effectOption) : 1
+                            drawBlinkFrame(testCtx, sourceImage, testCanvas.width, testCanvas.height, progress, blinkOutCount, 'close')
                             break
                         }
                         case 'swordSlashOut': {
@@ -3310,6 +3463,17 @@ export default function APNGGenerator() {
                         break
                     }
 
+                    case 'blinkIn': {
+                        const blinkInCount = effectOption ? parseInt(effectOption) : 1
+                        drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkInCount, 'open')
+                        break
+                    }
+                    case 'blinkOut': {
+                        const blinkOutCount = effectOption ? parseInt(effectOption) : 1
+                        drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkOutCount, 'close')
+                        break
+                    }
+
                     // V118: 斬撃効果（斜めに斬られて上下がスライドして消える）
                     case 'swordSlashOut': {
                         if (progress >= 0.95) break // 最終フレームは完全透明
@@ -4040,6 +4204,7 @@ export default function APNGGenerator() {
                     pageFlipIn: 1.11, pageFlipOut: 1.11,
                     cardFlipIn: 1.12, cardFlipOut: 1.12,
                     swordSlashIn: 1.71, swordSlashOut: 1.71,
+                    blinkIn: 0.85, blinkOut: 0.85,
                     zoomUp: 0.64, zoomUpOut: 0.64,
                     doorClose: 0.60, doorOpen: 0.60,
                     pixelateIn: 1.0, pixelateOut: 1.0,
@@ -4572,6 +4737,25 @@ export default function APNGGenerator() {
                     opacity: 1 - previewProgress,
                     clipPath: `inset(${previewProgress * 100}% 0 0 0)`,
                 }
+
+            case 'blinkIn': {
+                const blinkInOpenCSS = calcBlinkOpenRatio(previewProgress, parseInt(effectOption || '1'))
+                const blinkInClip = Math.max(0, (1 - blinkInOpenCSS) * 50)
+                return {
+                    ...baseStyle,
+                    clipPath: `inset(${blinkInClip}% 0 ${blinkInClip}% 0 round 50%)`,
+                    filter: `blur(${(1 - blinkInOpenCSS) * 6}px)`,
+                }
+            }
+            case 'blinkOut': {
+                const blinkOutOpenCSS = calcBlinkOpenRatio(1 - previewProgress, parseInt(effectOption || '1'))
+                const blinkOutClip = Math.max(0, (1 - blinkOutOpenCSS) * 50)
+                return {
+                    ...baseStyle,
+                    clipPath: `inset(${blinkOutClip}% 0 ${blinkOutClip}% 0 round 50%)`,
+                    filter: `blur(${(1 - blinkOutOpenCSS) * 6}px)`,
+                }
+            }
 
             // V118: 斬撃効果
             case 'swordSlashOut': {
@@ -5260,7 +5444,7 @@ export default function APNGGenerator() {
                 </filter>
             </svg >
             <canvas ref={canvasRef} style={{ display: 'none' }} />
-            <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} version="V121" />
+            <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} version="V122" />
         </div >
     )
 }
