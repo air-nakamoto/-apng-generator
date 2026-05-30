@@ -315,8 +315,16 @@ function drawBlinkFrame(
     ctx.restore()
 
     const centerY = height / 2
-    const maxGap = height * 0.7
+    const spread = openRatio * openRatio * width * 0.6
+    const leftX = -spread
+    const rightX = width + spread
+    const maxGap = height * (0.7 + openRatio * 0.5)
     const currentGap = maxGap * openRatio
+
+    if (currentGap / 2 >= centerY + 30 && spread > width * 0.3) {
+        ctx.restore()
+        return
+    }
 
     ctx.save()
     ctx.fillStyle = '#000000'
@@ -327,26 +335,26 @@ function drawBlinkFrame(
 
     // Upper eyelid
     ctx.beginPath()
-    ctx.moveTo(0, centerY)
-    ctx.lineTo(0, 0)
-    ctx.lineTo(width, 0)
-    ctx.lineTo(width, centerY)
+    ctx.moveTo(leftX, centerY)
+    ctx.lineTo(leftX, -spread)
+    ctx.lineTo(rightX, -spread)
+    ctx.lineTo(rightX, centerY)
     ctx.quadraticCurveTo(
         width / 2, centerY - currentGap / 2,
-        0, centerY
+        leftX, centerY
     )
     ctx.closePath()
     ctx.fill()
 
     // Lower eyelid
     ctx.beginPath()
-    ctx.moveTo(0, centerY)
-    ctx.lineTo(0, height)
-    ctx.lineTo(width, height)
-    ctx.lineTo(width, centerY)
+    ctx.moveTo(leftX, centerY)
+    ctx.lineTo(leftX, height + spread)
+    ctx.lineTo(rightX, height + spread)
+    ctx.lineTo(rightX, centerY)
     ctx.quadraticCurveTo(
         width / 2, centerY + currentGap / 2,
-        0, centerY
+        leftX, centerY
     )
     ctx.closePath()
     ctx.fill()
