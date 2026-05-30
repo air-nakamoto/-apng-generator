@@ -315,21 +315,23 @@ function drawBlinkFrame(
     ctx.restore()
 
     const centerY = height / 2
-    const spread = openRatio * openRatio * width * 0.6
+    const spread = openRatio * openRatio * width * 0.8
     const leftX = -spread
     const rightX = width + spread
-    const maxGap = height * (0.7 + openRatio * 0.5)
+    const maxGap = height * (0.8 + openRatio * 0.8)
     const currentGap = maxGap * openRatio
 
-    if (currentGap / 2 >= centerY + 30 && spread > width * 0.3) {
-        ctx.restore()
+    const curveTop = centerY - currentGap / 2
+    const curveBottom = centerY + currentGap / 2
+    if (curveTop < -height * 0.3 && curveBottom > height * 1.3) {
         return
     }
 
     ctx.save()
     ctx.fillStyle = '#000000'
+    const shadowAmount = Math.max(0, 20 * (1 - openRatio * 0.8))
     ctx.shadowColor = '#000000'
-    ctx.shadowBlur = 20
+    ctx.shadowBlur = shadowAmount
     ctx.shadowOffsetX = 0
     ctx.shadowOffsetY = 0
 
@@ -340,7 +342,7 @@ function drawBlinkFrame(
     ctx.lineTo(rightX, -spread)
     ctx.lineTo(rightX, centerY)
     ctx.quadraticCurveTo(
-        width / 2, centerY - currentGap / 2,
+        width / 2, curveTop,
         leftX, centerY
     )
     ctx.closePath()
@@ -353,7 +355,7 @@ function drawBlinkFrame(
     ctx.lineTo(rightX, height + spread)
     ctx.lineTo(rightX, centerY)
     ctx.quadraticCurveTo(
-        width / 2, centerY + currentGap / 2,
+        width / 2, curveBottom,
         leftX, centerY
     )
     ctx.closePath()
