@@ -315,21 +315,19 @@ function drawBlinkFrame(
     ctx.restore()
 
     const centerY = height / 2
+    // openRatio が 1 に近づくにつれ、まぶたを画面外まで大きく退避させる
+    // 角はアーモンド型のため、隙間(gap)を画面全体クリアできるまで終盤で加速させる
     const spread = openRatio * openRatio * width * 0.8
     const leftX = -spread
     const rightX = width + spread
-    const maxGap = height * (0.8 + openRatio * 0.8)
-    const currentGap = maxGap * openRatio
+    const currentGap = height * (0.6 * openRatio + 2.6 * openRatio * openRatio * openRatio)
 
     const curveTop = centerY - currentGap / 2
     const curveBottom = centerY + currentGap / 2
-    if (curveTop < -height * 0.3 && curveBottom > height * 1.3) {
-        return
-    }
 
     ctx.save()
     ctx.fillStyle = '#000000'
-    const shadowAmount = Math.max(0, 20 * (1 - openRatio * 0.8))
+    const shadowAmount = Math.max(0, 20 * (1 - openRatio))
     ctx.shadowColor = '#000000'
     ctx.shadowBlur = shadowAmount
     ctx.shadowOffsetX = 0
