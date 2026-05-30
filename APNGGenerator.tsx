@@ -5444,7 +5444,7 @@ export default function APNGGenerator() {
                 </filter>
             </svg >
             <canvas ref={canvasRef} style={{ display: 'none' }} />
-            <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} version="V121" />
+            <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} version="V122" />
         </div >
     )
 }
