@@ -325,29 +325,33 @@ function drawBlinkFrame(
 
     if (openRatio < 0.999) {
         const centerY = height / 2
-        const maxGap = height * 0.6
+        const maxGap = height * 0.7
         const currentGap = maxGap * openRatio
 
         ctx.fillStyle = '#000000'
 
+        // Upper eyelid - eye shape: meets at left/right corners, widest at center
         ctx.beginPath()
-        ctx.moveTo(0, 0)
-        ctx.lineTo(width, 0)
-        ctx.lineTo(width, centerY - currentGap / 2)
+        ctx.moveTo(0, centerY)          // left corner of eye
+        ctx.lineTo(0, 0)                // top-left
+        ctx.lineTo(width, 0)            // top-right
+        ctx.lineTo(width, centerY)      // right corner of eye
         ctx.quadraticCurveTo(
-            width / 2, centerY - currentGap / 2 + currentGap * 0.3,
-            0, centerY - currentGap / 2
+            width / 2, centerY - currentGap / 2,
+            0, centerY
         )
         ctx.closePath()
         ctx.fill()
 
+        // Lower eyelid - eye shape: meets at left/right corners, widest at center
         ctx.beginPath()
-        ctx.moveTo(0, height)
-        ctx.lineTo(width, height)
-        ctx.lineTo(width, centerY + currentGap / 2)
+        ctx.moveTo(0, centerY)          // left corner of eye
+        ctx.lineTo(0, height)           // bottom-left
+        ctx.lineTo(width, height)       // bottom-right
+        ctx.lineTo(width, centerY)      // right corner of eye
         ctx.quadraticCurveTo(
-            width / 2, centerY + currentGap / 2 - currentGap * 0.3,
-            0, centerY + currentGap / 2
+            width / 2, centerY + currentGap / 2,
+            0, centerY
         )
         ctx.closePath()
         ctx.fill()
