@@ -256,12 +256,6 @@ export const transitionEffects: EffectCategory[] = [
                     { value: '3', label: '3回', numericValue: 3 },
                 ],
                 defaultOption: '1',
-                hasIntensity: true,
-                intensityOptions: [
-                    { value: 'none', label: 'なし', numericValue: 0 },
-                    { value: 'blur', label: 'ぼやけ', numericValue: 1 },
-                ],
-                defaultIntensity: 'none'
             },
         ],
     },
@@ -456,13 +450,7 @@ export const transitionEffects: EffectCategory[] = [
                     { value: '2', label: '2回', numericValue: 2 },
                     { value: '3', label: '3回', numericValue: 3 },
                 ],
-                defaultOption: '1',
-                hasIntensity: true,
-                intensityOptions: [
-                    { value: 'none', label: 'なし', numericValue: 0 },
-                    { value: 'blur', label: 'ぼやけ', numericValue: 1 },
-                ],
-                defaultIntensity: 'none'
+                defaultOption: '1'
             },
         ],
     },

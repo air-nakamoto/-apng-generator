@@ -291,7 +291,6 @@ function drawBlinkFrame(
     height: number,
     progress: number,
     blinkCount: number,
-    visualEffect: string,
     direction: 'open' | 'close'
 ) {
     const effectiveProgress = direction === 'open' ? progress : 1 - progress
@@ -299,19 +298,14 @@ function drawBlinkFrame(
 
     ctx.save()
 
-    const hasBlur = visualEffect === 'blur'
-
-    if (hasBlur) {
-        const blurAmount = (1 - openRatio) * 6
+    const blurAmount = (1 - openRatio) * 6
+    if (blurAmount > 0.1) {
         ctx.filter = `blur(${blurAmount}px)`
     }
 
     ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height)
 
-    if (hasBlur) {
-        ctx.filter = 'none'
-    }
-
+    ctx.filter = 'none'
     ctx.restore()
 
     const centerY = height / 2
@@ -1208,14 +1202,12 @@ export default function APNGGenerator() {
             }
             case 'blinkIn': {
                 const blinkInCount = effectOption ? parseInt(effectOption) : 1
-                const blinkInVisual = effectIntensity || 'none'
-                drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkInCount, blinkInVisual, 'open')
+                drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkInCount, 'open')
                 break
             }
             case 'blinkOut': {
                 const blinkOutCount = effectOption ? parseInt(effectOption) : 1
-                const blinkOutVisual = effectIntensity || 'none'
-                drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkOutCount, blinkOutVisual, 'close')
+                drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkOutCount, 'close')
                 break
             }
             // V118: 斬撃効果（斜めに斬られて上下がスライドして消える）
@@ -2370,14 +2362,12 @@ export default function APNGGenerator() {
                         }
                         case 'blinkIn': {
                             const blinkInCount = effectOption ? parseInt(effectOption) : 1
-                            const blinkInVisual = effectIntensity || 'none'
-                            drawBlinkFrame(testCtx, sourceImage, testCanvas.width, testCanvas.height, progress, blinkInCount, blinkInVisual, 'open')
+                            drawBlinkFrame(testCtx, sourceImage, testCanvas.width, testCanvas.height, progress, blinkInCount, 'open')
                             break
                         }
                         case 'blinkOut': {
                             const blinkOutCount = effectOption ? parseInt(effectOption) : 1
-                            const blinkOutVisual = effectIntensity || 'none'
-                            drawBlinkFrame(testCtx, sourceImage, testCanvas.width, testCanvas.height, progress, blinkOutCount, blinkOutVisual, 'close')
+                            drawBlinkFrame(testCtx, sourceImage, testCanvas.width, testCanvas.height, progress, blinkOutCount, 'close')
                             break
                         }
                         case 'swordSlashOut': {
@@ -3475,14 +3465,12 @@ export default function APNGGenerator() {
 
                     case 'blinkIn': {
                         const blinkInCount = effectOption ? parseInt(effectOption) : 1
-                        const blinkInVisual = effectIntensity || 'none'
-                        drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkInCount, blinkInVisual, 'open')
+                        drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkInCount, 'open')
                         break
                     }
                     case 'blinkOut': {
                         const blinkOutCount = effectOption ? parseInt(effectOption) : 1
-                        const blinkOutVisual = effectIntensity || 'none'
-                        drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkOutCount, blinkOutVisual, 'close')
+                        drawBlinkFrame(ctx, sourceImage, canvas.width, canvas.height, progress, blinkOutCount, 'close')
                         break
                     }
 
@@ -4756,8 +4744,7 @@ export default function APNGGenerator() {
                 return {
                     ...baseStyle,
                     clipPath: `inset(${blinkInClip}% 0 ${blinkInClip}% 0 round 50%)`,
-                    filter: effectIntensity === 'blur'
-                        ? `blur(${(1 - blinkInOpenCSS) * 6}px)` : undefined,
+                    filter: `blur(${(1 - blinkInOpenCSS) * 6}px)`,
                 }
             }
             case 'blinkOut': {
@@ -4766,8 +4753,7 @@ export default function APNGGenerator() {
                 return {
                     ...baseStyle,
                     clipPath: `inset(${blinkOutClip}% 0 ${blinkOutClip}% 0 round 50%)`,
-                    filter: effectIntensity === 'blur'
-                        ? `blur(${(1 - blinkOutOpenCSS) * 6}px)` : undefined,
+                    filter: `blur(${(1 - blinkOutOpenCSS) * 6}px)`,
                 }
             }
 
