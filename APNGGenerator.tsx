@@ -1760,7 +1760,7 @@ export default function APNGGenerator() {
             playbackSpeedRef.current = savedSpeed // refも即時更新
         } else {
             // 初めて選ぶエフェクトはデフォルト速度
-            const defaultSpeed = (newTransition === 'blinkIn' || newTransition === 'blinkOut') ? 0.5 : 1.0
+            const defaultSpeed = (newTransition === 'blinkIn' || newTransition === 'blinkOut') ? 0.3 : 1.0
             setPlaybackSpeed(defaultSpeed)
             playbackSpeedRef.current = defaultSpeed // refも即時更新
         }
@@ -2803,7 +2803,7 @@ export default function APNGGenerator() {
                     }
 
                     testFrames.push(testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height).data.buffer)
-                    testDelays.push(Math.round(1000 / fps))
+                    testDelays.push(Math.round(1000 / (fps * playbackSpeed)))
                 }
 
                 if (requiresFinalClear) {
@@ -2814,7 +2814,7 @@ export default function APNGGenerator() {
                         transparentFrame[i] = 1
                     }
                     testFrames.push(transparentFrame.buffer)
-                    testDelays.push(Math.round(1000 / fps))
+                    testDelays.push(Math.round(1000 / (fps * playbackSpeed)))
                 }
 
                 if (!isLooping && testFrames.length > 0) {
@@ -4042,7 +4042,7 @@ export default function APNGGenerator() {
                 }
 
                 frames.push(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer)
-                delays.push(1000 / fps)
+                delays.push(Math.round(1000 / (fps * playbackSpeed)))
 
                 setGenerationProgress((i + 1) / frameCount * 0.8)
                 // 毎フレームUIに制御を戻す（アニメーション継続のため）
@@ -4056,7 +4056,7 @@ export default function APNGGenerator() {
                     transparentFrame[i] = 1
                 }
                 frames.push(transparentFrame.buffer)
-                delays.push(1000 / fps)
+                delays.push(Math.round(1000 / (fps * playbackSpeed)))
             }
 
             if (!isLooping && frames.length > 0) {
