@@ -1760,7 +1760,7 @@ export default function APNGGenerator() {
             playbackSpeedRef.current = savedSpeed // refも即時更新
         } else {
             // 初めて選ぶエフェクトはデフォルト速度
-            const defaultSpeed = (newTransition === 'blinkIn' || newTransition === 'blinkOut') ? 0.3 : 1.0
+            const defaultSpeed = (newTransition === 'blinkIn' || newTransition === 'blinkOut') ? 0.4 : 1.0
             setPlaybackSpeed(defaultSpeed)
             playbackSpeedRef.current = defaultSpeed // refも即時更新
         }
